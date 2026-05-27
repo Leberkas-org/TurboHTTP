@@ -1,85 +1,66 @@
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Stage;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
 
 namespace TurboHTTP.Streams.Stages.Server;
 
-internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestContext, RequestContext>>
+internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IFeatureCollection, IFeatureCollection>>
+    where TContext : notnull
 {
-    private readonly Func<IFeatureCollection, object> _createContext;
-    private readonly Func<object, Task> _processRequest;
-    private readonly Action<object, Exception?> _disposeContext;
+    private readonly IHttpApplication<TContext> _application;
     private readonly int _parallelism;
     private readonly TimeSpan _handlerTimeout;
     private readonly TimeSpan _handlerGracePeriod;
 
-    private readonly Inlet<RequestContext> _in = new("AppBridge.In");
-    private readonly Outlet<RequestContext> _out = new("AppBridge.Out");
+    private readonly Inlet<IFeatureCollection> _in = new("AppBridge.In");
+    private readonly Outlet<IFeatureCollection> _out = new("AppBridge.Out");
 
-    public override FlowShape<RequestContext, RequestContext> Shape { get; }
+    public override FlowShape<IFeatureCollection, IFeatureCollection> Shape { get; }
 
-    private ApplicationBridgeStage(
-        Func<IFeatureCollection, object> createContext,
-        Func<object, Task> processRequest,
-        Action<object, Exception?> disposeContext,
+    public ApplicationBridgeStage(
+        IHttpApplication<TContext> application,
         int parallelism,
         TimeSpan handlerTimeout,
         TimeSpan handlerGracePeriod)
     {
-        _createContext = createContext;
-        _processRequest = processRequest;
-        _disposeContext = disposeContext;
+        _application = application;
         _parallelism = parallelism;
         _handlerTimeout = handlerTimeout;
         _handlerGracePeriod = handlerGracePeriod;
-        Shape = new FlowShape<RequestContext, RequestContext>(_in, _out);
-    }
-
-    public static ApplicationBridgeStage Create<TContext>(
-        Microsoft.AspNetCore.Hosting.Server.IHttpApplication<TContext> application,
-        int parallelism,
-        TimeSpan handlerTimeout,
-        TimeSpan handlerGracePeriod) where TContext : notnull
-    {
-        return new ApplicationBridgeStage(
-            features => application.CreateContext(features),
-            ctx => application.ProcessRequestAsync((TContext)ctx),
-            (ctx, ex) => application.DisposeContext((TContext)ctx, ex),
-            parallelism,
-            handlerTimeout,
-            handlerGracePeriod);
+        Shape = new FlowShape<IFeatureCollection, IFeatureCollection>(_in, _out);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
 
-    private sealed record DispatchCompleted(int Sequence, RequestContext Context);
+    private sealed record DispatchCompleted(int Sequence, IFeatureCollection Features);
 
-    private sealed record DispatchFailed(int Sequence, RequestContext Context, Exception Error);
+    private sealed record DispatchFailed(int Sequence, IFeatureCollection Features, Exception Error);
 
-    private sealed record ResponseReady(int Sequence, RequestContext Context, Task HandlerTask);
+    private sealed record ResponseReady(int Sequence, IFeatureCollection Features, Task HandlerTask);
 
-    private sealed record HandlerFinished(int Sequence, RequestContext Context);
+    private sealed record HandlerFinished(int Sequence, IFeatureCollection Features);
 
-    private sealed record HandlerFaulted(int Sequence, RequestContext Context, Exception Error);
+    private sealed record HandlerFaulted(int Sequence, IFeatureCollection Features, Exception Error);
 
-    private sealed record HandlerTimedOut(int Sequence, RequestContext Context);
+    private sealed record HandlerTimedOut(int Sequence, IFeatureCollection Features);
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly ApplicationBridgeStage _stage;
+        private readonly ApplicationBridgeStage<TContext> _stage;
         private IActorRef? _stageActor;
         private bool _upstreamFinished;
         private int _inFlight;
         private int _sequence;
         private int _nextToEmit;
         private bool _downstreamReady;
-        private readonly SortedDictionary<int, RequestContext> _pending = [];
+        private readonly SortedDictionary<int, IFeatureCollection> _pending = [];
         private readonly Dictionary<int, CancellationTokenSource> _activeTimeouts = [];
-        private readonly Dictionary<int, object> _appContexts = [];
+        private readonly Dictionary<int, TContext> _appContexts = [];
 
-        public Logic(ApplicationBridgeStage stage) : base(stage.Shape)
+        public Logic(ApplicationBridgeStage<TContext> stage) : base(stage.Shape)
         {
             _stage = stage;
 
@@ -111,120 +92,118 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
 
         private void OnPush()
         {
-            var ctx = Grab(_stage._in);
+            var features = Grab(_stage._in);
             var seq = _sequence++;
 
             _inFlight++;
 
             try
             {
-                DispatchAsync(ctx, seq);
+                DispatchAsync(features, seq);
             }
             catch (Exception)
             {
                 _inFlight--;
-                var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                var responseFeature = features.Get<IHttpResponseFeature>();
                 if (responseFeature is not null)
                 {
                     responseFeature.StatusCode = 500;
                 }
-                CompleteResponseBody(ctx);
-                Emit(seq, ctx);
+                CompleteResponseBody(features);
+                Emit(seq, features);
             }
 
             TryPullNext();
         }
 
-        private void DispatchAsync(RequestContext ctx, int seq)
+        private void DispatchAsync(IFeatureCollection features, int seq)
         {
-            object? appContext = null;
+            TContext appContext;
             try
             {
-                appContext = _stage._createContext(ctx.Features);
+                appContext = _stage._application.CreateContext(features);
                 _appContexts[seq] = appContext;
             }
             catch (Exception)
             {
                 _inFlight--;
-                var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                var responseFeature = features.Get<IHttpResponseFeature>();
                 if (responseFeature is not null)
                 {
                     responseFeature.StatusCode = 500;
                 }
-                CompleteResponseBody(ctx);
-                Emit(seq, ctx);
+                CompleteResponseBody(features);
+                Emit(seq, features);
                 return;
             }
 
-            var task = DispatchAsyncInternal(ctx, seq, appContext);
+            var task = _stage._application.ProcessRequestAsync(appContext);
 
             if (task.IsCompletedSuccessfully)
             {
                 _inFlight--;
-                _stage._disposeContext(appContext, null);
+                _stage._application.DisposeContext(appContext, null);
                 _appContexts.Remove(seq);
-                CompleteResponseBody(ctx);
-                Emit(seq, ctx);
+                CompleteResponseBody(features);
+                Emit(seq, features);
             }
             else if (task.IsFaulted)
             {
                 _inFlight--;
-                var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                var responseFeature = features.Get<IHttpResponseFeature>();
                 if (responseFeature is not null)
                 {
                     responseFeature.StatusCode = 500;
                 }
-                _stage._disposeContext(appContext, task.Exception);
+                _stage._application.DisposeContext(appContext, task.Exception);
                 _appContexts.Remove(seq);
-                CompleteResponseBody(ctx);
-                Emit(seq, ctx);
+                CompleteResponseBody(features);
+                Emit(seq, features);
             }
             else
             {
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.Lifetime?.Token ?? CancellationToken.None);
+                var lifetime = features.Get<IHttpRequestLifetimeFeature>();
+                var cts = lifetime is not null
+                    ? CancellationTokenSource.CreateLinkedTokenSource(lifetime.RequestAborted)
+                    : new CancellationTokenSource();
                 cts.CancelAfter(_stage._handlerTimeout);
                 _activeTimeouts[seq] = cts;
 
-                var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+                var bodyFeature = features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
                 var headersReady = bodyFeature?.WhenHeadersReady;
 
                 Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod, cts.Token)
                     .PipeTo(_stageActor!,
-                        success: () => new HandlerTimedOut(seq, ctx));
+                        success: () => new HandlerTimedOut(seq, features));
 
                 if (headersReady is not null)
                 {
                     Task.WhenAny(headersReady, task)
                         .PipeTo(_stageActor!,
-                            success: () => new ResponseReady(seq, ctx, task));
+                            success: () => new ResponseReady(seq, features, task));
                 }
                 else
                 {
                     task.PipeTo(_stageActor!,
-                        success: () => new DispatchCompleted(seq, ctx),
-                        failure: ex => new DispatchFailed(seq, ctx, ex));
+                        success: () => new DispatchCompleted(seq, features),
+                        failure: ex => new DispatchFailed(seq, features, ex));
                 }
             }
-        }
-
-        private async Task DispatchAsyncInternal(RequestContext ctx, int seq, object appContext)
-        {
-            await _stage._processRequest(appContext);
         }
 
         private void OnMessage((IActorRef sender, object msg) args)
         {
             switch (args.msg)
             {
-                case ResponseReady(var seq, var ctx, var handlerTask):
+                case ResponseReady(var seq, var features, var handlerTask):
                     if (handlerTask.IsFaulted)
                     {
-                        if (ctx.Features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature
+                        if (features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature
                             {
                                 HasStarted: true
                             })
                         {
-                            var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                            var responseFeature = features.Get<IHttpResponseFeature>();
                             if (responseFeature is not null)
                             {
                                 responseFeature.StatusCode = 500;
@@ -234,35 +213,27 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
 
                     if (handlerTask.IsCompleted)
                     {
-                        CompleteResponseBody(ctx);
+                        CompleteResponseBody(features);
                         _inFlight--;
                         DisposeCts(seq);
-                        if (_appContexts.TryGetValue(seq, out var appCtxReady))
-                        {
-                            _stage._disposeContext(appCtxReady, handlerTask.Exception);
-                            _appContexts.Remove(seq);
-                        }
-                        Emit(seq, ctx);
+                        DisposeAppContext(seq, handlerTask.Exception);
+                        Emit(seq, features);
                     }
                     else
                     {
-                        Emit(seq, ctx);
+                        Emit(seq, features);
                         handlerTask.PipeTo(_stageActor!,
-                            success: () => new HandlerFinished(seq, ctx),
-                            failure: ex => new HandlerFaulted(seq, ctx, ex));
+                            success: () => new HandlerFinished(seq, features),
+                            failure: ex => new HandlerFaulted(seq, features, ex));
                     }
 
                     break;
 
-                case HandlerFinished(var seq, var finishedCtx):
-                    CompleteResponseBody(finishedCtx);
+                case HandlerFinished(var seq, var finishedFeatures):
+                    CompleteResponseBody(finishedFeatures);
                     _inFlight--;
                     DisposeCts(seq);
-                    if (_appContexts.TryGetValue(seq, out var appCtx))
-                    {
-                        _stage._disposeContext(appCtx, null);
-                        _appContexts.Remove(seq);
-                    }
+                    DisposeAppContext(seq, null);
                     if (_upstreamFinished && _inFlight == 0)
                     {
                         CompleteStage();
@@ -270,15 +241,11 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
 
                     break;
 
-                case HandlerFaulted(var seq, var faultedCtx, var error):
-                    CompleteResponseBody(faultedCtx);
+                case HandlerFaulted(var seq, var faultedFeatures, var error):
+                    CompleteResponseBody(faultedFeatures);
                     _inFlight--;
                     DisposeCts(seq);
-                    if (_appContexts.TryGetValue(seq, out var appCtxFaulted))
-                    {
-                        _stage._disposeContext(appCtxFaulted, error);
-                        _appContexts.Remove(seq);
-                    }
+                    DisposeAppContext(seq, error);
                     if (_upstreamFinished && _inFlight == 0)
                     {
                         CompleteStage();
@@ -286,52 +253,40 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
 
                     break;
 
-                case DispatchCompleted(var seq, var ctx):
+                case DispatchCompleted(var seq, var features):
                     _inFlight--;
                     DisposeCts(seq);
-                    if (_appContexts.TryGetValue(seq, out var appCtxCompleted))
-                    {
-                        _stage._disposeContext(appCtxCompleted, null);
-                        _appContexts.Remove(seq);
-                    }
-                    CompleteResponseBody(ctx);
-                    Emit(seq, ctx);
+                    DisposeAppContext(seq, null);
+                    CompleteResponseBody(features);
+                    Emit(seq, features);
                     break;
 
-                case DispatchFailed(var seq, var ctx, var error):
+                case DispatchFailed(var seq, var features, var error):
                     _inFlight--;
                     DisposeCts(seq);
-                    if (_appContexts.TryGetValue(seq, out var appCtxFailed))
-                    {
-                        _stage._disposeContext(appCtxFailed, error);
-                        _appContexts.Remove(seq);
-                    }
-                    var respFeature = ctx.Features.Get<IHttpResponseFeature>();
+                    DisposeAppContext(seq, error);
+                    var respFeature = features.Get<IHttpResponseFeature>();
                     if (respFeature is not null)
                     {
                         respFeature.StatusCode = 500;
                     }
-                    CompleteResponseBody(ctx);
-                    Emit(seq, ctx);
+                    CompleteResponseBody(features);
+                    Emit(seq, features);
                     break;
 
-                case HandlerTimedOut(var seq, var ctx):
+                case HandlerTimedOut(var seq, var features):
                     if (_activeTimeouts.TryGetValue(seq, out var cts))
                     {
                         cts.Dispose();
                         _activeTimeouts.Remove(seq);
-                        var respFeatureTimeout = ctx.Features.Get<IHttpResponseFeature>();
+                        var respFeatureTimeout = features.Get<IHttpResponseFeature>();
                         if (respFeatureTimeout is not null && respFeatureTimeout.StatusCode == 200)
                         {
                             respFeatureTimeout.StatusCode = 503;
-                            CompleteResponseBody(ctx);
+                            CompleteResponseBody(features);
                             _inFlight--;
-                            if (_appContexts.TryGetValue(seq, out var appCtxTimeout))
-                            {
-                                _stage._disposeContext(appCtxTimeout, null);
-                                _appContexts.Remove(seq);
-                            }
-                            Emit(seq, ctx);
+                            DisposeAppContext(seq, null);
+                            Emit(seq, features);
                         }
                     }
 
@@ -341,6 +296,15 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
             if (_upstreamFinished && _inFlight == 0 && _pending.Count == 0)
             {
                 CompleteStage();
+            }
+        }
+
+        private void DisposeAppContext(int seq, Exception? exception)
+        {
+            if (_appContexts.TryGetValue(seq, out var appCtx))
+            {
+                _stage._application.DisposeContext(appCtx, exception);
+                _appContexts.Remove(seq);
             }
         }
 
@@ -361,9 +325,9 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
             }
         }
 
-        private void Emit(int seq, RequestContext ctx)
+        private void Emit(int seq, IFeatureCollection features)
         {
-            _pending[seq] = ctx;
+            _pending[seq] = features;
             TryEmitPending();
         }
 
@@ -378,9 +342,9 @@ internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestConte
             }
         }
 
-        private static void CompleteResponseBody(RequestContext ctx)
+        private static void CompleteResponseBody(IFeatureCollection features)
         {
-            var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+            var bodyFeature = features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
             bodyFeature?.Complete();
         }
     }
