@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -19,6 +20,8 @@ internal sealed class TurboFeatureCollection : IFeatureCollection
     private IHttpMaxRequestBodySizeFeature? _maxRequestBodySize;
     private IHttpBodyControlFeature? _bodyControl;
     private Dictionary<Type, object>? _extras;
+    internal long RequestTimestamp { get; set; }
+    internal Activity? RequestActivity { get; set; }
     private int _revision;
 
     public T? Get<T>() where T : class

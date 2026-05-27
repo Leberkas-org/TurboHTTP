@@ -81,6 +81,9 @@ internal static class FeatureCollectionFactory
             return;
         }
 
+        turboFeatures.RequestTimestamp = 0;
+        turboFeatures.RequestActivity = null;
+
         t_pool ??= new Stack<TurboFeatureCollection>(MaxPoolSize);
 
         if (t_pool.Count < MaxPoolSize)
