@@ -260,6 +260,8 @@ namespace TurboHTTP.Diagnostics
         public static OpenTelemetry.Metrics.MeterProviderBuilder AddTurboHttpInstrumentation(this OpenTelemetry.Metrics.MeterProviderBuilder builder) { }
         public static OpenTelemetry.Trace.TracerProviderBuilder AddTurboHttpInstrumentation(this OpenTelemetry.Trace.TracerProviderBuilder builder) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboLoggerTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Servus.Core.Diagnostics.TraceLevel minimumLevel = 1, System.Func<string, bool>? categoryFilter = null) { }
+        public static OpenTelemetry.Metrics.MeterProviderBuilder AddTurboServerInstrumentation(this OpenTelemetry.Metrics.MeterProviderBuilder builder) { }
+        public static OpenTelemetry.Trace.TracerProviderBuilder AddTurboServerInstrumentation(this OpenTelemetry.Trace.TracerProviderBuilder builder) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboTracing(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Servus.Core.Diagnostics.IServusTraceListener listener, Servus.Core.Diagnostics.TraceLevel minimumLevel = 1, System.Func<string, bool>? categoryFilter = null) { }
     }
 }
