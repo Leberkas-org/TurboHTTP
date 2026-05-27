@@ -68,6 +68,19 @@ public sealed class TurboServer : IServer
         var resolver = new EndpointResolver();
         var resolvedEndpoints = resolver.Resolve(_options);
 
+        var addressesFeature = _features.Get<IServerAddressesFeature>()!;
+        foreach (var endpoint in resolvedEndpoints)
+        {
+            var opts = endpoint.Options;
+            var scheme = opts.ServerCertificate is not null ? "https" : "http";
+            var host = opts.Host ?? "localhost";
+            if (host == "0.0.0.0" || host == "::")
+            {
+                host = "localhost";
+            }
+            addressesFeature.Addresses.Add(string.Concat(scheme, "://", host, ":", opts.Port.ToString()));
+        }
+
         var listenerProps = new List<Props>(resolvedEndpoints.Count);
         foreach (var endpoint in resolvedEndpoints)
         {
