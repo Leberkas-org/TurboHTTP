@@ -17,8 +17,8 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ICli
     private readonly Outlet<ITransportOutbound> _outNetwork;
 
     private readonly TSM _sm;
-    private readonly Queue<ITransportOutbound> _outboundQueue = new();
-    private readonly Queue<HttpResponseMessage> _responseQueue = new();
+    private readonly Queue<ITransportOutbound> _outboundQueue = new(64);
+    private readonly Queue<HttpResponseMessage> _responseQueue = new(64);
     private IActorRef _stageActor = ActorRefs.Nobody;
 
     public HttpConnectionStageLogic(
@@ -172,14 +172,22 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ICli
     void IClientStageOperations.OnResponse(HttpResponseMessage response)
     {
         Tracing.For("Protocol").Debug(this, "← {0}", (int)response.StatusCode);
+        if (IsAvailable(_outResponse))
+        {
+            Push(_outResponse, response);
+            return;
+        }
         _responseQueue.Enqueue(response);
-        TryPushResponse();
     }
 
     void IClientStageOperations.OnOutbound(ITransportOutbound item)
     {
+        if (IsAvailable(_outNetwork))
+        {
+            Push(_outNetwork, item);
+            return;
+        }
         _outboundQueue.Enqueue(item);
-        TryPushOutbound();
     }
 
     void IClientStageOperations.OnScheduleTimer(string name, TimeSpan duration)
