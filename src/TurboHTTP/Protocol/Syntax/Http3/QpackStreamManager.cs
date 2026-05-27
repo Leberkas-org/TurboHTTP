@@ -15,10 +15,6 @@ internal sealed class QpackStreamManager
     private bool _encoderPrefaceSent;
     private bool _decoderPrefaceSent;
 
-    private const int FlushThreshold = 256;
-    private byte[]? _pendingInstructions;
-    private int _pendingLength;
-
     public QpackTableSync TableSync { get; }
 
     public QpackStreamManager(
@@ -78,7 +74,13 @@ internal sealed class QpackStreamManager
         }
     }
 
-    public void AccumulateEncoderInstructions()
+    public void FlushPendingInstructions()
+    {
+        FlushDecoderInstructions();
+        FlushEncoderInstructions();
+    }
+
+    public void FlushEncoderInstructions()
     {
         var instructions = _requestEncoder.EncoderInstructions;
         if (instructions.Length == 0)
@@ -86,76 +88,28 @@ internal sealed class QpackStreamManager
             return;
         }
 
-        var needed = _pendingLength + instructions.Length;
-        if (_pendingInstructions is null || _pendingInstructions.Length < needed)
-        {
-            var newBuf = new byte[Math.Max(needed, FlushThreshold * 2)];
-            if (_pendingLength > 0)
-            {
-                _pendingInstructions.AsSpan(0, _pendingLength).CopyTo(newBuf);
-            }
-            _pendingInstructions = newBuf;
-        }
-
-        instructions.Span.CopyTo(_pendingInstructions.AsSpan(_pendingLength));
-        _pendingLength += instructions.Length;
-    }
-
-    public void FlushIfNeeded(bool force = false)
-    {
-        if (_pendingLength == 0)
-        {
-            return;
-        }
-
-        if (!force && _pendingLength < FlushThreshold)
-        {
-            return;
-        }
-
-        FlushPendingEncoderBuffer();
-    }
-
-    private void FlushPendingEncoderBuffer()
-    {
-        if (_pendingLength == 0)
-        {
-            return;
-        }
-
-        var prefaceSize = _encoderPrefaceSent ? 0 : 1;
-        var totalLength = prefaceSize + _pendingLength;
-
-        var buf = TransportBuffer.Rent(totalLength);
-        var dest = buf.FullMemory.Span;
+        int totalLength;
+        using var owner = MemoryPool<byte>.Shared.Rent(1 + instructions.Length);
+        var span = owner.Memory.Span;
 
         if (!_encoderPrefaceSent)
         {
             _encoderPrefaceSent = true;
-            dest[0] = (byte)StreamType.QpackEncoder;
-            _pendingInstructions.AsSpan(0, _pendingLength).CopyTo(dest[1..]);
+            span[0] = (byte)StreamType.QpackEncoder;
+            instructions.Span.CopyTo(span[1..]);
+            totalLength = 1 + instructions.Length;
         }
         else
         {
-            _pendingInstructions.AsSpan(0, _pendingLength).CopyTo(dest);
+            instructions.Span.CopyTo(span);
+            totalLength = instructions.Length;
         }
 
+        var buf = TransportBuffer.Rent(totalLength);
+        owner.Memory.Span[..totalLength].CopyTo(buf.FullMemory.Span);
         buf.Length = totalLength;
+
         _ops.OnOutbound(new MultiplexedData(buf, CriticalStreamId.QpackEncoder));
-        _pendingLength = 0;
-    }
-
-    public void FlushPendingInstructions()
-    {
-        FlushDecoderInstructions();
-        AccumulateEncoderInstructions();
-        FlushPendingEncoderBuffer();
-    }
-
-    public void FlushEncoderInstructions()
-    {
-        AccumulateEncoderInstructions();
-        FlushPendingEncoderBuffer();
     }
 
     public void FlushDecoderInstructions()
@@ -208,6 +162,5 @@ internal sealed class QpackStreamManager
     {
         _encoderPrefaceSent = false;
         _decoderPrefaceSent = false;
-        _pendingLength = 0;
     }
 }

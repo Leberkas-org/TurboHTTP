@@ -108,8 +108,7 @@ internal sealed class Http3ClientSessionManager
             return;
         }
 
-        _qpackStreamManager.AccumulateEncoderInstructions();
-        _qpackStreamManager.FlushIfNeeded();
+        _qpackStreamManager.FlushEncoderInstructions();
 
         EmitBatchedFrames(frames, streamId);
 
@@ -275,13 +274,6 @@ internal sealed class Http3ClientSessionManager
 
     public void Cleanup()
     {
-        var exception = new HttpRequestException("HTTP/3 connection closed while requests were in flight.");
-        foreach (var (_, request) in _correlationMap)
-        {
-            request.Fail(exception);
-        }
-
-        _correlationMap.Clear();
         _streamManager.Dispose();
 
         foreach (var item in _preConnectBuffer)

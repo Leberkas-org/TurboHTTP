@@ -273,12 +273,6 @@ internal sealed class Http2ClientSessionManager
             state.AbortBody();
         }
 
-        var exception = new HttpRequestException("HTTP/2 connection closed while requests were in flight.");
-        foreach (var (_, request) in _correlationMap)
-        {
-            request.Fail(exception);
-        }
-
         ReleaseAllStreamState();
     }
 
