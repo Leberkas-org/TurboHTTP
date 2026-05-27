@@ -15,7 +15,8 @@ internal static class FeatureCollectionFactory
         bool hasBody,
         IServiceProvider? services = null,
         IHttpConnectionFeature? connectionFeature = null,
-        TlsHandshakeFeature? tlsFeature = null)
+        TlsHandshakeFeature? tlsFeature = null,
+        long? maxRequestBodySize = null)
     {
         TurboFeatureCollection features;
 
@@ -60,6 +61,15 @@ internal static class FeatureCollectionFactory
 
         var identifierFeature = new TurboHttpRequestIdentifierFeature();
         features.Set<IHttpRequestIdentifierFeature>(identifierFeature);
+
+        var maxBodyFeature = new TurboHttpMaxRequestBodySizeFeature
+        {
+            MaxRequestBodySize = maxRequestBodySize
+        };
+        features.Set<IHttpMaxRequestBodySizeFeature>(maxBodyFeature);
+
+        var bodyControlFeature = new TurboHttpBodyControlFeature();
+        features.Set<IHttpBodyControlFeature>(bodyControlFeature);
 
         return features;
     }
