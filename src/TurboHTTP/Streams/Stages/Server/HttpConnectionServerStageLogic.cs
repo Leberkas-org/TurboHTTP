@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
@@ -5,6 +7,7 @@ using Akka.Streams.Stage;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Diagnostics;
 using TurboHTTP.Protocol;
 using TurboHTTP.Server;
 using static Servus.Core.Servus;
@@ -26,6 +29,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
     private readonly IServiceProvider? _services;
     private TurboHttpConnectionFeature? _connectionFeature;
     private TlsHandshakeFeature? _tlsHandshakeFeature;
+    private readonly bool _metricsEnabled;
 
     public HttpConnectionServerStageLogic(
         GraphStage<ServerConnectionShape> stage,
@@ -40,6 +44,9 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
         _services = services;
 
         _sm = smFactory(this);
+        _metricsEnabled = Metrics.ServerActiveRequests().Enabled
+            || Metrics.ServerRequestDuration().Enabled
+            || Tracing.IsServerTracingActive();
 
         SetHandler(_inNetwork,
             onPush: OnNetworkPush,
@@ -85,8 +92,17 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
 
                 if (_sm.ShouldComplete)
                 {
+                    if (_metricsEnabled)
+                    {
+                        OnResponseInstrumented(response);
+                    }
                     CompleteStage();
                     return;
+                }
+
+                if (_metricsEnabled)
+                {
+                    OnResponseInstrumented(response);
                 }
 
                 var bodyFeature = response.Get<IHttpResponseBodyFeature>();
@@ -204,8 +220,77 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
             return;
         }
 
+        if (_metricsEnabled)
+        {
+            OnRequestInstrumented(features);
+        }
+
         _requestQueue.Enqueue(features);
         TryPushRequest();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void OnRequestInstrumented(IFeatureCollection features)
+    {
+        var requestFeature = features.Get<IHttpRequestFeature>();
+        if (requestFeature is null)
+        {
+            return;
+        }
+
+        var method = requestFeature.Method;
+        var path = requestFeature.Path;
+        var scheme = requestFeature.Scheme ?? "http";
+
+        if (Metrics.ServerActiveRequests().Enabled)
+        {
+            Metrics.ServerActiveRequests().Add(1,
+                new KeyValuePair<string, object?>("url.scheme", scheme),
+                new KeyValuePair<string, object?>("http.request.method",
+                    TurboHttpInstrumentationExtensions.NormalizeMethod(method)));
+        }
+
+        if (features is TurboFeatureCollection turbo)
+        {
+            turbo.RequestTimestamp = Stopwatch.GetTimestamp();
+            turbo.RequestActivity = Tracing.StartRequestActivity(method, path, scheme);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void OnResponseInstrumented(IFeatureCollection features)
+    {
+        var responseFeature = features.Get<IHttpResponseFeature>();
+        var requestFeature = features.Get<IHttpRequestFeature>();
+        var statusCode = responseFeature?.StatusCode ?? 0;
+
+        if (requestFeature is not null && Metrics.ServerActiveRequests().Enabled)
+        {
+            var scheme = requestFeature.Scheme ?? "http";
+            Metrics.ServerActiveRequests().Add(-1,
+                new KeyValuePair<string, object?>("url.scheme", scheme),
+                new KeyValuePair<string, object?>("http.request.method",
+                    TurboHttpInstrumentationExtensions.NormalizeMethod(requestFeature.Method)));
+        }
+
+        if (features is TurboFeatureCollection turbo)
+        {
+            if (turbo.RequestActivity is { } activity)
+            {
+                Tracing.SetServerResponse(activity, statusCode);
+                activity.Stop();
+            }
+
+            if (turbo.RequestTimestamp > 0 && Metrics.ServerRequestDuration().Enabled && requestFeature is not null)
+            {
+                var elapsed = Stopwatch.GetElapsedTime(turbo.RequestTimestamp);
+                Metrics.ServerRequestDuration().Record(elapsed.TotalSeconds,
+                    new KeyValuePair<string, object?>("http.request.method",
+                        TurboHttpInstrumentationExtensions.NormalizeMethod(requestFeature.Method)),
+                    new KeyValuePair<string, object?>("http.response.status_code", statusCode),
+                    new KeyValuePair<string, object?>("url.scheme", requestFeature.Scheme ?? "http"));
+            }
+        }
     }
 
     void IServerStageOperations.OnOutbound(ITransportOutbound item)
