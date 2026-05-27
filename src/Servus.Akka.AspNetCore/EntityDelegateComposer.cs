@@ -35,7 +35,7 @@ internal static class EntityDelegateComposer
 
         var messageExpr = factoryMethod.ReturnType == typeof(object)
             ? factoryCall
-            : (Expression)Expression.Convert(factoryCall, typeof(object));
+            : Expression.Convert(factoryCall, typeof(object));
 
         var dispatchCall = Expression.Call(
             Expression.Constant(dispatcher),

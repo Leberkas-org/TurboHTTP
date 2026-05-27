@@ -22,6 +22,7 @@
   </Folder>
   <Folder Name="/Servus/">
     <Project Path="Servus.Akka.AspNetCore/Servus.Akka.AspNetCore.csproj" />
+    <Project Path="Servus.Akka.AspNetCore.Tests/Servus.Akka.AspNetCore.Tests.csproj" />
     <Project Path="Servus.Akka.TestKit.Tests/Servus.Akka.TestKit.Tests.csproj" />
     <Project Path="Servus.Akka.TestKit/Servus.Akka.TestKit.csproj" />
     <Project Path="Servus.Akka.Tests/Servus.Akka.Tests.csproj" />
