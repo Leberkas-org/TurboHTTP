@@ -1,6 +1,7 @@
 using Akka.Actor;
 using TurboHTTP.Protocol.LineBased;
 using TurboHTTP.Protocol.LineBased.Body;
+using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 
 namespace TurboHTTP.Protocol.Syntax.Http11.Client;
@@ -8,6 +9,7 @@ namespace TurboHTTP.Protocol.Syntax.Http11.Client;
 internal sealed class Http11ClientEncoder
 {
     private readonly Http11ClientEncoderOptions _options;
+    private readonly HeaderCollection _reusableHeaders = new();
 
     public Http11ClientEncoder(Http11ClientEncoderOptions options)
     {
@@ -29,8 +31,8 @@ internal sealed class Http11ClientEncoder
         var writer = SpanWriter.Create(destination);
         var targetStr = request.ResolveTarget();
         RequestLineWriter.Write(ref writer, request.Method.Method, targetStr, request.Version);
-        var headers = HeaderBuilder.Build(request, _options);
-        HeaderBlockWriter.Write(ref writer, headers);
+        HeaderBuilder.Build(request, _options, _reusableHeaders);
+        HeaderBlockWriter.Write(ref writer, _reusableHeaders);
 
         bodyEncoder?.Start(bodyStream!, stageActor);
 

@@ -10,10 +10,17 @@ internal static class HeaderBuilder
     public static HeaderCollection Build(HttpRequestMessage request, Http11ClientEncoderOptions options)
     {
         var collection = new HeaderCollection();
+        Build(request, options, collection);
+        return collection;
+    }
+
+    public static void Build(HttpRequestMessage request, Http11ClientEncoderOptions options, HeaderCollection target)
+    {
+        target.Clear();
 
         if (options.AutoHost)
         {
-            AddHostHeader(collection, request.RequestUri!);
+            AddHostHeader(target, request.RequestUri!);
         }
 
         var isChunked = request.Headers.TransferEncodingChunked == true;
@@ -25,19 +32,17 @@ internal static class HeaderBuilder
 
         if (options.AutoAcceptEncoding)
         {
-            AddAcceptEncodingIfNeeded(collection, request.Headers);
+            AddAcceptEncodingIfNeeded(target, request.Headers);
         }
 
-        AddHeaders(collection, request.Headers, skipHost: true);
+        AddHeaders(target, request.Headers, skipHost: true);
 
         if (request.Content != null)
         {
-            AddContentHeaders(collection, request.Content.Headers, isChunked);
+            AddContentHeaders(target, request.Content.Headers, isChunked);
         }
 
-        AddConnectionHeader(collection, request.Headers);
-
-        return collection;
+        AddConnectionHeader(target, request.Headers);
     }
 
     private static void AddHostHeader(HeaderCollection collection, Uri uri)

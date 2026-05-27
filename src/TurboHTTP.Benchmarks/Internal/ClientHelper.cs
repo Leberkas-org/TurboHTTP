@@ -43,7 +43,7 @@ internal sealed class ClientHelper : IAsyncDisposable
             Http1 = new Http1Options
             {
                 MaxConnectionsPerServer = 512,
-                MaxPipelineDepth = 2
+                MaxPipelineDepth = 64
             },
             // H2: 16 connections × 1000 streams = 16 000 in-flight capacity.
             Http2 = new Http2Options
@@ -82,7 +82,7 @@ internal sealed class ClientHelper : IAsyncDisposable
             BaseAddress = baseAddress,
             DangerousAcceptAnyServerCertificate = true,
             // Streaming: fewer connections but deep pipelining via the channel.
-            Http1 = new Http1Options { MaxConnectionsPerServer = 4, MaxPipelineDepth = 2048 },
+            Http1 = new Http1Options { MaxConnectionsPerServer = 4, MaxPipelineDepth = 2 * 1024 },
             // H2: 16 connections × 1000 streams for high-CL streaming.
             Http2 = new Http2Options { MaxConnectionsPerServer = 16, MaxConcurrentStreams = 1000 },
             // H3: 8 connections × 1000 streams, larger QPACK table for repeated header patterns.
