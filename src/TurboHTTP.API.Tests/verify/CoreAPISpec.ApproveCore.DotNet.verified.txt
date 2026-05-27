@@ -197,74 +197,6 @@ namespace TurboHTTP.Context.Features
         System.Net.Security.TlsCipherSuite? NegotiatedCipherSuite { get; }
         System.Security.Authentication.SslProtocols Protocol { get; }
     }
-    public interface ITurboConnectionFeature
-    {
-        string ConnectionId { get; set; }
-        System.Net.IPAddress? LocalIpAddress { get; set; }
-        int LocalPort { get; set; }
-        System.Net.IPAddress? RemoteIpAddress { get; set; }
-        int RemotePort { get; set; }
-    }
-    public interface ITurboFeatureCollection
-    {
-        T? Get<T>()
-            where T :  class;
-        void Set<T>(T? feature)
-            where T :  class;
-    }
-    public interface ITurboRequestBodyDetectionFeature
-    {
-        bool CanHaveBody { get; }
-    }
-    public interface ITurboRequestBodyFeature
-    {
-        System.IO.Stream Body { get; }
-        Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
-    }
-    public interface ITurboRequestFeature
-    {
-        System.IO.Stream Body { get; set; }
-        TurboHTTP.Context.ITurboHeaderDictionary Headers { get; }
-        string Method { get; set; }
-        string Path { get; set; }
-        string PathBase { get; set; }
-        string Protocol { get; set; }
-        string QueryString { get; set; }
-        string RawTarget { get; set; }
-        string Scheme { get; set; }
-    }
-    public interface ITurboRequestIdentifierFeature
-    {
-        string TraceIdentifier { get; set; }
-    }
-    public interface ITurboRequestLifetimeFeature
-    {
-        System.Threading.CancellationToken RequestAborted { get; set; }
-        void Abort();
-    }
-    public interface ITurboResetFeature
-    {
-        void Reset(int errorCode);
-    }
-    public interface ITurboResponseBodyFeature : Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature
-    {
-        Akka.Streams.Dsl.Sink<System.ReadOnlyMemory<byte>, System.Threading.Tasks.Task> BodySink { get; }
-        System.Threading.Tasks.Task WhenSinkCompleted { get; }
-    }
-    public interface ITurboResponseFeature
-    {
-        System.IO.Stream Body { get; set; }
-        bool HasStarted { get; }
-        TurboHTTP.Context.ITurboHeaderDictionary Headers { get; }
-        string? ReasonPhrase { get; set; }
-        int StatusCode { get; set; }
-        void OnCompleted(System.Func<object?, System.Threading.Tasks.Task> callback, object? state);
-        void OnStarting(System.Func<object?, System.Threading.Tasks.Task> callback, object? state);
-    }
-    public interface ITurboResponseTrailersFeature
-    {
-        TurboHTTP.Context.ITurboHeaderDictionary Trailers { get; set; }
-    }
 }
 namespace TurboHTTP.Context
 {
@@ -321,51 +253,50 @@ namespace TurboHTTP.Context
         System.Collections.Generic.ICollection<string> Keys { get; }
         bool ContainsKey(string key);
     }
-    public sealed class TurboHttpRequest : Microsoft.AspNetCore.Http.HttpRequest
+    public sealed class TurboHttpRequest
     {
         public TurboHttpRequest(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
-        public override System.IO.Stream Body { get; set; }
-        public override System.IO.Pipelines.PipeReader BodyReader { get; }
+        public System.IO.Stream Body { get; set; }
+        public System.IO.Pipelines.PipeReader BodyReader { get; }
         public Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
         public System.Net.Http.HttpContent? Content { get; }
-        public override long? ContentLength { get; set; }
-        public override string? ContentType { get; set; }
-        public override Microsoft.AspNetCore.Http.IRequestCookieCollection Cookies { get; set; }
-        public override Microsoft.AspNetCore.Http.IFormCollection Form { get; set; }
-        public override bool HasFormContentType { get; }
-        public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
-        public override Microsoft.AspNetCore.Http.HostString Host { get; set; }
-        public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
-        public override bool IsHttps { get; set; }
-        public override string Method { get; set; }
-        public override Microsoft.AspNetCore.Http.PathString Path { get; set; }
-        public override Microsoft.AspNetCore.Http.PathString PathBase { get; set; }
-        public override string Protocol { get; set; }
-        public override Microsoft.AspNetCore.Http.IQueryCollection Query { get; set; }
-        public override Microsoft.AspNetCore.Http.QueryString QueryString { get; set; }
+        public long? ContentLength { get; set; }
+        public string? ContentType { get; set; }
+        public Microsoft.AspNetCore.Http.IRequestCookieCollection Cookies { get; set; }
+        public Microsoft.AspNetCore.Http.IFormCollection Form { get; set; }
+        public bool HasFormContentType { get; }
+        public Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
+        public string Host { get; set; }
+        public TurboHTTP.Server.TurboHttpContext HttpContext { get; }
+        public bool IsHttps { get; set; }
+        public string Method { get; set; }
+        public string Path { get; set; }
+        public string PathBase { get; set; }
+        public string Protocol { get; set; }
+        public Microsoft.AspNetCore.Http.IQueryCollection Query { get; set; }
+        public string QueryString { get; set; }
         public System.Uri? RequestUri { get; }
-        public override Microsoft.AspNetCore.Routing.RouteValueDictionary RouteValues { get; set; }
-        public override string Scheme { get; set; }
-        public override System.Threading.Tasks.Task<Microsoft.AspNetCore.Http.IFormCollection> ReadFormAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Collections.Generic.Dictionary<string, object?> RouteValues { get; set; }
+        public string Scheme { get; set; }
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Http.IFormCollection> ReadFormAsync(System.Threading.CancellationToken cancellationToken = default) { }
     }
-    public sealed class TurboHttpResponse : Microsoft.AspNetCore.Http.HttpResponse
+    public sealed class TurboHttpResponse
     {
         public TurboHttpResponse(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
-        public override System.IO.Stream Body { get; set; }
-        public override System.IO.Pipelines.PipeWriter BodyWriter { get; }
-        public override long? ContentLength { get; set; }
-        public override string? ContentType { get; set; }
-        public override Microsoft.AspNetCore.Http.IResponseCookies Cookies { get; }
-        public override bool HasStarted { get; }
-        public override Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
-        public override Microsoft.AspNetCore.Http.HttpContext HttpContext { get; }
-        public override int StatusCode { get; set; }
+        public System.IO.Stream Body { get; set; }
+        public System.IO.Pipelines.PipeWriter BodyWriter { get; }
+        public long? ContentLength { get; set; }
+        public string? ContentType { get; set; }
+        public bool HasStarted { get; }
+        public Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
+        public TurboHTTP.Server.TurboHttpContext HttpContext { get; }
+        public int StatusCode { get; set; }
         public void AppendTrailer(string name, string value) { }
         public void DeclareTrailer(string name) { }
         public Microsoft.AspNetCore.Http.IHeaderDictionary GetTrailers() { }
-        public override void OnCompleted(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
-        public override void OnStarting(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
-        public override void Redirect(string location, bool permanent = false) { }
+        public void OnCompleted(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
+        public void OnStarting(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
+        public void Redirect(string location, bool permanent = false) { }
     }
 }
 namespace TurboHTTP.Diagnostics
@@ -511,76 +442,6 @@ namespace TurboHTTP.Features.Sse
         public System.TimeSpan? Retry { get; init; }
     }
 }
-namespace TurboHTTP.Routing
-{
-    public sealed class AuthorizeData : System.IEquatable<TurboHTTP.Routing.AuthorizeData>, TurboHTTP.Routing.IAuthorizeData
-    {
-        public AuthorizeData(string? Policy, string? Roles, string? AuthenticationSchemes) { }
-        public string? AuthenticationSchemes { get; init; }
-        public string? Policy { get; init; }
-        public string? Roles { get; init; }
-    }
-    public sealed class EndpointMetadata
-    {
-        public EndpointMetadata() { }
-        public bool AllowsAnonymous { get; }
-        public System.Collections.Generic.List<string?> AuthorizationPolicies { get; }
-        public string? DisplayName { get; }
-        public System.Collections.Generic.List<object> Items { get; }
-        public string? Name { get; }
-        public bool RequiresAuthorization { get; }
-        public System.Collections.Generic.List<string> Tags { get; }
-    }
-    public interface IAllowAnonymous { }
-    public interface IAuthorizeData
-    {
-        string? AuthenticationSchemes { get; }
-        string? Policy { get; }
-        string? Roles { get; }
-    }
-    public interface IEntityActorResolver
-    {
-        System.Threading.Tasks.ValueTask<Akka.Actor.IActorRef> ResolveAsync(System.IServiceProvider services, System.Threading.CancellationToken cancellationToken);
-    }
-    public interface ITagsMetadata
-    {
-        System.Collections.Generic.IReadOnlyList<string> Tags { get; }
-    }
-    public sealed class RouteMatchResult
-    {
-        public static readonly TurboHTTP.Routing.RouteMatchResult NoMatch;
-        public bool IsMatch { get; }
-        public Microsoft.AspNetCore.Routing.RouteValueDictionary RouteValues { get; }
-    }
-    public sealed class RouteTable
-    {
-        public TurboHTTP.Routing.RouteMatchResult Match(string method, string path) { }
-    }
-    public sealed class TagsMetadata : System.IEquatable<TurboHTTP.Routing.TagsMetadata>, TurboHTTP.Routing.ITagsMetadata
-    {
-        public TagsMetadata(System.Collections.Generic.IReadOnlyList<string> Tags) { }
-        public System.Collections.Generic.IReadOnlyList<string> Tags { get; init; }
-    }
-    public sealed class TurboEndpointMetadata
-    {
-        public TurboEndpointMetadata(System.Collections.Generic.IReadOnlyList<object> items) { }
-        public System.Collections.Generic.IReadOnlyList<object> Items { get; }
-        public T? GetMetadata<T>()
-            where T :  class { }
-        public System.Collections.Generic.IEnumerable<T> GetOrderedMetadata<T>()
-            where T :  class { }
-        public bool HasMetadata<T>()
-            where T :  class { }
-        public static TurboHTTP.Routing.TurboEndpointMetadata Merge(TurboHTTP.Routing.TurboEndpointMetadata group, TurboHTTP.Routing.TurboEndpointMetadata route) { }
-    }
-    public sealed class TurboRouteTable
-    {
-        public TurboRouteTable() { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder Add(string method, string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder Add(string method, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-        public TurboHTTP.Server.TurboRouteGroupBuilder CreateGroup(string prefix) { }
-    }
-}
 namespace TurboHTTP.Server
 {
     public sealed class Http1ServerOptions
@@ -638,25 +499,9 @@ namespace TurboHTTP.Server
     {
         public static System.Collections.Generic.List<System.Net.Security.SslApplicationProtocol> ToAlpnProtocols(this TurboHTTP.Server.HttpProtocols protocols) { }
     }
-    public interface ITurboApplicationBuilder
+    public interface IRouteDispatcher
     {
-        TurboHTTP.Server.ITurboApplicationBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure);
-        TurboHTTP.Server.ITurboApplicationBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure);
-        TurboHTTP.Server.ITurboApplicationBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler);
-        TurboHTTP.Server.ITurboApplicationBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware);
-        TurboHTTP.Server.ITurboApplicationBuilder Use<T>()
-            where T :  class, TurboHTTP.Server.ITurboMiddleware;
-    }
-    public interface ITurboEndpointRouteBuilder
-    {
-        [System.Obsolete("Use extension methods to register routes. Direct RouteTable access will be remove" +
-            "d in 2.0.")]
-        TurboHTTP.Routing.TurboRouteTable RouteTable { get; }
-        System.IServiceProvider ServiceProvider { get; }
-    }
-    public interface ITurboMiddleware
-    {
-        System.Threading.Tasks.Task InvokeAsync(TurboHTTP.Server.TurboHttpContext context, TurboHTTP.Server.TurboRequestDelegate next);
+        System.Threading.Tasks.Task DispatchAsync(TurboHTTP.Server.TurboHttpContext context, System.Threading.CancellationToken cancellationToken);
     }
     public sealed class ListenerBinding
     {
@@ -665,114 +510,46 @@ namespace TurboHTTP.Server
         public required Servus.Akka.Transport.IListenerFactory Factory { get; init; }
         public required Servus.Akka.Transport.ListenerOptions Options { get; init; }
     }
-    public sealed class ProducesMetadata : System.IEquatable<TurboHTTP.Server.ProducesMetadata>
+    public sealed class RouteMatchResult : System.IEquatable<TurboHTTP.Server.RouteMatchResult>
     {
-        public ProducesMetadata(System.Type Type, int StatusCode) { }
-        public int StatusCode { get; init; }
-        public System.Type Type { get; init; }
+        public RouteMatchResult(bool IsMatch, TurboHTTP.Server.IRouteDispatcher? Dispatcher, System.Collections.Generic.IDictionary<string, string>? RouteValues, object? Metadata) { }
+        public TurboHTTP.Server.IRouteDispatcher? Dispatcher { get; init; }
+        public bool IsMatch { get; init; }
+        public object? Metadata { get; init; }
+        public System.Collections.Generic.IDictionary<string, string>? RouteValues { get; init; }
     }
-    public sealed class ProducesProblemMetadata : System.IEquatable<TurboHTTP.Server.ProducesProblemMetadata>
+    public abstract class RouteTable
     {
-        public ProducesProblemMetadata(int StatusCode) { }
-        public int StatusCode { get; init; }
+        protected RouteTable() { }
+        public virtual TurboHTTP.Server.RouteMatchResult Match(string method, string path) { }
     }
-    public sealed class TurboConnectionInfo : Microsoft.AspNetCore.Http.ConnectionInfo
+    public sealed class TurboConnectionInfo
     {
         public TurboConnectionInfo(string id, System.Net.IPAddress? remoteIpAddress, int remotePort, System.Net.IPAddress? localIpAddress, int localPort) { }
-        public override System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate { get; set; }
-        public override string Id { get; set; }
-        public override System.Net.IPAddress? LocalIpAddress { get; set; }
-        public override int LocalPort { get; set; }
-        public override System.Net.IPAddress? RemoteIpAddress { get; set; }
-        public override int RemotePort { get; set; }
-        public override System.Threading.Tasks.Task<System.Security.Cryptography.X509Certificates.X509Certificate2?> GetClientCertificateAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate { get; set; }
+        public string Id { get; set; }
+        public System.Net.IPAddress? LocalIpAddress { get; set; }
+        public int LocalPort { get; set; }
+        public System.Net.IPAddress? RemoteIpAddress { get; set; }
+        public int RemotePort { get; set; }
+        public System.Threading.Tasks.Task<System.Security.Cryptography.X509Certificates.X509Certificate2?> GetClientCertificateAsync(System.Threading.CancellationToken cancellationToken = default) { }
     }
-    public static class TurboEndpointRouteBuilderExtensions
-    {
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapDelete(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Delegate handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapDelete(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapEntity(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapEntity<TActorKey>(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapGet(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Delegate handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapGet(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-        public static TurboHTTP.Server.TurboRouteGroupBuilder MapGroup(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string prefix) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapMethods(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Collections.Generic.IEnumerable<string> methods, System.Delegate handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapMethods(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Collections.Generic.IEnumerable<string> methods, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapPatch(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Delegate handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapPatch(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapPost(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Delegate handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapPost(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapPut(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Delegate handler) { }
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapPut(this TurboHTTP.Server.ITurboEndpointRouteBuilder builder, string pattern, System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> handler) { }
-    }
-    public sealed class TurboEntityAskBuilder
-    {
-        public TurboEntityAskBuilder() { }
-        public TurboHTTP.Server.TurboEntityAskBuilder Handle<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, System.Threading.Tasks.Task> handler) { }
-        public TurboHTTP.Server.TurboEntityAskBuilder Produces<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, Microsoft.AspNetCore.Http.IResult> handler) { }
-        public TurboHTTP.Server.TurboEntityAskBuilder WithTimeout(System.TimeSpan timeout) { }
-    }
-    public sealed class TurboEntityBuilder
-    {
-        public TurboEntityBuilder(string pattern) { }
-        public TurboHTTP.Server.TurboEntityMethodBuilder OnDelete(System.Delegate messageFactory) { }
-        public TurboHTTP.Server.TurboEntityMethodBuilder OnGet(System.Delegate messageFactory) { }
-        public TurboHTTP.Server.TurboEntityMethodBuilder OnPatch(System.Delegate messageFactory) { }
-        public TurboHTTP.Server.TurboEntityMethodBuilder OnPost(System.Delegate messageFactory) { }
-        public TurboHTTP.Server.TurboEntityMethodBuilder OnPut(System.Delegate messageFactory) { }
-        public TurboHTTP.Server.TurboEntityBuilder Response<TResponse>(System.Func<TurboHTTP.Server.TurboHttpContext, TResponse, System.Threading.Tasks.Task> mapper) { }
-        public TurboHTTP.Server.TurboEntityBuilder UseActorRef(System.Func<Akka.Hosting.IReadOnlyActorRegistry, Akka.Actor.IActorRef> actorRefFactory) { }
-        public TurboHTTP.Server.TurboEntityBuilder UseActorRef(System.Func<System.IServiceProvider, Akka.Actor.IActorRef> factory) { }
-        public TurboHTTP.Server.TurboEntityBuilder UseActorRef<TActorKey>() { }
-        public TurboHTTP.Server.TurboEntityBuilder UseResolver(TurboHTTP.Routing.IEntityActorResolver resolver) { }
-        public TurboHTTP.Server.TurboEntityBuilder UseResolver<TResolver>()
-            where TResolver : TurboHTTP.Routing.IEntityActorResolver, new () { }
-        public TurboHTTP.Server.TurboEntityBuilder WithTimeout(System.TimeSpan timeout) { }
-    }
-    public sealed class TurboEntityMethodBuilder
-    {
-        public void Ask(System.Action<TurboHTTP.Server.TurboEntityAskBuilder> configure) { }
-        public void Tell(System.Action<TurboHTTP.Server.TurboEntityTellBuilder>? configure = null) { }
-        public TurboHTTP.Server.TurboEntityMethodBuilder WithTimeout(System.TimeSpan timeout) { }
-    }
-    public sealed class TurboEntityTellBuilder
-    {
-        public TurboEntityTellBuilder() { }
-        public void Handle(System.Func<TurboHTTP.Server.TurboHttpContext, System.Threading.Tasks.Task> writer) { }
-        public void Produces(System.Func<TurboHTTP.Server.TurboHttpContext, Microsoft.AspNetCore.Http.IResult> factory) { }
-        public void Produces(System.Net.HttpStatusCode statusCode) { }
-        public void Produces(int statusCode) { }
-    }
-    public sealed class TurboHostBuilder
-    {
-        public TurboHTTP.Server.TurboHostBuilder ConfigureAppConfiguration(System.Action<Microsoft.Extensions.Configuration.IConfigurationBuilder> configure) { }
-        public TurboHTTP.Server.TurboHostBuilder ConfigureHostOptions(System.Action<Microsoft.Extensions.Hosting.HostOptions> configure) { }
-        public TurboHTTP.Server.TurboHostBuilder ConfigureServices(System.Action<Microsoft.Extensions.DependencyInjection.IServiceCollection> configure) { }
-    }
-    public sealed class TurboHttpContext : Microsoft.AspNetCore.Http.HttpContext
+    public sealed class TurboHttpContext
     {
         public TurboHttpContext(Microsoft.AspNetCore.Http.Features.IFeatureCollection features, TurboHTTP.Server.TurboConnectionInfo connectionInfo, System.IServiceProvider? services, System.Threading.CancellationToken requestAborted, Akka.Streams.IMaterializer materializer) { }
-        public override Microsoft.AspNetCore.Http.ConnectionInfo Connection { get; }
-        public override Microsoft.AspNetCore.Http.Features.IFeatureCollection Features { get; }
-        public override System.Collections.Generic.IDictionary<object, object?> Items { get; set; }
+        public TurboHTTP.Server.TurboConnectionInfo Connection { get; }
+        public Microsoft.AspNetCore.Http.Features.IFeatureCollection Features { get; }
+        public System.Collections.Generic.IDictionary<object, object?> Items { get; set; }
         public Akka.Streams.IMaterializer Materializer { get; set; }
-        public override Microsoft.AspNetCore.Http.HttpRequest Request { get; }
-        public override System.Threading.CancellationToken RequestAborted { get; set; }
-        public override System.IServiceProvider RequestServices { get; set; }
-        public override Microsoft.AspNetCore.Http.HttpResponse Response { get; }
-        public override Microsoft.AspNetCore.Http.ISession Session { get; set; }
-        public override string TraceIdentifier { get; set; }
+        public TurboHTTP.Context.TurboHttpRequest Request { get; }
+        public System.Threading.CancellationToken RequestAborted { get; set; }
+        public System.IServiceProvider RequestServices { get; set; }
+        public TurboHTTP.Context.TurboHttpResponse Response { get; }
+        public string TraceIdentifier { get; set; }
         public TurboHTTP.Context.TurboHttpRequest TurboRequest { get; }
         public TurboHTTP.Context.TurboHttpResponse TurboResponse { get; }
-        public override System.Security.Claims.ClaimsPrincipal User { get; set; }
-        public override Microsoft.AspNetCore.Http.WebSocketManager WebSockets { get; }
-        public override void Abort() { }
-    }
-    public static class TurboHttpContextExtensions
-    {
-        public static TurboHTTP.Routing.TurboEndpointMetadata? GetEndpointMetadata(this TurboHTTP.Server.TurboHttpContext context) { }
-        public static bool HasEndpointMetadata<T>(this TurboHTTP.Server.TurboHttpContext context)
-            where T :  class { }
+        public System.Security.Claims.ClaimsPrincipal User { get; set; }
+        public void Abort() { }
     }
     public sealed class TurboHttpsOptions
     {
@@ -801,72 +578,20 @@ namespace TurboHTTP.Server
         public void UseHttps(string path, string? password = null) { }
         public void UseHttps(string path, string? password, System.Action<TurboHTTP.Server.TurboHttpsOptions> configure) { }
     }
-    public static class TurboMiddlewareExtensions
+    public sealed class TurboRouteTable : TurboHTTP.Server.RouteTable
     {
-        [System.Obsolete("Use TurboWebApplication with Map() instead. Will be removed in 2.0.")]
-        public static Microsoft.AspNetCore.Builder.WebApplication MapTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
-        [System.Obsolete("Use TurboWebApplication with MapWhen() instead. Will be removed in 2.0.")]
-        public static Microsoft.AspNetCore.Builder.WebApplication MapTurboWhen(this Microsoft.AspNetCore.Builder.WebApplication app, System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
-        [System.Obsolete("Use TurboWebApplication with Run() instead. Will be removed in 2.0.")]
-        public static Microsoft.AspNetCore.Builder.WebApplication RunTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, TurboHTTP.Server.TurboRequestDelegate handler) { }
-        [System.Obsolete("Use TurboWebApplication with Use() instead. Will be removed in 2.0.")]
-        public static Microsoft.AspNetCore.Builder.WebApplication UseTurbo(this Microsoft.AspNetCore.Builder.WebApplication app, System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
-        [System.Obsolete("Use TurboWebApplication with Use<T>() instead. Will be removed in 2.0.")]
-        public static Microsoft.AspNetCore.Builder.WebApplication UseTurbo<T>(this Microsoft.AspNetCore.Builder.WebApplication app)
-            where T :  class, TurboHTTP.Server.ITurboMiddleware { }
+        public TurboRouteTable() { }
+        public TurboHTTP.Server.TurboRouteTable Add(string method, string path, System.Delegate handler) { }
+        public TurboHTTP.Server.TurboRouteTable Freeze() { }
     }
-    public delegate System.Threading.Tasks.Task TurboRequestDelegate(TurboHTTP.Server.TurboHttpContext context);
-    public sealed class TurboRouteGroupBuilder
+    public sealed class TurboServer : Microsoft.AspNetCore.Hosting.Server.IServer, System.IDisposable
     {
-        public TurboHTTP.Server.TurboRouteGroupBuilder AllowAnonymous() { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapDelete(string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapEntity(string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapEntity<TActorKey>(string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapGet(string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteGroupBuilder MapGroup(string prefix) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapMethods(string pattern, System.Collections.Generic.IEnumerable<string> methods, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapPatch(string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapPost(string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder MapPut(string pattern, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteGroupBuilder RequireAuthorization() { }
-        public TurboHTTP.Server.TurboRouteGroupBuilder RequireAuthorization(string? policy) { }
-        public TurboHTTP.Server.TurboRouteGroupBuilder WithMetadata(params object[] metadata) { }
-        public TurboHTTP.Server.TurboRouteGroupBuilder WithTags(params string[] tags) { }
-    }
-    public sealed class TurboRouteHandlerBuilder
-    {
-        public TurboRouteHandlerBuilder() { }
-        public TurboHTTP.Routing.EndpointMetadata Metadata { get; }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder AllowAnonymous() { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder Produces<T>(int statusCode = 200) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder ProducesProblem(int statusCode = 500) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder RequireAuthorization() { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder RequireAuthorization(string? policy) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder WithDisplayName(string displayName) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder WithMetadata(params object[] metadata) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder WithName(string name) { }
-        public TurboHTTP.Server.TurboRouteHandlerBuilder WithTags(params string[] tags) { }
-    }
-    public static class TurboRoutingExtensions
-    {
-        [System.Obsolete("Use TurboWebApplication with MapDelete() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboDelete(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
-        [System.Obsolete("Use TurboWebApplication with MapEntity() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboEntity(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
-        [System.Obsolete("Use TurboWebApplication with MapEntity() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboEntity<TActorKey>(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Action<TurboHTTP.Server.TurboEntityBuilder> configure) { }
-        [System.Obsolete("Use TurboWebApplication with MapGet() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboGet(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
-        [System.Obsolete("Use TurboWebApplication with MapGroup() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteGroupBuilder MapTurboGroup(this Microsoft.AspNetCore.Builder.WebApplication app, string prefix) { }
-        [System.Obsolete("Use TurboWebApplication with MapMethods() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboMethods(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Collections.Generic.IEnumerable<string> methods, System.Delegate handler) { }
-        [System.Obsolete("Use TurboWebApplication with MapPatch() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboPatch(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
-        [System.Obsolete("Use TurboWebApplication with MapPost() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboPost(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
-        [System.Obsolete("Use TurboWebApplication with MapPut() instead. Will be removed in 2.0.")]
-        public static TurboHTTP.Server.TurboRouteHandlerBuilder MapTurboPut(this Microsoft.AspNetCore.Builder.WebApplication app, string pattern, System.Delegate handler) { }
+        public TurboServer(Microsoft.Extensions.Options.IOptions<TurboHTTP.Server.TurboServerOptions> options, Microsoft.Extensions.Logging.ILoggerFactory loggerFactory, System.IServiceProvider services) { }
+        public Microsoft.AspNetCore.Http.Features.IFeatureCollection Features { get; }
+        public void Dispose() { }
+        public System.Threading.Tasks.Task StartAsync<TContext>(Microsoft.AspNetCore.Hosting.Server.IHttpApplication<TContext> application, System.Threading.CancellationToken cancellationToken)
+            where TContext :  notnull { }
+        public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken) { }
     }
     public sealed class TurboServerLimits
     {
@@ -925,59 +650,10 @@ namespace TurboHTTP.Server
     {
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboKestrel(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboKestrel(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboServer(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
     }
-    public static class TurboStreamResults
+    public static class TurboServerWebHostBuilderExtensions
     {
-        public static Microsoft.AspNetCore.Http.IResult EventStream(Akka.Streams.Dsl.Source<TurboHTTP.Features.Sse.ServerSentEvent, Akka.NotUsed> source) { }
-        public static Microsoft.AspNetCore.Http.IResult EventStream(Akka.Streams.Dsl.Source<string, Akka.NotUsed> source) { }
-        public static Microsoft.AspNetCore.Http.IResult Stream(Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> source, string? contentType = null) { }
-    }
-    public sealed class TurboWebApplication : Microsoft.Extensions.Hosting.IHost, System.IAsyncDisposable, System.IDisposable, TurboHTTP.Server.ITurboApplicationBuilder, TurboHTTP.Server.ITurboEndpointRouteBuilder
-    {
-        public Microsoft.Extensions.Configuration.IConfiguration Configuration { get; }
-        public Microsoft.Extensions.Hosting.IHostEnvironment Environment { get; }
-        public Microsoft.Extensions.Hosting.IHostApplicationLifetime Lifetime { get; }
-        public Microsoft.Extensions.Logging.ILogger Logger { get; }
-        public System.IServiceProvider Services { get; }
-        public System.Collections.Generic.ICollection<string> Urls { get; }
-        public void Dispose() { }
-        public System.Threading.Tasks.ValueTask DisposeAsync() { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
-        public System.Threading.Tasks.Task RunAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task RunAsync(System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Use<T>()
-            where T :  class, TurboHTTP.Server.ITurboMiddleware { }
-        public System.Threading.Tasks.Task WaitForShutdownAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public static TurboHTTP.Server.TurboWebApplication Create(string[]? args = null) { }
-        public static TurboHTTP.Server.TurboWebApplicationBuilder CreateBuilder() { }
-        public static TurboHTTP.Server.TurboWebApplicationBuilder CreateBuilder(string[] args) { }
-    }
-    public sealed class TurboWebApplicationBuilder
-    {
-        public Microsoft.Extensions.Configuration.ConfigurationManager Configuration { get; }
-        public Microsoft.Extensions.Hosting.IHostEnvironment Environment { get; }
-        public TurboHTTP.Server.TurboHostBuilder Host { get; }
-        public Microsoft.Extensions.Logging.ILoggingBuilder Logging { get; }
-        public TurboHTTP.Server.TurboServerOptions Server { get; }
-        public Microsoft.Extensions.DependencyInjection.IServiceCollection Services { get; }
-        public TurboHTTP.Server.TurboWebApplication Build() { }
-    }
-}
-namespace TurboHTTP.Server.Middleware
-{
-    public sealed class TurboPipelineBuilder : TurboHTTP.Server.ITurboApplicationBuilder
-    {
-        public TurboPipelineBuilder() { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Map(string pathPrefix, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder MapWhen(System.Func<TurboHTTP.Server.TurboHttpContext, bool> predicate, System.Action<TurboHTTP.Server.ITurboApplicationBuilder> configure) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Run(TurboHTTP.Server.TurboRequestDelegate handler) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Use(System.Func<TurboHTTP.Server.TurboHttpContext, TurboHTTP.Server.TurboRequestDelegate, System.Threading.Tasks.Task> middleware) { }
-        public TurboHTTP.Server.ITurboApplicationBuilder Use<T>()
-            where T :  class, TurboHTTP.Server.ITurboMiddleware { }
+        public static Microsoft.Extensions.Hosting.IHostBuilder UseTurboHttp(this Microsoft.Extensions.Hosting.IHostBuilder builder, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
     }
 }
