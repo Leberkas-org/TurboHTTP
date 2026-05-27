@@ -7,6 +7,7 @@ using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol;
 
@@ -167,7 +168,7 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
             _parent = parent;
         }
 
-        public void OnRequest(RequestContext context) => _real.OnRequest(context);
+        public void OnRequest(IFeatureCollection features) => _real.OnRequest(features);
         public void OnOutbound(ITransportOutbound item) => _real.OnOutbound(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => _real.OnScheduleTimer(name, delay);
         public void OnCancelTimer(string name) => _real.OnCancelTimer(name);
@@ -175,7 +176,7 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
         public IActorRef StageActor => _real.StageActor;
         public Akka.Streams.IMaterializer Materializer => _real.Materializer;
         public IServiceProvider? Services => _real.Services;
-        public TurboConnectionInfo? ConnectionInfo => _real.ConnectionInfo;
+        public TurboHttpConnectionFeature? ConnectionFeature => _real.ConnectionFeature;
         public TlsHandshakeFeature? TlsHandshakeFeature => _real.TlsHandshakeFeature;
 
         public void RequestProtocolSwitch(Func<IServerStageOperations, IServerStateMachine> newSmFactory)

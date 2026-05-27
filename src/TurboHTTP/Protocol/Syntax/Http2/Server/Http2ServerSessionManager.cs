@@ -2,7 +2,6 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Multiplexed;
@@ -135,7 +134,7 @@ internal sealed class Http2ServerSessionManager
             return;
         }
 
-        state.SetTurboContext(features);
+        state.SetFeatures(features);
 
         var responseFeature = features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
@@ -246,8 +245,8 @@ internal sealed class Http2ServerSessionManager
 
         if (!state.HasPendingOutbound)
         {
-            var context = state.GetTurboContext();
-            var trailerFeature = context?.Features.Get<IHttpResponseTrailersFeature>();
+            var features = state.GetFeatures();
+            var trailerFeature = features?.Get<IHttpResponseTrailersFeature>();
             var hasTrailers = trailerFeature?.Trailers.Count > 0;
 
             if (hasTrailers)
@@ -291,8 +290,8 @@ internal sealed class Http2ServerSessionManager
 
         if (state is { HasPendingOutbound: false, IsBodyEncoderComplete: true })
         {
-            var context = state.GetTurboContext();
-            var trailerFeature = context?.Features.Get<IHttpResponseTrailersFeature>();
+            var features = state.GetFeatures();
+            var trailerFeature = features?.Get<IHttpResponseTrailersFeature>();
             var hasTrailers = trailerFeature?.Trailers.Count > 0;
 
             if (hasTrailers)
