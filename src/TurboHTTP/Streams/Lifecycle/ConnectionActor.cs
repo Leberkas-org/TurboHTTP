@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Akka;
 using Akka.Actor;
 using Akka.Event;
@@ -26,6 +27,8 @@ internal sealed class ConnectionActor : ReceiveActor
     private SharedKillSwitch? _killSwitch;
     private bool _draining;
     private readonly CancellationTokenSource _cts = new();
+    private long _connectionTimestamp;
+    private Activity? _connectionActivity;
 
     public sealed record Materialize(
         Flow<ITransportOutbound, ITransportInbound, NotUsed> ConnectionFlow,
@@ -33,13 +36,15 @@ internal sealed class ConnectionActor : ReceiveActor
         Flow<IFeatureCollection, IFeatureCollection, NotUsed> BridgeFlow,
         IServiceProvider Services,
         IMaterializer Materializer,
-        string? ConnectionLoggingCategory = null);
+        string? ConnectionLoggingCategory = null,
+        long ConnectionTimestamp = 0,
+        Activity? ConnectionActivity = null);
 
     public sealed record GracefulStop(TimeSpan Timeout);
 
     public sealed record StreamCompleted(Exception? Error);
 
-    public sealed record ConnectionCompleted(string ConnectionId, ConnectionCompletionReason Reason);
+    public sealed record ConnectionCompleted(string ConnectionId, ConnectionCompletionReason Reason, long ConnectionTimestamp = 0, Activity? ConnectionActivity = null);
 
     public ConnectionActor(string connectionId)
     {
@@ -53,6 +58,8 @@ internal sealed class ConnectionActor : ReceiveActor
 
     private void OnMaterialize(Materialize msg)
     {
+        _connectionTimestamp = msg.ConnectionTimestamp;
+        _connectionActivity = msg.ConnectionActivity;
         _log.Debug("Connection {0} materializing pipeline", _connectionId);
 
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
@@ -120,7 +127,7 @@ internal sealed class ConnectionActor : ReceiveActor
             _log.Debug("Connection {0} stream completed normally", _connectionId);
         }
 
-        var completion = new ConnectionCompleted(_connectionId, reason);
+        var completion = new ConnectionCompleted(_connectionId, reason, _connectionTimestamp, _connectionActivity);
         Context.Parent.Tell(completion);
         Self.Tell(PoisonPill.Instance);
     }

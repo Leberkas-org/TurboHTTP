@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Akka;
 using Akka.Actor;
 using Akka.Event;
@@ -5,7 +7,9 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Diagnostics;
 using TurboHTTP.Server;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
@@ -23,6 +27,8 @@ internal sealed class ListenerActor : ReceiveActor
     private UniqueKillSwitch? _listenerKillSwitch;
     private int _connectionCounter;
     private readonly HashSet<IActorRef> _activeConnections = [];
+    private readonly Dictionary<IActorRef, (long Timestamp, Activity? Activity)> _connectionMetrics = new();
+    private bool _draining;
 
     public sealed record StartListening;
 
@@ -110,17 +116,29 @@ internal sealed class ListenerActor : ReceiveActor
         {
             _log.Warning("Connection rejected: limit {0} reached ({1} active)",
                 limit, _activeConnections.Count);
+            if (Metrics.RejectedConnections().Enabled)
+            {
+                RecordRejectedConnection();
+            }
             RejectConnection(msg.ConnectionFlow);
             return;
         }
 
         var connectionId = string.Concat("conn-", ++_connectionCounter);
-
         var engine = ResolveEngineForListener();
+
+        long timestamp = 0;
+        Activity? connectionActivity = null;
+
+        if (Metrics.ActiveConnections().Enabled || Tracing.IsServerTracingActive())
+        {
+            OnIncomingConnectionInstrumented(out timestamp, out connectionActivity);
+        }
 
         var child = Context.ActorOf(ConnectionActor.Create(connectionId), connectionId);
         Context.Watch(child);
         _activeConnections.Add(child);
+        _connectionMetrics[child] = (timestamp, connectionActivity);
 
         child.Tell(new ConnectionActor.Materialize(
             msg.ConnectionFlow,
@@ -128,9 +146,36 @@ internal sealed class ListenerActor : ReceiveActor
             _bridgeFlow,
             _services,
             _materializer,
-            _connectionLoggingCategory));
+            _connectionLoggingCategory,
+            timestamp,
+            connectionActivity));
 
         Context.Parent.Tell(new ConnectionStarted(connectionId, child));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void OnIncomingConnectionInstrumented(out long timestamp, out Activity? connectionActivity)
+    {
+        timestamp = Stopwatch.GetTimestamp();
+        var host = _listenerOptions.Host ?? "localhost";
+        var port = _listenerOptions.Port;
+        var transport = _listenerOptions is QuicListenerOptions ? "udp" : "tcp";
+
+        var tags = new TagList();
+        TurboServerInstrumentationExtensions.InjectConnectionTags(ref tags, host, port);
+        tags.Add("network.transport", transport);
+        Metrics.ActiveConnections().Add(1, in tags);
+
+        connectionActivity = Tracing.StartConnectionActivity(host, port, transport);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void RecordRejectedConnection()
+    {
+        var host = _listenerOptions.Host ?? "localhost";
+        Metrics.RejectedConnections().Add(1,
+            new KeyValuePair<string, object?>("server.address", host),
+            new KeyValuePair<string, object?>("server.port", _listenerOptions.Port));
     }
 
     private void OnStopAccepting()
@@ -142,6 +187,12 @@ internal sealed class ListenerActor : ReceiveActor
     private void OnGracefulStop(GracefulStop msg)
     {
         OnStopAccepting();
+
+        _draining = true;
+        if (Metrics.DrainActive().Enabled)
+        {
+            Metrics.DrainActive().Add(1);
+        }
 
         foreach (var child in _activeConnections)
         {
@@ -165,6 +216,51 @@ internal sealed class ListenerActor : ReceiveActor
     private void OnChildTerminated(Terminated msg)
     {
         _activeConnections.Remove(msg.ActorRef);
+
+        if (_connectionMetrics.Remove(msg.ActorRef, out var metrics))
+        {
+            if (Metrics.ActiveConnections().Enabled || Metrics.ConnectionDuration().Enabled || metrics.Activity is not null)
+            {
+                OnConnectionEndInstrumented(metrics.Timestamp, metrics.Activity);
+            }
+        }
+
+        if (_draining && _activeConnections.Count == 0)
+        {
+            if (Metrics.DrainActive().Enabled)
+            {
+                Metrics.DrainActive().Add(-1);
+            }
+            _draining = false;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void OnConnectionEndInstrumented(long timestamp, Activity? connectionActivity)
+    {
+        var host = _listenerOptions.Host ?? "localhost";
+        var port = _listenerOptions.Port;
+        var transport = _listenerOptions is QuicListenerOptions ? "udp" : "tcp";
+
+        var tags = new TagList();
+        TurboServerInstrumentationExtensions.InjectConnectionTags(ref tags, host, port);
+        tags.Add("network.transport", transport);
+
+        if (Metrics.ActiveConnections().Enabled)
+        {
+            Metrics.ActiveConnections().Add(-1, in tags);
+        }
+
+        if (Metrics.ConnectionDuration().Enabled && timestamp > 0)
+        {
+            var elapsed = Stopwatch.GetElapsedTime(timestamp);
+            Metrics.ConnectionDuration().Record(elapsed.TotalSeconds, in tags);
+        }
+
+        if (connectionActivity is not null)
+        {
+            Tracing.StopConnectionActivity(connectionActivity, null);
+        }
     }
 
     private void RejectConnection(Flow<ITransportOutbound, ITransportInbound, NotUsed> connectionFlow)
