@@ -6,8 +6,6 @@ using TurboHTTP.Protocol.LineBased;
 using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
-using TurboHTTP.Server;
-using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http11.Server;
 
@@ -35,11 +33,11 @@ internal sealed class Http11ServerEncoder
         _activeBodyEncoder = null;
     }
 
-    public int Encode(Span<byte> destination, RequestContext context, bool isChunked = false, bool connectionClose = false)
+    public int Encode(Span<byte> destination, IFeatureCollection features, bool isChunked = false, bool connectionClose = false)
     {
         var writer = SpanWriter.Create(destination);
 
-        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var responseFeature = features.Get<IHttpResponseFeature>();
         var statusCode = responseFeature?.StatusCode ?? 500;
         StatusLineWriter.Write(ref writer, HttpVersion.Version11, statusCode);
 
@@ -71,7 +69,7 @@ internal sealed class Http11ServerEncoder
         }
         else
         {
-            var contentLengthFeature = context.Features.Get<IHttpResponseBodyFeature>();
+            var contentLengthFeature = features.Get<IHttpResponseBodyFeature>();
             var contentLength = 0L;
             headers.Add(WellKnownHeaders.ContentLength, ContentLengthCache.GetValue(contentLength));
         }
@@ -88,7 +86,7 @@ internal sealed class Http11ServerEncoder
 
         HeaderBlockWriter.Write(ref writer, headers);
 
-        // For RequestContext, body encoding is handled separately via the BodySink
+        // Body encoding is handled separately via the BodySink
         return writer.BytesWritten;
     }
 }

@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
-using TurboHTTP.Server;
-using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http2.Server;
 
@@ -50,9 +48,9 @@ internal sealed class Http2ServerEncoder
         }
     }
 
-    public IReadOnlyList<Http2Frame> EncodeHeaders(RequestContext context, int streamId, bool hasBody)
+    public IReadOnlyList<Http2Frame> EncodeHeaders(IFeatureCollection features, int streamId, bool hasBody)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(features);
 
         if (streamId < 0)
         {
@@ -62,7 +60,7 @@ internal sealed class Http2ServerEncoder
         ReturnRentedBuffers();
 
         _reusableHeaders.Clear();
-        BuildHeaderList(context, _reusableHeaders);
+        BuildHeaderList(features, _reusableHeaders);
 
         var hpackOwner = MemoryPool<byte>.Shared.Rent(4096);
         _rentedBodyOwners.Add(hpackOwner);
@@ -76,10 +74,10 @@ internal sealed class Http2ServerEncoder
         return _reusableFrames;
     }
 
-    private static void BuildHeaderList(RequestContext context, List<HpackHeader> headers)
+    private static void BuildHeaderList(IFeatureCollection features, List<HpackHeader> headers)
     {
         // RFC 9113 §7.2: :status pseudo-header (required)
-        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var responseFeature = features.Get<IHttpResponseFeature>();
         var statusCode = responseFeature?.StatusCode ?? 500;
         headers.Add(new HpackHeader(WellKnownHeaders.Status,
             WellKnownHeaders.GetStatusCodeString(statusCode)));
