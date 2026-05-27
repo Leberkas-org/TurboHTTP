@@ -4,11 +4,11 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
-using TurboHTTP.Server;
 using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Streams.Lifecycle;
@@ -32,13 +32,9 @@ internal sealed class ConnectionActor : ReceiveActor
     public sealed record Materialize(
         Flow<ITransportOutbound, ITransportInbound, NotUsed> ConnectionFlow,
         IServerProtocolEngine Engine,
-        TurboRequestDelegate Pipeline,
-        RouteTable RouteTable,
-        int Parallelism,
+        Flow<IFeatureCollection, IFeatureCollection, NotUsed> BridgeFlow,
         IServiceProvider Services,
         IMaterializer Materializer,
-        TimeSpan HandlerTimeout,
-        TimeSpan HandlerGracePeriod,
         string? ConnectionLoggingCategory = null);
 
     public sealed record GracefulStop(TimeSpan Timeout);
@@ -63,9 +59,8 @@ internal sealed class ConnectionActor : ReceiveActor
 
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
 
-        var routing = Flow.FromGraph(new RoutingStage(msg.RouteTable, msg.Pipeline, msg.Parallelism, msg.HandlerTimeout, msg.HandlerGracePeriod));
         var protocolBidi = msg.Engine.CreateFlow(msg.Services);
-        var composed = protocolBidi.Join(routing);
+        var composed = protocolBidi.Join(msg.BridgeFlow);
 
         var self = Self;
         Flow<ITransportInbound, ITransportInbound, NotUsed>? loggingFlow = null;

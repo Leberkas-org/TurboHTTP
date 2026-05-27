@@ -3,6 +3,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Server;
 
@@ -14,8 +15,7 @@ internal sealed class ListenerActor : ReceiveActor
     private readonly IListenerFactory _factory;
     private readonly ListenerOptions _listenerOptions;
     private readonly TurboServerOptions _serverOptions;
-    private readonly TurboRequestDelegate _pipeline;
-    private readonly RouteTable _routeTable;
+    private readonly Flow<IFeatureCollection, IFeatureCollection, NotUsed> _bridgeFlow;
     private readonly IServiceProvider _services;
     private readonly IMaterializer _materializer;
     private readonly string? _connectionLoggingCategory;
@@ -46,8 +46,7 @@ internal sealed class ListenerActor : ReceiveActor
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
-        TurboRequestDelegate pipeline,
-        RouteTable routeTable,
+        Flow<IFeatureCollection, IFeatureCollection, NotUsed> bridgeFlow,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
@@ -55,8 +54,7 @@ internal sealed class ListenerActor : ReceiveActor
         _factory = factory;
         _listenerOptions = listenerOptions;
         _serverOptions = serverOptions;
-        _pipeline = pipeline;
-        _routeTable = routeTable;
+        _bridgeFlow = bridgeFlow;
         _services = services;
         _materializer = materializer;
         _connectionLoggingCategory = connectionLoggingCategory;
@@ -127,13 +125,9 @@ internal sealed class ListenerActor : ReceiveActor
         child.Tell(new ConnectionActor.Materialize(
             msg.ConnectionFlow,
             engine,
-            _pipeline,
-            _routeTable,
-            1,
+            _bridgeFlow,
             _services,
             _materializer,
-            _serverOptions.HandlerTimeout,
-            _serverOptions.HandlerGracePeriod,
             _connectionLoggingCategory));
 
         Context.Parent.Tell(new ConnectionStarted(connectionId, child));
@@ -199,13 +193,12 @@ internal sealed class ListenerActor : ReceiveActor
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
-        TurboRequestDelegate pipeline,
-        RouteTable routeTable,
+        Flow<IFeatureCollection, IFeatureCollection, NotUsed> bridgeFlow,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
         => Props.Create(() => new ListenerActor(
             factory, listenerOptions, serverOptions,
-            pipeline, routeTable, services, materializer,
+            bridgeFlow, services, materializer,
             connectionLoggingCategory));
 }

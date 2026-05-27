@@ -3,6 +3,7 @@ using Akka.Actor;
 using Akka.Configuration;
 using Akka.Hosting.Logging;
 using Akka.Streams;
+using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http.Features;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TurboHTTP.Streams.Lifecycle;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Server;
 
@@ -55,10 +57,13 @@ public sealed class TurboServer : IServer
 
         var materializer = _system.Materializer();
 
-        // TODO: Task 4 will replace this with ApplicationBridgeStage
-        // For now, routing is disabled - all requests get 404
-        TurboRequestDelegate pipeline = _ => Task.CompletedTask;
-        var routeTable = new TurboRouteTable().Freeze();
+        var parallelism = _options.Http2.MaxConcurrentStreams;
+        var bridgeStage = new ApplicationBridgeStage<TContext>(
+            application,
+            parallelism,
+            _options.HandlerTimeout,
+            _options.HandlerGracePeriod);
+        var bridgeFlow = Flow.FromGraph(bridgeStage);
 
         var resolver = new EndpointResolver();
         var resolvedEndpoints = resolver.Resolve(_options);
@@ -70,8 +75,7 @@ public sealed class TurboServer : IServer
                 endpoint.Factory,
                 endpoint.Options,
                 _options,
-                pipeline,
-                routeTable,
+                bridgeFlow,
                 _services,
                 materializer,
                 endpoint.ConnectionLoggingCategory));
