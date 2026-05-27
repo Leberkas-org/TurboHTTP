@@ -110,7 +110,7 @@ internal sealed class Http3ServerSessionManager
         }
     }
 
-    public void OnResponse(TurboHttpContext context)
+    public void OnResponse(RequestContext context)
     {
         var streamId = GetStreamIdFromContext(context);
 
@@ -502,7 +502,7 @@ internal sealed class Http3ServerSessionManager
         }
     }
 
-    private long GetStreamIdFromContext(TurboHttpContext context)
+    private long GetStreamIdFromContext(RequestContext context)
     {
         var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)

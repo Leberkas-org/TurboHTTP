@@ -9,7 +9,7 @@ namespace TurboHTTP.Streams.Stages.Server;
 
 internal interface IServerStageOperations
 {
-    void OnRequest(TurboHttpContext context);
+    void OnRequest(RequestContext context);
     void OnOutbound(ITransportOutbound item);
     void OnScheduleTimer(string name, TimeSpan delay);
     void OnCancelTimer(string name);

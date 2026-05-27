@@ -86,7 +86,7 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(TurboHttpContext context)
+    public void OnResponse(RequestContext context)
     {
         _sessionManager.OnResponse(context);
     }

@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Context.Features;
 
 internal sealed class TurboHttpRequestIdentifierFeature : IHttpRequestIdentifierFeature
 {
-    private readonly TurboHttpContext _context;
+    private readonly RequestContext _context;
 
-    public TurboHttpRequestIdentifierFeature(TurboHttpContext context)
+    public TurboHttpRequestIdentifierFeature(RequestContext context)
     {
         _context = context;
     }

@@ -3,6 +3,7 @@ using Akka.Actor;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Multiplexed.Body;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http2;
 
@@ -19,7 +20,7 @@ internal sealed class StreamState
     private int _headerLength;
     private HttpResponseMessage? _response;
     private TurboHttpRequestFeature? _requestFeature;
-    private TurboHttpContext? _turboContext;
+    private RequestContext? _requestContext;
     private List<(string Name, string Value)>? _contentHeaders;
     private Dictionary<string, string>? _pseudoHeaders;
     private IBodyDecoder? _bodyDecoder;
@@ -67,12 +68,12 @@ internal sealed class StreamState
 
     public TurboHttpRequestFeature? GetRequestFeature() => _requestFeature;
 
-    public void SetTurboContext(TurboHttpContext context)
+    public void SetTurboContext(RequestContext context)
     {
-        _turboContext = context;
+        _requestContext = context;
     }
 
-    public TurboHttpContext? GetTurboContext() => _turboContext;
+    public RequestContext? GetTurboContext() => _requestContext;
 
     public void AddPseudoHeader(string name, string value)
     {
@@ -212,7 +213,7 @@ internal sealed class StreamState
         _headerLength = 0;
         _response = null;
         _requestFeature = null;
-        _turboContext = null;
+        _requestContext = null;
         _contentHeaders = null;
         _pseudoHeaders = null;
         _bodyDecoder?.Dispose();

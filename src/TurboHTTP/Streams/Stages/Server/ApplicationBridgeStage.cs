@@ -3,32 +3,53 @@ using Akka.Streams;
 using Akka.Streams.Stage;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.Streams.Stages.Server;
 
-internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, RequestContext>>
+internal sealed class ApplicationBridgeStage : GraphStage<FlowShape<RequestContext, RequestContext>>
 {
-    private readonly RouteTable _routeTable;
-    private readonly TurboRequestDelegate _pipeline;
+    private readonly Func<IFeatureCollection, object> _createContext;
+    private readonly Func<object, Task> _processRequest;
+    private readonly Action<object, Exception?> _disposeContext;
     private readonly int _parallelism;
     private readonly TimeSpan _handlerTimeout;
     private readonly TimeSpan _handlerGracePeriod;
 
-    private readonly Inlet<RequestContext> _in = new("Routing.In");
-    private readonly Outlet<RequestContext> _out = new("Routing.Out");
+    private readonly Inlet<RequestContext> _in = new("AppBridge.In");
+    private readonly Outlet<RequestContext> _out = new("AppBridge.Out");
 
     public override FlowShape<RequestContext, RequestContext> Shape { get; }
 
-    public RoutingStage(RouteTable routeTable, TurboRequestDelegate pipeline, int parallelism, TimeSpan handlerTimeout,
+    private ApplicationBridgeStage(
+        Func<IFeatureCollection, object> createContext,
+        Func<object, Task> processRequest,
+        Action<object, Exception?> disposeContext,
+        int parallelism,
+        TimeSpan handlerTimeout,
         TimeSpan handlerGracePeriod)
     {
-        _routeTable = routeTable;
-        _pipeline = pipeline;
+        _createContext = createContext;
+        _processRequest = processRequest;
+        _disposeContext = disposeContext;
         _parallelism = parallelism;
         _handlerTimeout = handlerTimeout;
         _handlerGracePeriod = handlerGracePeriod;
         Shape = new FlowShape<RequestContext, RequestContext>(_in, _out);
+    }
+
+    public static ApplicationBridgeStage Create<TContext>(
+        Microsoft.AspNetCore.Hosting.Server.IHttpApplication<TContext> application,
+        int parallelism,
+        TimeSpan handlerTimeout,
+        TimeSpan handlerGracePeriod) where TContext : notnull
+    {
+        return new ApplicationBridgeStage(
+            features => application.CreateContext(features),
+            ctx => application.ProcessRequestAsync((TContext)ctx),
+            (ctx, ex) => application.DisposeContext((TContext)ctx, ex),
+            parallelism,
+            handlerTimeout,
+            handlerGracePeriod);
     }
 
     protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes) => new Logic(this);
@@ -47,7 +68,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
 
     private sealed class Logic : GraphStageLogic
     {
-        private readonly RoutingStage _stage;
+        private readonly ApplicationBridgeStage _stage;
         private IActorRef? _stageActor;
         private bool _upstreamFinished;
         private int _inFlight;
@@ -56,8 +77,9 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
         private bool _downstreamReady;
         private readonly SortedDictionary<int, RequestContext> _pending = [];
         private readonly Dictionary<int, CancellationTokenSource> _activeTimeouts = [];
+        private readonly Dictionary<int, object> _appContexts = [];
 
-        public Logic(RoutingStage stage) : base(stage.Shape)
+        public Logic(ApplicationBridgeStage stage) : base(stage.Shape)
         {
             _stage = stage;
 
@@ -89,92 +111,105 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
 
         private void OnPush()
         {
-            var reqCtx = Grab(_stage._in);
+            var ctx = Grab(_stage._in);
             var seq = _sequence++;
-            var turboCtx = new TurboHttpContext(reqCtx.Features);
-            var path = turboCtx.Request.Path ?? "/";
-
-            var match = _stage._routeTable.Match(turboCtx.Request.Method, path);
-            if (match is not { IsMatch: true, Dispatcher: not null })
-            {
-                turboCtx.Response.StatusCode = 404;
-                CompleteResponseBody(turboCtx.Features);
-                Emit(seq, reqCtx);
-                return;
-            }
-
-            foreach (var kv in match.RouteValues)
-            {
-                turboCtx.Request.RouteValues[kv.Key] = kv.Value;
-            }
 
             _inFlight++;
 
             try
             {
-                DispatchAsync(reqCtx, turboCtx, seq, match);
+                DispatchAsync(ctx, seq);
             }
             catch (Exception)
             {
                 _inFlight--;
-                turboCtx.Response.StatusCode = 500;
-                CompleteResponseBody(turboCtx.Features);
-                Emit(seq, reqCtx);
+                var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                if (responseFeature is not null)
+                {
+                    responseFeature.StatusCode = 500;
+                }
+                CompleteResponseBody(ctx);
+                Emit(seq, ctx);
             }
 
             TryPullNext();
         }
 
-        private void DispatchAsync(RequestContext reqCtx, TurboHttpContext turboCtx, int seq, RouteMatchResult match)
+        private void DispatchAsync(RequestContext ctx, int seq)
         {
-            var task = DispatchAsyncInternal(turboCtx, seq, match);
+            object? appContext = null;
+            try
+            {
+                appContext = _stage._createContext(ctx.Features);
+                _appContexts[seq] = appContext;
+            }
+            catch (Exception)
+            {
+                _inFlight--;
+                var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                if (responseFeature is not null)
+                {
+                    responseFeature.StatusCode = 500;
+                }
+                CompleteResponseBody(ctx);
+                Emit(seq, ctx);
+                return;
+            }
+
+            var task = DispatchAsyncInternal(ctx, seq, appContext);
 
             if (task.IsCompletedSuccessfully)
             {
                 _inFlight--;
-                CompleteResponseBody(turboCtx.Features);
-                Emit(seq, reqCtx);
+                _stage._disposeContext(appContext, null);
+                _appContexts.Remove(seq);
+                CompleteResponseBody(ctx);
+                Emit(seq, ctx);
             }
             else if (task.IsFaulted)
             {
                 _inFlight--;
-                turboCtx.Response.StatusCode = 500;
-                CompleteResponseBody(turboCtx.Features);
-                Emit(seq, reqCtx);
+                var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                if (responseFeature is not null)
+                {
+                    responseFeature.StatusCode = 500;
+                }
+                _stage._disposeContext(appContext, task.Exception);
+                _appContexts.Remove(seq);
+                CompleteResponseBody(ctx);
+                Emit(seq, ctx);
             }
             else
             {
-                var cts = CancellationTokenSource.CreateLinkedTokenSource(reqCtx.RequestAborted);
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(ctx.Lifetime?.Token ?? CancellationToken.None);
                 cts.CancelAfter(_stage._handlerTimeout);
                 _activeTimeouts[seq] = cts;
-                reqCtx.RequestAborted = cts.Token;
 
-                var bodyFeature = turboCtx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+                var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
                 var headersReady = bodyFeature?.WhenHeadersReady;
 
                 Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod, cts.Token)
                     .PipeTo(_stageActor!,
-                        success: () => new HandlerTimedOut(seq, reqCtx));
+                        success: () => new HandlerTimedOut(seq, ctx));
 
                 if (headersReady is not null)
                 {
                     Task.WhenAny(headersReady, task)
                         .PipeTo(_stageActor!,
-                            success: () => new ResponseReady(seq, reqCtx, task));
+                            success: () => new ResponseReady(seq, ctx, task));
                 }
                 else
                 {
                     task.PipeTo(_stageActor!,
-                        success: () => new DispatchCompleted(seq, reqCtx),
-                        failure: ex => new DispatchFailed(seq, reqCtx, ex));
+                        success: () => new DispatchCompleted(seq, ctx),
+                        failure: ex => new DispatchFailed(seq, ctx, ex));
                 }
             }
         }
 
-        private async Task DispatchAsyncInternal(TurboHttpContext turboCtx, int seq, RouteMatchResult match)
+        private async Task DispatchAsyncInternal(RequestContext ctx, int seq, object appContext)
         {
-            await _stage._pipeline(turboCtx);
-            await match.Dispatcher!.DispatchAsync(turboCtx, turboCtx.RequestAborted);
+            await _stage._processRequest(appContext);
         }
 
         private void OnMessage((IActorRef sender, object msg) args)
@@ -189,19 +224,24 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
                                 HasStarted: true
                             })
                         {
-                            var respFeature = ctx.Features.Get<IHttpResponseFeature>();
-                            if (respFeature is not null)
+                            var responseFeature = ctx.Features.Get<IHttpResponseFeature>();
+                            if (responseFeature is not null)
                             {
-                                respFeature.StatusCode = 500;
+                                responseFeature.StatusCode = 500;
                             }
                         }
                     }
 
                     if (handlerTask.IsCompleted)
                     {
-                        CompleteResponseBody(ctx.Features);
+                        CompleteResponseBody(ctx);
                         _inFlight--;
                         DisposeCts(seq);
+                        if (_appContexts.TryGetValue(seq, out var appCtxReady))
+                        {
+                            _stage._disposeContext(appCtxReady, handlerTask.Exception);
+                            _appContexts.Remove(seq);
+                        }
                         Emit(seq, ctx);
                     }
                     else
@@ -215,9 +255,14 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
                     break;
 
                 case HandlerFinished(var seq, var finishedCtx):
-                    CompleteResponseBody(finishedCtx.Features);
+                    CompleteResponseBody(finishedCtx);
                     _inFlight--;
                     DisposeCts(seq);
+                    if (_appContexts.TryGetValue(seq, out var appCtx))
+                    {
+                        _stage._disposeContext(appCtx, null);
+                        _appContexts.Remove(seq);
+                    }
                     if (_upstreamFinished && _inFlight == 0)
                     {
                         CompleteStage();
@@ -225,10 +270,15 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
 
                     break;
 
-                case HandlerFaulted(var seq, var faultedCtx, _):
-                    CompleteResponseBody(faultedCtx.Features);
+                case HandlerFaulted(var seq, var faultedCtx, var error):
+                    CompleteResponseBody(faultedCtx);
                     _inFlight--;
                     DisposeCts(seq);
+                    if (_appContexts.TryGetValue(seq, out var appCtxFaulted))
+                    {
+                        _stage._disposeContext(appCtxFaulted, error);
+                        _appContexts.Remove(seq);
+                    }
                     if (_upstreamFinished && _inFlight == 0)
                     {
                         CompleteStage();
@@ -239,19 +289,29 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
                 case DispatchCompleted(var seq, var ctx):
                     _inFlight--;
                     DisposeCts(seq);
-                    CompleteResponseBody(ctx.Features);
+                    if (_appContexts.TryGetValue(seq, out var appCtxCompleted))
+                    {
+                        _stage._disposeContext(appCtxCompleted, null);
+                        _appContexts.Remove(seq);
+                    }
+                    CompleteResponseBody(ctx);
                     Emit(seq, ctx);
                     break;
 
-                case DispatchFailed(var seq, var ctx, _):
+                case DispatchFailed(var seq, var ctx, var error):
                     _inFlight--;
                     DisposeCts(seq);
-                    var respFeatureFailed = ctx.Features.Get<IHttpResponseFeature>();
-                    if (respFeatureFailed is not null)
+                    if (_appContexts.TryGetValue(seq, out var appCtxFailed))
                     {
-                        respFeatureFailed.StatusCode = 500;
+                        _stage._disposeContext(appCtxFailed, error);
+                        _appContexts.Remove(seq);
                     }
-                    CompleteResponseBody(ctx.Features);
+                    var respFeature = ctx.Features.Get<IHttpResponseFeature>();
+                    if (respFeature is not null)
+                    {
+                        respFeature.StatusCode = 500;
+                    }
+                    CompleteResponseBody(ctx);
                     Emit(seq, ctx);
                     break;
 
@@ -260,16 +320,17 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
                     {
                         cts.Dispose();
                         _activeTimeouts.Remove(seq);
-                        var respBodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
-                        if (respBodyFeature is not { HasStarted: true })
+                        var respFeatureTimeout = ctx.Features.Get<IHttpResponseFeature>();
+                        if (respFeatureTimeout is not null && respFeatureTimeout.StatusCode == 200)
                         {
-                            var respFeatureTimeout = ctx.Features.Get<IHttpResponseFeature>();
-                            if (respFeatureTimeout is not null)
-                            {
-                                respFeatureTimeout.StatusCode = 503;
-                            }
-                            CompleteResponseBody(ctx.Features);
+                            respFeatureTimeout.StatusCode = 503;
+                            CompleteResponseBody(ctx);
                             _inFlight--;
+                            if (_appContexts.TryGetValue(seq, out var appCtxTimeout))
+                            {
+                                _stage._disposeContext(appCtxTimeout, null);
+                                _appContexts.Remove(seq);
+                            }
                             Emit(seq, ctx);
                         }
                     }
@@ -317,9 +378,9 @@ internal sealed class RoutingStage : GraphStage<FlowShape<RequestContext, Reques
             }
         }
 
-        private static void CompleteResponseBody(IFeatureCollection features)
+        private static void CompleteResponseBody(RequestContext ctx)
         {
-            var bodyFeature = features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
+            var bodyFeature = ctx.Features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
             bodyFeature?.Complete();
         }
     }

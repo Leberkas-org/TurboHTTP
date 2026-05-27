@@ -98,7 +98,7 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(TurboHttpContext context) => _sessionManager.OnResponse(context);
+    public void OnResponse(RequestContext context) => _sessionManager.OnResponse(context);
 
     public void OnDownstreamFinished()
     {

@@ -12,14 +12,14 @@ namespace TurboHTTP.Tests.Shared;
 
 internal sealed class FakeServerOps : IServerStageOperations
 {
-    private readonly List<TurboHttpContext> _contexts = [];
+    private readonly List<RequestContext> _contexts = [];
 
-    public List<TurboHttpContext> Requests => _contexts;
+    public List<RequestContext> Requests => _contexts;
     public List<ITransportOutbound> Outbound { get; } = [];
     public List<(string Name, TimeSpan Delay)> ScheduledTimers { get; } = [];
     public List<string> CancelledTimers { get; } = [];
 
-    public void OnRequest(TurboHttpContext context) => _contexts.Add(context);
+    public void OnRequest(RequestContext context) => _contexts.Add(context);
     public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
 
     public void OnScheduleTimer(string name, TimeSpan delay)

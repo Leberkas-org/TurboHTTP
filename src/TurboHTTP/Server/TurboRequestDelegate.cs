@@ -1,3 +1,3 @@
 namespace TurboHTTP.Server;
 
-public delegate Task TurboRequestDelegate(TurboHttpContext context);
+internal delegate Task TurboRequestDelegate(TurboHttpContext context);

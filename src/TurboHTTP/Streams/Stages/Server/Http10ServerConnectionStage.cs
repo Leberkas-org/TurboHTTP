@@ -9,8 +9,8 @@ namespace TurboHTTP.Streams.Stages.Server;
 internal sealed class Http10ServerConnectionStage : GraphStage<ServerConnectionShape>
 {
     private readonly Inlet<ITransportInbound> _inNetwork = new("Http10Connection.In.Network");
-    private readonly Outlet<TurboHttpContext> _outRequest = new("Http10Connection.Out.Request");
-    private readonly Inlet<TurboHttpContext> _inResponse = new("Http10Connection.In.Response");
+    private readonly Outlet<RequestContext> _outRequest = new("Http10Connection.Out.Request");
+    private readonly Inlet<RequestContext> _inResponse = new("Http10Connection.In.Response");
     private readonly Outlet<ITransportOutbound> _outNetwork = new("Http10Connection.Out.Network");
     private readonly TurboServerOptions _options;
     private readonly IServiceProvider? _services;

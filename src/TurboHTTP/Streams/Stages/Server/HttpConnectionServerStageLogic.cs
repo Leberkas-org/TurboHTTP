@@ -15,12 +15,12 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
     where TSM : IServerStateMachine
 {
     private readonly Inlet<ITransportInbound> _inNetwork;
-    private readonly Outlet<TurboHttpContext> _outRequest;
-    private readonly Inlet<TurboHttpContext> _inResponse;
+    private readonly Outlet<RequestContext> _outRequest;
+    private readonly Inlet<RequestContext> _inResponse;
     private readonly Outlet<ITransportOutbound> _outNetwork;
 
     private readonly TSM _sm;
-    private readonly Queue<TurboHttpContext> _requestQueue = new();
+    private readonly Queue<RequestContext> _requestQueue = new();
     private readonly Queue<ITransportOutbound> _outboundQueue = new();
     private IActorRef _stageActor = ActorRefs.Nobody;
     private readonly IServiceProvider? _services;
@@ -89,7 +89,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
                     return;
                 }
 
-                var bodyFeature = response.TurboResponse.HttpContext.Features.Get<IHttpResponseBodyFeature>();
+                var bodyFeature = response.Features.Get<IHttpResponseBodyFeature>();
                 var hasBody = bodyFeature is not null;
                 if (!hasBody)
                 {
@@ -199,7 +199,7 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
         }
     }
 
-    void IServerStageOperations.OnRequest(TurboHttpContext context)
+    void IServerStageOperations.OnRequest(RequestContext context)
     {
         if (_requestQueue.Count >= _sm.MaxQueuedRequests)
         {
@@ -208,7 +208,6 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
             return;
         }
 
-        context.Materializer = Materializer;
         _requestQueue.Enqueue(context);
         TryPushRequest();
     }
