@@ -49,4 +49,16 @@ public static class TurboTraceExtensions
         return builder
             .AddMeter(Servus.Core.Servus.Metrics.Meter.Name);
     }
+
+    public static TracerProviderBuilder AddTurboServerInstrumentation(this TracerProviderBuilder builder)
+    {
+        return builder
+            .AddSource(Servus.Core.Servus.Tracing.Source.Name);
+    }
+
+    public static MeterProviderBuilder AddTurboServerInstrumentation(this MeterProviderBuilder builder)
+    {
+        return builder
+            .AddMeter(Servus.Core.Servus.Metrics.Meter.Name);
+    }
 }
