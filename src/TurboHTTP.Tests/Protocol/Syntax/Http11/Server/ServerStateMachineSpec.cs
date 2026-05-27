@@ -34,7 +34,7 @@ public sealed class ServerStateMachineSpec
         Assert.Single(ops.Requests);
         var ctx = ops.Requests[0];
         Assert.Equal("GET", ctx.Request.Method);
-        Assert.Equal("/", ctx.Request.Path.Value);
+        Assert.Equal("/", ctx.Request.Path);
     }
 
     [Fact(Timeout = 5000)]

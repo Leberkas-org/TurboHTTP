@@ -23,9 +23,6 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
     </PropertyGroup>
 
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
-    </ItemGroup>
 
     <ItemGroup>
         <None Include="../../README.md" Pack="true" Visible="false" PackagePath="\"/>
@@ -39,6 +36,7 @@
         <PackageReference Include="Akka.Streams"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream"/>
         <PackageReference Include="Servus.Akka"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions"/>
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="TurboHTTP.Tests"/>

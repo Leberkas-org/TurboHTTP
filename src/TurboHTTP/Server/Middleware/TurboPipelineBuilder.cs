@@ -38,7 +38,7 @@ public sealed class TurboPipelineBuilder : ITurboApplicationBuilder
             TurboRequestDelegate? builtBranch = null;
             return ctx =>
             {
-                var path = ctx.Request.Path.Value ?? string.Empty;
+                var path = ctx.Request.Path ?? string.Empty;
                 if (path.StartsWith(pathPrefix, StringComparison.OrdinalIgnoreCase))
                 {
                     builtBranch ??= branch.BuildDelegate(next);

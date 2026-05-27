@@ -104,19 +104,19 @@ internal static class DelegateHandlerBinder
             unwrappedType = returnType.GetGenericArguments()[0];
         }
 
-        if (typeof(IResult).IsAssignableFrom(unwrappedType))
+        if (typeof(ITurboResult).IsAssignableFrom(unwrappedType))
         {
-            return CreateIResultHandler(handler, binders, returnType, requiresValidation, parameters);
+            return CreateITurboResultHandler(handler, binders, returnType, requiresValidation, parameters);
         }
 
         throw new InvalidOperationException(
             string.Concat(
                 "Handler for '", pattern,
-                "' must return IResult or Task<IResult>. Got: ",
+                "' must return ITurboResult or Task<ITurboResult>. Got: ",
                 returnType.Name));
     }
 
-    private static Func<TurboHttpContext, IServiceProvider, Task> CreateIResultHandler(
+    private static Func<TurboHttpContext, IServiceProvider, Task> CreateITurboResultHandler(
         Delegate handler, ParameterBinder[] binders, Type returnType, bool[] requiresValidation,
         ParameterInfo[] parameters)
     {
@@ -135,27 +135,27 @@ internal static class DelegateHandlerBinder
 
                 var result = handler.DynamicInvoke(args);
 
-                IResult? iresult = null;
+                ITurboResult? itresult = null;
                 if (result is Task task)
                 {
                     await task;
                     if (returnType.IsGenericType)
                     {
-                        iresult = task.GetType().GetProperty("Result")!.GetValue(task) as IResult;
+                        itresult = task.GetType().GetProperty("Result")!.GetValue(task) as ITurboResult;
                     }
                 }
                 else
                 {
-                    iresult = result as IResult;
+                    itresult = result as ITurboResult;
                 }
 
-                if (iresult is null)
+                if (itresult is null)
                 {
                     ctx.Response.StatusCode = 500;
                     return;
                 }
 
-                await iresult.ExecuteAsync(ctx);
+                await itresult.ExecuteAsync(ctx);
             }
             catch (ParameterParseException)
             {

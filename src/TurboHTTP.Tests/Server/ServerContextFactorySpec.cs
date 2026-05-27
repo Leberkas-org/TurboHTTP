@@ -13,7 +13,7 @@ public sealed class ServerContextFactorySpec
         var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
 
         Assert.Equal("POST", ctx.Request.Method);
-        Assert.Equal("/api", ctx.Request.Path.Value);
+        Assert.Equal("/api", ctx.Request.Path);
     }
 
     [Fact(Timeout = 5000)]

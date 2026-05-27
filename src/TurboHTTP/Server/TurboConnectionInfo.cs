@@ -1,22 +1,21 @@
 using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.AspNetCore.Http;
 
 namespace TurboHTTP.Server;
 
-public sealed class TurboConnectionInfo : ConnectionInfo
+public sealed class TurboConnectionInfo
 {
     private SslStream? _sslStream;
     private bool _allowDelayedNegotiation;
     private SslApplicationProtocol _negotiatedProtocol;
 
-    public override string Id { get; set; }
-    public override IPAddress? RemoteIpAddress { get; set; }
-    public override int RemotePort { get; set; }
-    public override IPAddress? LocalIpAddress { get; set; }
-    public override int LocalPort { get; set; }
-    public override X509Certificate2? ClientCertificate { get; set; }
+    public string Id { get; set; }
+    public IPAddress? RemoteIpAddress { get; set; }
+    public int RemotePort { get; set; }
+    public IPAddress? LocalIpAddress { get; set; }
+    public int LocalPort { get; set; }
+    public X509Certificate2? ClientCertificate { get; set; }
 
     public TurboConnectionInfo(
         string id,
@@ -58,7 +57,7 @@ public sealed class TurboConnectionInfo : ConnectionInfo
         }
     }
 
-    public override async Task<X509Certificate2?> GetClientCertificateAsync(
+    public async Task<X509Certificate2?> GetClientCertificateAsync(
         CancellationToken cancellationToken = default)
     {
         if (ClientCertificate is not null)

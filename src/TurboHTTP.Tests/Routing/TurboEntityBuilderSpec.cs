@@ -10,6 +10,16 @@ public sealed class TurboEntityBuilderSpec
 
     private sealed record TestMessage(string Id);
 
+    private sealed class ResultAdapter(IResult inner) : ITurboResult
+    {
+        public async Task ExecuteAsync(TurboHttpContext httpContext)
+        {
+            var features = httpContext.Features;
+            var httpContextAdapter = new DefaultHttpContext(features);
+            await inner.ExecuteAsync(httpContextAdapter);
+        }
+    }
+
     [Fact(Timeout = 5000)]
     public void AddToRouteTable_should_register_get_route()
     {
@@ -143,8 +153,8 @@ public sealed class TurboEntityBuilderSpec
     {
         var builder = new TurboEntityBuilder("/orders/{id}");
         builder.OnGet(() => new TestMessage("get")).Ask(ask =>
-            ask.Produces<TestMessage>((_, _) => Results.NotFound())
-                .Produces<TestActorKey>((_, _) => Results.Accepted()));
+            ask.Produces<TestMessage>((_, _) => new ResultAdapter(Results.NotFound()))
+                .Produces<TestActorKey>((_, _) => new ResultAdapter(Results.Accepted())));
 
         var table = new TurboRouteTable();
         builder.AddToRouteTable(table);

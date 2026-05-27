@@ -28,6 +28,6 @@ public sealed class TurboEntityTellBuilder
     public void Handle(Func<TurboHttpContext, Task> writer)
         => ResponseHandler = async ctx => await writer(ctx);
 
-    public void Produces(Func<TurboHttpContext, IResult> factory)
+    public void Produces(Func<TurboHttpContext, ITurboResult> factory)
         => ResponseHandler = async ctx => await factory(ctx).ExecuteAsync(ctx);
 }

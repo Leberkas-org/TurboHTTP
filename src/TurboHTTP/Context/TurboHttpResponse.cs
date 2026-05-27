@@ -2,13 +2,14 @@ using System.IO.Pipelines;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Context;
 
-public sealed class TurboHttpResponse : HttpResponse
+public sealed class TurboHttpResponse
 {
     private IFeatureCollection _features;
-    private HttpContext? _httpContext;
+    private TurboHttpContext? _httpContext;
     private IHttpResponseFeature? _responseFeature;
     private IHttpResponseBodyFeature? _bodyFeature;
 
@@ -23,57 +24,54 @@ public sealed class TurboHttpResponse : HttpResponse
     private IHttpResponseBodyFeature? BodyFeature
         => _bodyFeature ??= _features.Get<IHttpResponseBodyFeature>();
 
-    public override HttpContext HttpContext => _httpContext!;
+    public TurboHttpContext HttpContext => _httpContext!;
 
-    internal void SetHttpContext(HttpContext context)
+    internal void SetHttpContext(TurboHttpContext context)
     {
         _httpContext = context;
     }
 
-    public override int StatusCode
+    public int StatusCode
     {
         get => ResponseFeature.StatusCode;
         set => ResponseFeature.StatusCode = value;
     }
 
-    public override IHeaderDictionary Headers => ResponseFeature.Headers;
+    public IHeaderDictionary Headers => ResponseFeature.Headers;
 
-    public override Stream Body
+    public Stream Body
     {
         get => BodyFeature?.Stream ?? Stream.Null;
         set { }
     }
 
-    public override PipeWriter BodyWriter => BodyFeature?.Writer ?? throw new InvalidOperationException("IHttpResponseBodyFeature not found in feature collection");
+    public PipeWriter BodyWriter => BodyFeature?.Writer ?? throw new InvalidOperationException("IHttpResponseBodyFeature not found in feature collection");
 
-    public override long? ContentLength
+    public long? ContentLength
     {
         get => Headers.ContentLength;
         set => Headers.ContentLength = value;
     }
 
-    public override string? ContentType
+    public string? ContentType
     {
         get => Headers["Content-Type"].ToString();
         set => Headers["Content-Type"] = value ?? string.Empty;
     }
 
-    public override IResponseCookies Cookies
-        => throw new NotSupportedException("Response cookies not yet supported.");
+    public bool HasStarted => ResponseFeature.HasStarted;
 
-    public override bool HasStarted => ResponseFeature.HasStarted;
-
-    public override void OnStarting(Func<object, Task> callback, object state)
+    public void OnStarting(Func<object, Task> callback, object state)
     {
         ResponseFeature.OnStarting(callback, state);
     }
 
-    public override void OnCompleted(Func<object, Task> callback, object state)
+    public void OnCompleted(Func<object, Task> callback, object state)
     {
         ResponseFeature.OnCompleted(callback, state);
     }
 
-    public override void Redirect(string location, bool permanent = false)
+    public void Redirect(string location, bool permanent = false)
     {
         ArgumentNullException.ThrowIfNull(location);
 

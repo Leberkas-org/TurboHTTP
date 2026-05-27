@@ -3,25 +3,25 @@ using Akka;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using TurboHTTP.Context.Adapters;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Context;
 
-public sealed class TurboHttpRequest : HttpRequest
+public sealed class TurboHttpRequest
 {
     private IFeatureCollection _features;
-    private HttpContext? _httpContext;
+    private TurboHttpContext? _httpContext;
     private IFormCollection? _parsedForm;
     private Uri? _cachedRequestUri;
     private IHttpRequestFeature? _requestFeature;
     private IQueryCollection? _query;
     private IRequestCookieCollection? _cookies;
-    private RouteValueDictionary? _routeValues;
+    private Dictionary<string, object?>? _routeValues;
     private PipeReader? _bodyReader;
 
     public TurboHttpRequest(IFeatureCollection features)
@@ -33,9 +33,9 @@ public sealed class TurboHttpRequest : HttpRequest
         => _requestFeature ??= _features.Get<IHttpRequestFeature>() ??
                      throw new InvalidOperationException("IHttpRequestFeature not found in feature collection");
 
-    public override HttpContext HttpContext => _httpContext!;
+    public TurboHttpContext HttpContext => _httpContext!;
 
-    internal void SetHttpContext(HttpContext context)
+    internal void SetHttpContext(TurboHttpContext context)
     {
         _httpContext = context;
     }
@@ -49,13 +49,13 @@ public sealed class TurboHttpRequest : HttpRequest
                 return _cachedRequestUri;
             }
 
-            var host = Host.Value;
+            var host = Host;
             if (string.IsNullOrEmpty(host))
             {
                 return null;
             }
 
-            var uriString = string.Concat(Scheme, "://", host, Path.Value, QueryString.Value);
+            var uriString = string.Concat(Scheme, "://", host, Path, QueryString);
             _cachedRequestUri = new Uri(uriString);
             return _cachedRequestUri;
         }
@@ -70,62 +70,61 @@ public sealed class TurboHttpRequest : HttpRequest
         }
     }
 
-    public override string Method
+    public string Method
     {
         get => RequestFeature.Method;
         set => RequestFeature.Method = value;
     }
 
-    public override string Scheme
+    public string Scheme
     {
         get => RequestFeature.Scheme;
         set => RequestFeature.Scheme = value;
     }
 
-    public override bool IsHttps
+    public bool IsHttps
     {
         get => Scheme == "https";
         set => Scheme = value ? "https" : "http";
     }
 
-    public override HostString Host
+    public string Host
     {
         get
         {
             var hostHeader = (string?)Headers["Host"] ?? string.Empty;
             if (string.IsNullOrEmpty(hostHeader))
             {
-                // Fallback to extracted host from RequestUri if Host header is not set
                 var feature = RequestFeature;
                 if (feature is TurboHttpRequestFeature turboFeature && !string.IsNullOrEmpty(turboFeature.ExtractedHost))
                 {
-                    return new HostString(turboFeature.ExtractedHost);
+                    return turboFeature.ExtractedHost;
                 }
             }
-            return new HostString(hostHeader);
+            return hostHeader;
         }
-        set => Headers["Host"] = value.Value ?? string.Empty;
+        set => Headers["Host"] = value ?? string.Empty;
     }
 
-    public override PathString PathBase
+    public string PathBase
     {
-        get => new(RequestFeature.PathBase);
-        set => RequestFeature.PathBase = value.Value ?? string.Empty;
+        get => RequestFeature.PathBase;
+        set => RequestFeature.PathBase = value ?? string.Empty;
     }
 
-    public override PathString Path
+    public string Path
     {
-        get => new(RequestFeature.Path);
-        set => RequestFeature.Path = value.Value ?? "/";
+        get => RequestFeature.Path;
+        set => RequestFeature.Path = value ?? "/";
     }
 
-    public override QueryString QueryString
+    public string QueryString
     {
-        get => new(RequestFeature.QueryString);
-        set => RequestFeature.QueryString = value.Value ?? string.Empty;
+        get => RequestFeature.QueryString;
+        set => RequestFeature.QueryString = value ?? string.Empty;
     }
 
-    public override IQueryCollection Query
+    public IQueryCollection Query
     {
         get
         {
@@ -135,15 +134,15 @@ public sealed class TurboHttpRequest : HttpRequest
         set => _query = value;
     }
 
-    public override string Protocol
+    public string Protocol
     {
         get => RequestFeature.Protocol;
         set => RequestFeature.Protocol = value;
     }
 
-    public override IHeaderDictionary Headers => RequestFeature.Headers;
+    public IHeaderDictionary Headers => RequestFeature.Headers;
 
-    public override IRequestCookieCollection Cookies
+    public IRequestCookieCollection Cookies
     {
         get
         {
@@ -153,25 +152,25 @@ public sealed class TurboHttpRequest : HttpRequest
         set => _cookies = value;
     }
 
-    public override long? ContentLength
+    public long? ContentLength
     {
         get => Headers.ContentLength;
         set => Headers.ContentLength = value;
     }
 
-    public override string? ContentType
+    public string? ContentType
     {
         get => (string?)Headers["Content-Type"] ?? string.Empty;
         set => Headers["Content-Type"] = value ?? string.Empty;
     }
 
-    public override Stream Body
+    public Stream Body
     {
         get => RequestFeature.Body;
         set => RequestFeature.Body = value;
     }
 
-    public override PipeReader BodyReader
+    public PipeReader BodyReader
     {
         get
         {
@@ -183,7 +182,7 @@ public sealed class TurboHttpRequest : HttpRequest
     public Source<ReadOnlyMemory<byte>, NotUsed> BodySource
         => _features.Get<ITurboRequestBodyFeature>()?.BodySource ?? Source.Empty<ReadOnlyMemory<byte>>();
 
-    public override bool HasFormContentType
+    public bool HasFormContentType
     {
         get
         {
@@ -198,13 +197,13 @@ public sealed class TurboHttpRequest : HttpRequest
         }
     }
 
-    public override IFormCollection Form
+    public IFormCollection Form
     {
         get => _parsedForm ?? throw new InvalidOperationException("Form has not been read. Call ReadFormAsync first.");
         set => _parsedForm = value;
     }
 
-    public override async Task<IFormCollection> ReadFormAsync(CancellationToken cancellationToken = default)
+    public async Task<IFormCollection> ReadFormAsync(CancellationToken cancellationToken = default)
     {
         if (_parsedForm is not null)
         {
@@ -234,9 +233,9 @@ public sealed class TurboHttpRequest : HttpRequest
         return _parsedForm;
     }
 
-    public override RouteValueDictionary RouteValues
+    public Dictionary<string, object?> RouteValues
     {
-        get => _routeValues ??= new RouteValueDictionary();
+        get => _routeValues ??= new Dictionary<string, object?>();
         set => _routeValues = value;
     }
 

@@ -158,7 +158,7 @@ public sealed class Http2ServerStateMachineSpec
 
         // Verify request properties
         Assert.Equal("GET", context.Request.Method);
-        Assert.Equal("/", context.Request.Path.Value);
+        Assert.Equal("/", context.Request.Path);
     }
 
     [Fact(Timeout = 5000)]

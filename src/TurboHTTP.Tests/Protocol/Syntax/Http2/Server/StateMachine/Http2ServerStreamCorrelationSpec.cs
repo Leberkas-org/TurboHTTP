@@ -109,13 +109,13 @@ public sealed class Http2ServerStreamCorrelationSpec
         var streamIdFeature1 = context1.Features.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature1);
         Assert.Equal(1, streamIdFeature1.StreamId);
-        Assert.Equal("/path1", context1.Request.Path.Value);
+        Assert.Equal("/path1", context1.Request.Path);
 
         var context3 = ops.Requests[1];
         var streamIdFeature3 = context3.Features.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature3);
         Assert.Equal(3, streamIdFeature3.StreamId);
-        Assert.Equal("/path3", context3.Request.Path.Value);
+        Assert.Equal("/path3", context3.Request.Path);
 
         // Now respond to stream 3 first
         ops.Outbound.Clear();
@@ -208,7 +208,7 @@ public sealed class Http2ServerStreamCorrelationSpec
             var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
             Assert.NotNull(streamIdFeature);
             Assert.Equal(expectedStreamId, streamIdFeature.StreamId);
-            Assert.Equal(expectedPath, context.Request.Path.Value);
+            Assert.Equal(expectedPath, context.Request.Path);
         }
 
         // Respond in reverse order (5, 3, 1) and verify correct stream IDs are used
@@ -297,9 +297,9 @@ public sealed class Http2ServerStreamCorrelationSpec
         Assert.Equal(new[] { 1, 3, 5 }, streamIds);
 
         // Verify paths match stream order
-        Assert.Equal("/", ops.Requests[0].Request.Path.Value);
-        Assert.Equal("/submit", ops.Requests[1].Request.Path.Value);
-        Assert.Equal("/status", ops.Requests[2].Request.Path.Value);
+        Assert.Equal("/", ops.Requests[0].Request.Path);
+        Assert.Equal("/submit", ops.Requests[1].Request.Path);
+        Assert.Equal("/status", ops.Requests[2].Request.Path);
     }
 }
 

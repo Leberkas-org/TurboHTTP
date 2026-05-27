@@ -9,36 +9,32 @@ namespace TurboHTTP.Server;
 
 public static class TurboStreamResults
 {
-    public static IResult EventStream(Source<string, NotUsed> source)
+    public static ITurboResult EventStream(Source<string, NotUsed> source)
     {
         return new EventStreamResult(source);
     }
 
-    public static IResult EventStream(Source<ServerSentEvent, NotUsed> source)
+    public static ITurboResult EventStream(Source<ServerSentEvent, NotUsed> source)
     {
         return new SseEventStreamResult(source);
     }
 
-    public static IResult Stream(Source<ReadOnlyMemory<byte>, NotUsed> source, string? contentType = null)
+    public static ITurboResult Stream(Source<ReadOnlyMemory<byte>, NotUsed> source, string? contentType = null)
     {
         return new AkkaStreamResult(source, contentType);
     }
 }
 
-internal sealed class EventStreamResult(Source<string, NotUsed> source) : IResult
+internal sealed class EventStreamResult(Source<string, NotUsed> source) : ITurboResult
 {
-    public async Task ExecuteAsync(HttpContext httpContext)
+    public async Task ExecuteAsync(TurboHttpContext turboCtx)
     {
-        httpContext.Response.StatusCode = 200;
-        httpContext.Response.ContentType = "text/event-stream";
-        httpContext.Response.Headers.CacheControl = "no-cache";
 
-        if (httpContext is not TurboHttpContext turboCtx)
-        {
-            return;
-        }
+        turboCtx.Response.StatusCode = 200;
+        turboCtx.Response.ContentType = "text/event-stream";
+        turboCtx.Response.Headers.CacheControl = "no-cache";
 
-        if (httpContext.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
+        if (turboCtx.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
         {
             return;
         }
@@ -54,20 +50,16 @@ internal sealed class EventStreamResult(Source<string, NotUsed> source) : IResul
     }
 }
 
-internal sealed class SseEventStreamResult(Source<ServerSentEvent, NotUsed> source) : IResult
+internal sealed class SseEventStreamResult(Source<ServerSentEvent, NotUsed> source) : ITurboResult
 {
-    public async Task ExecuteAsync(HttpContext httpContext)
+    public async Task ExecuteAsync(TurboHttpContext turboCtx)
     {
-        httpContext.Response.StatusCode = 200;
-        httpContext.Response.ContentType = "text/event-stream";
-        httpContext.Response.Headers.CacheControl = "no-cache";
 
-        if (httpContext is not TurboHttpContext turboCtx)
-        {
-            return;
-        }
+        turboCtx.Response.StatusCode = 200;
+        turboCtx.Response.ContentType = "text/event-stream";
+        turboCtx.Response.Headers.CacheControl = "no-cache";
 
-        if (httpContext.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
+        if (turboCtx.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
         {
             return;
         }
@@ -79,22 +71,18 @@ internal sealed class SseEventStreamResult(Source<ServerSentEvent, NotUsed> sour
     }
 }
 
-internal sealed class AkkaStreamResult(Source<ReadOnlyMemory<byte>, NotUsed> source, string? contentType) : IResult
+internal sealed class AkkaStreamResult(Source<ReadOnlyMemory<byte>, NotUsed> source, string? contentType) : ITurboResult
 {
-    public async Task ExecuteAsync(HttpContext httpContext)
+    public async Task ExecuteAsync(TurboHttpContext turboCtx)
     {
-        httpContext.Response.StatusCode = 200;
+
+        turboCtx.Response.StatusCode = 200;
         if (contentType is not null)
         {
-            httpContext.Response.ContentType = contentType;
+            turboCtx.Response.ContentType = contentType;
         }
 
-        if (httpContext is not TurboHttpContext turboCtx)
-        {
-            return;
-        }
-
-        if (httpContext.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
+        if (turboCtx.Features.Get<ITurboResponseBodyFeature>() is not TurboHttpResponseBodyFeature bodyFeature)
         {
             return;
         }

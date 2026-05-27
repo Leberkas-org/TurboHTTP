@@ -53,13 +53,12 @@ public sealed class TurboConnectionInfoSpec
     }
 
     [Fact(Timeout = 5000)]
-    public void TurboConnectionInfo_should_be_assignable_to_ConnectionInfo()
+    public void TurboConnectionInfo_properties_should_be_readable()
     {
         var info = new TurboConnectionInfo("conn-1", IPAddress.Loopback, 12345, IPAddress.Loopback, 443);
-        ConnectionInfo baseRef = info;
-        Assert.Equal("conn-1", baseRef.Id);
-        Assert.Equal(IPAddress.Loopback, baseRef.RemoteIpAddress);
-        Assert.Equal(12345, baseRef.RemotePort);
+        Assert.Equal("conn-1", info.Id);
+        Assert.Equal(IPAddress.Loopback, info.RemoteIpAddress);
+        Assert.Equal(12345, info.RemotePort);
     }
 
     [Fact(Timeout = 5000)]

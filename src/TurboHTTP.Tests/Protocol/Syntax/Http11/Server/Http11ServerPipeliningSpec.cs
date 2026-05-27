@@ -41,8 +41,8 @@ public sealed class Http11ServerPipeliningSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         Assert.Equal(2, ops.Requests.Count);
-        Assert.Equal("/", ops.Requests[0].Request.Path.Value);
-        Assert.Equal("/page2", ops.Requests[1].Request.Path.Value);
+        Assert.Equal("/", ops.Requests[0].Request.Path);
+        Assert.Equal("/page2", ops.Requests[1].Request.Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -109,9 +109,9 @@ public sealed class Http11ServerPipeliningSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         Assert.Equal(3, ops.Requests.Count);
-        Assert.Equal("/page1", ops.Requests[0].Request.Path.Value);
-        Assert.Equal("/page2", ops.Requests[1].Request.Path.Value);
-        Assert.Equal("/page3", ops.Requests[2].Request.Path.Value);
+        Assert.Equal("/page1", ops.Requests[0].Request.Path);
+        Assert.Equal("/page2", ops.Requests[1].Request.Path);
+        Assert.Equal("/page3", ops.Requests[2].Request.Path);
     }
 
     private static TransportBuffer MakeBuffer(string raw)

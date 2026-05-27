@@ -1,13 +1,12 @@
 using System.Security.Claims;
 using Akka.Streams;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context;
 using TurboHTTP.Routing;
 
 namespace TurboHTTP.Server;
 
-public sealed class TurboHttpContext : HttpContext
+public sealed class TurboHttpContext
 {
     private static readonly ClaimsPrincipal AnonymousPrincipal = new();
 
@@ -47,48 +46,37 @@ public sealed class TurboHttpContext : HttpContext
     {
     }
 
-    public override IFeatureCollection Features => _features;
+    public IFeatureCollection Features => _features;
 
-    public override HttpRequest Request => TurboRequest;
+    public TurboHttpRequest Request => TurboRequest;
     public TurboHttpRequest TurboRequest { get; }
 
-    public override HttpResponse Response => TurboResponse;
+    public TurboHttpResponse Response => TurboResponse;
     public TurboHttpResponse TurboResponse { get; }
-    public override ConnectionInfo Connection => _connectionInfo;
-    public override WebSocketManager WebSockets
-        => throw new NotSupportedException(
-            "TurboHTTP does not support WebSockets. Use Akka.Streams for bidirectional streaming.");
+    public TurboConnectionInfo Connection => _connectionInfo;
 
-    public override ClaimsPrincipal User
+    public ClaimsPrincipal User
     {
         get => _user ?? AnonymousPrincipal;
         set => _user = value;
     }
 
-    public override IDictionary<object, object?> Items
+    public IDictionary<object, object?> Items
     {
         get => _items ??= new Dictionary<object, object?>();
         set => _items = value;
     }
 
-    public override IServiceProvider RequestServices { get; set; }
-    public override CancellationToken RequestAborted { get; set; }
+    public IServiceProvider RequestServices { get; set; }
+    public CancellationToken RequestAborted { get; set; }
 
-    public override string TraceIdentifier
+    public string TraceIdentifier
     {
         get => _traceIdentifier ??= Guid.NewGuid().ToString("N");
         set => _traceIdentifier = value;
     }
 
-    public override ISession Session
-    {
-        get => throw new NotSupportedException(
-            "TurboHTTP does not support ASP.NET Core sessions. Use ITurboMiddleware with context.Items for per-request state.");
-        set => throw new NotSupportedException(
-            "TurboHTTP does not support ASP.NET Core sessions. Use ITurboMiddleware with context.Items for per-request state.");
-    }
-
-    public override void Abort() => RequestAborted = new CancellationToken(true);
+    public void Abort() => RequestAborted = new CancellationToken(true);
 
     public IMaterializer Materializer { get; set; } = null!;
 

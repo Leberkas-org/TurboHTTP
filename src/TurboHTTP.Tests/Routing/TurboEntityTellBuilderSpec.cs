@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
 
@@ -6,9 +5,9 @@ namespace TurboHTTP.Tests.Routing;
 
 public sealed class TurboEntityTellBuilderSpec
 {
-    private sealed class TestResult(int statusCode) : IResult
+    private sealed class TestResult(int statusCode) : ITurboResult
     {
-        public Task ExecuteAsync(HttpContext httpContext)
+        public Task ExecuteAsync(TurboHttpContext httpContext)
         {
             httpContext.Response.StatusCode = statusCode;
             return Task.CompletedTask;

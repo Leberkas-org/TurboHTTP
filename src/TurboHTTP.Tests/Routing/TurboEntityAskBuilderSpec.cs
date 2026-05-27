@@ -98,9 +98,9 @@ public sealed class TurboEntityAskBuilderSpec
         Assert.Null(builder.TimeoutOverride);
     }
 
-    private sealed class TestResult(int statusCode) : IResult
+    private sealed class TestResult(int statusCode) : ITurboResult
     {
-        public Task ExecuteAsync(HttpContext httpContext)
+        public Task ExecuteAsync(TurboHttpContext httpContext)
         {
             httpContext.Response.StatusCode = statusCode;
             return Task.CompletedTask;

@@ -18,14 +18,14 @@ public sealed class TurboHttpRequestSpec
     public void Path_should_delegate_to_feature()
     {
         var (request, _) = CreateRequest("GET", "/api/users");
-        Assert.Equal("/api/users", request.Path.Value);
+        Assert.Equal("/api/users", request.Path);
     }
 
     [Fact(Timeout = 5000)]
     public void QueryString_should_delegate_to_feature()
     {
         var (request, _) = CreateRequest("GET", "/test?page=1");
-        Assert.Equal("?page=1", request.QueryString.Value);
+        Assert.Equal("?page=1", request.QueryString);
     }
 
     [Fact(Timeout = 5000)]
@@ -90,7 +90,7 @@ public sealed class TurboHttpRequestSpec
         features.Set<IHttpRequestFeature>(feature);
         var request = new TurboHttpRequest(features);
 
-        Assert.Equal("example.com:8080", request.Host.Value);
+        Assert.Equal("example.com:8080", request.Host);
     }
 
     private static (TurboHttpRequest Request, IFeatureCollection Features) CreateRequest(

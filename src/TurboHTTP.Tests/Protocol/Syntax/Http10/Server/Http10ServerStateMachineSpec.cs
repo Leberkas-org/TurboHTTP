@@ -58,7 +58,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
 
         Assert.Single(ops.Requests);
         Assert.Equal("GET", ops.Requests[0].Request.Method);
-        Assert.Equal("/path", ops.Requests[0].Request.Path.Value);
+        Assert.Equal("/path", ops.Requests[0].Request.Path);
     }
 
     [Fact(Timeout = 5000)]

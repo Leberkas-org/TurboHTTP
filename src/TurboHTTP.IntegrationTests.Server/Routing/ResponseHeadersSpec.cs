@@ -24,7 +24,7 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
         {
             ctx.Response.Headers["X-Request-Id"] = "abc-123";
             ctx.Response.StatusCode = 200;
-            return Results.Ok("ok").ExecuteAsync(ctx);
+            return new ResultAdapter(Results.Ok("ok")).ExecuteAsync(ctx);
         });
 
         routeTable.Add("GET", "/multi-header", (TurboHttpContext ctx) =>
@@ -32,7 +32,7 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
             ctx.Response.Headers.Append("X-Tag", "alpha");
             ctx.Response.Headers.Append("X-Tag", "beta");
             ctx.Response.StatusCode = 200;
-            return Results.Ok("ok").ExecuteAsync(ctx);
+            return new ResultAdapter(Results.Ok("ok")).ExecuteAsync(ctx);
         });
 
         routeTable.Add("GET", "/cache-headers", (TurboHttpContext ctx) =>
@@ -40,8 +40,18 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
             ctx.Response.Headers["Cache-Control"] = "no-cache, no-store";
             ctx.Response.Headers["ETag"] = "\"v1\"";
             ctx.Response.StatusCode = 200;
-            return Results.Ok("cached").ExecuteAsync(ctx);
+            return new ResultAdapter(Results.Ok("cached")).ExecuteAsync(ctx);
         });
+    }
+
+    private sealed class ResultAdapter(IResult inner) : ITurboResult
+    {
+        public async Task ExecuteAsync(TurboHttpContext httpContext)
+        {
+            var features = httpContext.Features;
+            var httpContextAdapter = new DefaultHttpContext(features);
+            await inner.ExecuteAsync(httpContextAdapter);
+        }
     }
 
     [Fact(Timeout = 15000)]

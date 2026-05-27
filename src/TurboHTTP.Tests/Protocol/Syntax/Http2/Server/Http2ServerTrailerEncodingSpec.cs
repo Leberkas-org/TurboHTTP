@@ -6,6 +6,7 @@ using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server;
 
@@ -49,11 +50,12 @@ public sealed class Http2ServerTrailerEncodingSpec
     public void TurboHttpResponse_should_expose_DeclareTrailer_and_AppendTrailer()
     {
         var features = new TurboFeatureCollection();
+        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpResponseTrailersFeature>(new TurboHttpResponseTrailersFeature());
 
         var response = new TurboHttpResponse(features);
-        var httpContext = new DefaultHttpContext(features);
+        var httpContext = new TurboHttpContext(features);
         response.SetHttpContext(httpContext);
 
         response.DeclareTrailer("grpc-status");

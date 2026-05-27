@@ -14,7 +14,7 @@ public sealed class TurboEntityAskBuilder
         return this;
     }
 
-    public TurboEntityAskBuilder Produces<TResponse>(Func<TurboHttpContext, TResponse, IResult> handler)
+    public TurboEntityAskBuilder Produces<TResponse>(Func<TurboHttpContext, TResponse, ITurboResult> handler)
     {
         Mappers.Add<TResponse>(async (ctx, resp) => await handler(ctx, resp).ExecuteAsync(ctx));
         return this;

@@ -10,11 +10,11 @@ namespace TurboHTTP.Tests.Server;
 public sealed class TurboHttpContextSpec
 {
     [Fact(Timeout = 5000)]
-    public void TurboHttpContext_should_be_assignable_to_HttpContext()
+    public void TurboHttpContext_should_be_instantiable_with_features()
     {
         var ctx = CreateContext();
-        HttpContext baseRef = ctx;
-        Assert.NotNull(baseRef);
+        Assert.NotNull(ctx);
+        Assert.NotNull(ctx.Features);
     }
 
     [Fact(Timeout = 5000)]

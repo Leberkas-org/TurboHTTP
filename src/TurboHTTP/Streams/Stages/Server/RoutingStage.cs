@@ -91,7 +91,7 @@ internal sealed class RoutingStage : GraphStage<FlowShape<TurboHttpContext, Turb
         {
             var ctx = Grab(_stage._in);
             var seq = _sequence++;
-            var path = ctx.Request.Path.Value ?? "/";
+            var path = ctx.Request.Path ?? "/";
 
             var match = _stage._routeTable.Match(ctx.Request.Method, path);
             if (match is not { IsMatch: true, Dispatcher: not null })
