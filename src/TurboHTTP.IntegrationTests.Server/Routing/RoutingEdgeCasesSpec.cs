@@ -103,7 +103,7 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
 
         var response = await Client.SendAsync(request, CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
 
     [Fact(Timeout = 15000)]
