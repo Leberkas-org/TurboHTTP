@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context;
 using TurboHTTP.Context.Adapters;
 using TurboHTTP.Protocol.Semantics;
 

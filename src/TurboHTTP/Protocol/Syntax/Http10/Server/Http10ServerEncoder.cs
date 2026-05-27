@@ -1,7 +1,6 @@
 using System.Net;
 using Akka.Actor;
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.LineBased;
 using TurboHTTP.Protocol.LineBased.Body;
@@ -23,16 +22,16 @@ internal sealed class Http10ServerEncoder
         _options = options;
     }
 
-    public int Encode(Span<byte> _, RequestContext context, IActorRef stageActor)
+    public int Encode(Span<byte> _, IFeatureCollection features, IActorRef stageActor)
     {
         // HTTP/1.0 always defers — body sink will be handled by caller
         return 0;
     }
 
-    public int EncodeDeferred(Span<byte> destination, RequestContext context, ReadOnlySpan<byte> body)
+    public int EncodeDeferred(Span<byte> destination, IFeatureCollection features, ReadOnlySpan<byte> body)
     {
         var writer = SpanWriter.Create(destination);
-        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var responseFeature = features.Get<IHttpResponseFeature>();
         var statusCode = responseFeature?.StatusCode ?? 500;
         StatusLineWriter.Write(ref writer, HttpVersion.Version10, statusCode);
 

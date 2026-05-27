@@ -130,17 +130,17 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
             var info = connected.Info;
             if (info.Remote is System.Net.IPEndPoint remoteEp)
             {
-                var connectionInfo = new TurboConnectionInfo(
-                    Guid.NewGuid().ToString("N"),
-                    remoteEp.Address, remoteEp.Port,
-                    (info.Local as System.Net.IPEndPoint)?.Address,
-                    (info.Local as System.Net.IPEndPoint)?.Port ?? 0);
+                var connectionFeature = new TurboHttpConnectionFeature
+                {
+                    ConnectionId = Guid.NewGuid().ToString("N"),
+                    RemoteIpAddress = remoteEp.Address,
+                    RemotePort = remoteEp.Port,
+                    LocalIpAddress = (info.Local as System.Net.IPEndPoint)?.Address,
+                    LocalPort = (info.Local as System.Net.IPEndPoint)?.Port ?? 0,
+                };
 
                 if (info.Security is { } security)
                 {
-                    connectionInfo.SetSecurityInfo(security);
-                    connectionInfo.SetNegotiatedProtocol(security.ApplicationProtocol);
-
                     _tlsHandshakeFeature = new TlsHandshakeFeature
                     {
                         Protocol = security.Protocol,
@@ -148,15 +148,9 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
                         HostName = security.HostName,
                         NegotiatedApplicationProtocol = security.ApplicationProtocol,
                     };
-
-                    if (security.SslStream is not null)
-                    {
-                        connectionInfo.SetClientCertificateFromHandshake(security.SslStream);
-                        connectionInfo.SetTlsState(security.SslStream, security.AllowDelayedNegotiation);
-                    }
                 }
 
-                _connectionFeature = new TurboHttpConnectionFeature(connectionInfo);
+                _connectionFeature = connectionFeature;
             }
         }
 

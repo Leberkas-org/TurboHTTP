@@ -7,6 +7,7 @@ using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Streams;
+using TurboHTTP.Streams.Stages.Server;
 using HttpVersion = System.Net.HttpVersion;
 
 namespace TurboHTTP.Protocol.Syntax.Http11.Server;
