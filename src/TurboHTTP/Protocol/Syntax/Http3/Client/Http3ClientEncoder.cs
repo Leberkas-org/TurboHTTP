@@ -74,7 +74,7 @@ internal sealed class Http3ClientEncoder
         FieldValidator.Validate(_reusableHeaders);
 
         // QPACK encode directly into a MemoryPool-rented buffer
-        var qpackOwner = MemoryPool<byte>.Shared.Rent(8192);
+        var qpackOwner = MemoryPool<byte>.Shared.Rent(4 * 1024);
         _rentedOwners.Add(qpackOwner);
         var qpackWriter = SpanWriter.Create(qpackOwner.Memory.Span);
         var qpackBytesWritten = _tableSync.Encoder.Encode(_reusableHeaders, ref qpackWriter);
@@ -110,7 +110,7 @@ internal sealed class Http3ClientEncoder
         ValidatePseudoHeaders(_reusableHeaders);
         FieldValidator.Validate(_reusableHeaders);
 
-        var owner = MemoryPool<byte>.Shared.Rent(8192);
+        var owner = MemoryPool<byte>.Shared.Rent(4 * 1024);
         var w = SpanWriter.Create(owner.Memory.Span);
         var n = _tableSync.Encoder.Encode(_reusableHeaders, ref w);
         return (owner, n);

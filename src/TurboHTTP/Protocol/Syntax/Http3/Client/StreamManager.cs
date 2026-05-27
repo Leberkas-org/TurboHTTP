@@ -16,8 +16,8 @@ namespace TurboHTTP.Protocol.Syntax.Http3.Client;
 /// </summary>
 internal sealed class StreamManager
 {
-    private const int MaxPoolSize = 16;
-    private const int MaxDecoderPoolSize = 16;
+    private const int MaxPoolSize = 256;
+    private const int MaxDecoderPoolSize = 256;
 
     private readonly IClientStageOperations _ops;
     private readonly Http3ClientDecoder _responseDecoder;
