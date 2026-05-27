@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Akka;
 using Akka.Actor;
 using Akka.Event;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
+using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
@@ -62,10 +64,17 @@ internal sealed class ConnectionActor : ReceiveActor
         _connectionActivity = msg.ConnectionActivity;
         _log.Debug("Connection {0} materializing pipeline", _connectionId);
 
+        var negotiationStart = Stopwatch.GetTimestamp();
+
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
 
         var protocolBidi = msg.Engine.CreateFlow(msg.Services);
         var composed = protocolBidi.Join(msg.BridgeFlow);
+
+        if (Metrics.ProtocolNegotiationDuration().Enabled)
+        {
+            RecordProtocolNegotiation(negotiationStart, msg.Engine);
+        }
 
         var self = Self;
         Flow<ITransportInbound, ITransportInbound, NotUsed>? loggingFlow = null;
@@ -108,6 +117,16 @@ internal sealed class ConnectionActor : ReceiveActor
         completionTask.PipeTo(self,
             success: () => new StreamCompleted(null),
             failure: ex => new StreamCompleted(ex));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void RecordProtocolNegotiation(long startTimestamp, IServerProtocolEngine engine)
+    {
+        var elapsed = Stopwatch.GetElapsedTime(startTimestamp);
+        var version = engine.ProtocolVersion;
+        Metrics.ProtocolNegotiationDuration().Record(elapsed.TotalSeconds,
+            new KeyValuePair<string, object?>("network.protocol.version",
+                TurboHttpInstrumentationExtensions.FormatProtocolVersion(version)));
     }
 
     private void OnStreamCompleted(StreamCompleted msg)

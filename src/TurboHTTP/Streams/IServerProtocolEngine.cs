@@ -7,6 +7,8 @@ namespace TurboHTTP.Streams;
 
 internal interface IServerProtocolEngine
 {
+    Version ProtocolVersion { get; }
+
     BidiFlow<ITransportInbound, IFeatureCollection, IFeatureCollection, ITransportOutbound, NotUsed> CreateFlow(
         IServiceProvider? services = null);
 }

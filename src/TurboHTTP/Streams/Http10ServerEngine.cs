@@ -17,6 +17,8 @@ internal sealed class Http10ServerEngine : IServerProtocolEngine
         _options = options;
     }
 
+    public Version ProtocolVersion => new(1, 0);
+
     public BidiFlow<ITransportInbound, IFeatureCollection, IFeatureCollection, ITransportOutbound, NotUsed> CreateFlow(IServiceProvider? services = null)
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
