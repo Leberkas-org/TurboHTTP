@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
@@ -22,8 +23,8 @@ public sealed class Http3ServerEncoderHardeningSpec
     public void EncodeHeaders_status_should_be_first()
     {
         var ctx = ServerTestContext.CreateH3Response(streamId: 1, statusCode: 201);
-        ctx.Response.Headers["x-test"] = "value";
-        ctx.Response.Body = new MemoryStream("test"u8.ToArray());
+        ctx.Get<IHttpResponseFeature>().Headers["x-test"] = "value";
+        ctx.Get<IHttpResponseFeature>().Body = new MemoryStream("test"u8.ToArray());
 
         var frame = _encoder.EncodeHeaders(ctx);
 
@@ -39,9 +40,9 @@ public sealed class Http3ServerEncoderHardeningSpec
     public void EncodeHeaders_should_filter_forbidden_headers()
     {
         var ctx = ServerTestContext.CreateH3Response(streamId: 1, statusCode: 200);
-        ctx.Response.Headers["connection"] = "close";
-        ctx.Response.Headers["transfer-encoding"] = "chunked";
-        ctx.Response.Headers["x-allowed"] = "yes";
+        ctx.Get<IHttpResponseFeature>().Headers["connection"] = "close";
+        ctx.Get<IHttpResponseFeature>().Headers["transfer-encoding"] = "chunked";
+        ctx.Get<IHttpResponseFeature>().Headers["x-allowed"] = "yes";
 
         var frame = _encoder.EncodeHeaders(ctx);
 
@@ -57,8 +58,8 @@ public sealed class Http3ServerEncoderHardeningSpec
     public void EncodeHeaders_should_lowercase_header_names()
     {
         var ctx = ServerTestContext.CreateH3Response(streamId: 1, statusCode: 200);
-        ctx.Response.Headers["X-Custom-Header"] = "test-value";
-        ctx.Response.Headers["Server"] = "TestServer";
+        ctx.Get<IHttpResponseFeature>().Headers["X-Custom-Header"] = "test-value";
+        ctx.Get<IHttpResponseFeature>().Headers["Server"] = "TestServer";
 
         var frame = _encoder.EncodeHeaders(ctx);
 
@@ -75,9 +76,9 @@ public sealed class Http3ServerEncoderHardeningSpec
     public void EncodeHeaders_should_include_content_headers()
     {
         var ctx = ServerTestContext.CreateH3Response(streamId: 1, statusCode: 200);
-        ctx.Response.Headers["content-type"] = "application/json";
-        ctx.Response.Headers["content-length"] = "4";
-        ctx.Response.Body = new MemoryStream("data"u8.ToArray());
+        ctx.Get<IHttpResponseFeature>().Headers["content-type"] = "application/json";
+        ctx.Get<IHttpResponseFeature>().Headers["content-length"] = "4";
+        ctx.Get<IHttpResponseFeature>().Body = new MemoryStream("data"u8.ToArray());
 
         var frame = _encoder.EncodeHeaders(ctx);
 
@@ -92,10 +93,10 @@ public sealed class Http3ServerEncoderHardeningSpec
     public void EncodeHeaders_multiple_responses_should_not_cross_contaminate()
     {
         var ctx1 = ServerTestContext.CreateH3Response(streamId: 1, statusCode: 200);
-        ctx1.Response.Headers["x-first"] = "first-value";
+        ctx1.Get<IHttpResponseFeature>().Headers["x-first"] = "first-value";
 
         var ctx2 = ServerTestContext.CreateH3Response(streamId: 3, statusCode: 200);
-        ctx2.Response.Headers["x-second"] = "second-value";
+        ctx2.Get<IHttpResponseFeature>().Headers["x-second"] = "second-value";
 
         // Encode response1 with its own encoder/decoder pair
         var encoder1Sync = new QpackTableSync(encoderMaxCapacity: 4096, decoderMaxCapacity: 4096);

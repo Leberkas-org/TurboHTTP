@@ -104,7 +104,7 @@ public sealed class ProtocolNegotiatingStateMachineSpec
 
         Assert.Single(ops.Requests);
         var ctx = ops.Requests[0];
-        var feature = ctx.Features.Get<IHttpRequestFeature>();
+        var feature = ctx.Get<IHttpRequestFeature>();
         Assert.NotNull(feature);
         Assert.Equal("GET", feature.Method);
     }
@@ -122,7 +122,7 @@ public sealed class ProtocolNegotiatingStateMachineSpec
 
         Assert.Single(ops.Requests);
         var ctx = ops.Requests[0];
-        var feature = ctx.Features.Get<IHttpRequestFeature>();
+        var feature = ctx.Get<IHttpRequestFeature>();
         Assert.NotNull(feature);
         Assert.Equal("POST", feature.Method);
     }

@@ -17,7 +17,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 /// </summary>
 public sealed class Http3StreamLifecycleSpec
 {
-    private static RequestContext CreateResponseContext(long streamId = 999)
+    private static IFeatureCollection CreateResponseContext(long streamId = 999)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -26,7 +26,7 @@ public sealed class Http3StreamLifecycleSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
 
@@ -81,10 +81,10 @@ public sealed class Http3StreamLifecycleSpec
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
 
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(streamId, streamIdFeature.StreamId);
-        var requestFeature = context.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature = context.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
         Assert.NotNull(requestFeature);
         Assert.Equal("GET", requestFeature.Method);
         Assert.Equal("https", requestFeature.Scheme);
@@ -110,15 +110,15 @@ public sealed class Http3StreamLifecycleSpec
         var ctx1 = ops.Requests[0];
         var ctx2 = ops.Requests[1];
 
-        var streamIdFeature1 = ctx1.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature1 = ctx1.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature1);
-        var streamIdFeature2 = ctx2.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature2 = ctx2.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature2);
         Assert.Equal(streamId1, streamIdFeature1.StreamId);
         Assert.Equal(streamId2, streamIdFeature2.StreamId);
 
-        var requestFeature1 = ctx1.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
-        var requestFeature2 = ctx2.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature1 = ctx1.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature2 = ctx2.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
         Assert.NotNull(requestFeature1);
         Assert.NotNull(requestFeature2);
         Assert.Equal("GET", requestFeature1.Method);
@@ -156,8 +156,7 @@ public sealed class Http3StreamLifecycleSpec
 
         ops.Outbound.Clear();
 
-        context.Response.StatusCode = 200;
-        context.Response.ContentLength = 0;
+        context.Get<IHttpResponseFeature>().StatusCode = 200;
         sm.OnResponse(context);
 
         var completeWrites = ops.Outbound.OfType<CompleteWrites>().ToList();
@@ -211,7 +210,7 @@ public sealed class Http3StreamLifecycleSpec
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
 
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(streamId, streamIdFeature.StreamId);
     }

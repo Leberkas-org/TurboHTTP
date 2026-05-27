@@ -2,6 +2,7 @@ using System.Text;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
@@ -24,7 +25,7 @@ public sealed class Http11ServerEncoderHardeningSpec
     {
         var encoder = MakeEncoder();
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers[headerName] = "test-value";
+        ctx.Get<IHttpResponseFeature>().Headers[headerName] = "test-value";
 
         var buffer = new byte[4096];
         var written = encoder.Encode(buffer, ctx, isChunked: false);
@@ -68,7 +69,7 @@ public sealed class Http11ServerEncoderHardeningSpec
         var encoder = MakeEncoder(withDate: true);
         var existingDate = "Mon, 17 May 2021 12:00:00 GMT";
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["Date"] = existingDate;
+        ctx.Get<IHttpResponseFeature>().Headers["Date"] = existingDate;
         var buffer = new byte[4096];
 
         var written = encoder.Encode(buffer, ctx, isChunked: false);

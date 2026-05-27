@@ -16,7 +16,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 /// </summary>
 public sealed class Http2ServerTimerErrorSpec
 {
-    private static RequestContext CreateResponseContext(long streamId = 999)
+    private static IFeatureCollection CreateResponseContext(long streamId = 999)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -25,7 +25,7 @@ public sealed class Http2ServerTimerErrorSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
 

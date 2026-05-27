@@ -16,7 +16,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 /// </summary>
 public sealed class Http2ServerResponseBufferSpec
 {
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -24,7 +24,7 @@ public sealed class Http2ServerResponseBufferSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
 
@@ -145,8 +145,8 @@ public sealed class Http2ServerResponseBufferSpec
 
         // Send response
         var requestContext = ops.Requests[0];
-        requestContext.Response.StatusCode = 200;
-        requestContext.Response.ContentLength = 0;
+        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>().Headers["Content-Length"] = "0";
         sm.OnResponse(requestContext);
 
         // Extract frames after response
@@ -177,8 +177,8 @@ public sealed class Http2ServerResponseBufferSpec
 
         // Send response
         var requestContext = ops.Requests[0];
-        requestContext.Response.StatusCode = 200;
-        requestContext.Response.ContentLength = 100;
+        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>().Headers["Content-Length"] = "100";
         sm.OnResponse(requestContext);
 
         // Extract frames after response
@@ -204,7 +204,7 @@ public sealed class Http2ServerResponseBufferSpec
         Assert.Single(ops.Requests);
 
         var requestContext = ops.Requests[0];
-        requestContext.Response.StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
         sm.OnResponse(requestContext);
 
         var windowUpdateData = BuildWindowUpdateFrame(streamId: 1, increment: 50000);

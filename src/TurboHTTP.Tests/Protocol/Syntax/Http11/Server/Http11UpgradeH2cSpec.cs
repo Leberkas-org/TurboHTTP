@@ -2,6 +2,7 @@ using System.Text;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Streams;
+using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
@@ -18,7 +19,7 @@ public sealed class Http11UpgradeH2cSpec
         private readonly FakeServerOps _inner = new();
         public Func<IServerStageOperations, IServerStateMachine>? SwitchFactory { get; private set; }
 
-        public List<RequestContext> Requests => _inner.Requests;
+        public List<IFeatureCollection> Requests => _inner.Requests;
         public List<ITransportOutbound> Outbound => _inner.Outbound;
         public List<(string Name, TimeSpan Delay)> ScheduledTimers => _inner.ScheduledTimers;
         public List<string> CancelledTimers => _inner.CancelledTimers;
@@ -26,7 +27,7 @@ public sealed class Http11UpgradeH2cSpec
         public IActorRef StageActor { get => _inner.StageActor; set => _inner.StageActor = value; }
         public IMaterializer Materializer { get => _inner.Materializer; set => _inner.Materializer = value; }
 
-        public void OnRequest(RequestContext context) => _inner.OnRequest(context);
+        public void OnRequest(IFeatureCollection features) => _inner.OnRequest(features);
         public void OnOutbound(ITransportOutbound item) => _inner.OnOutbound(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => _inner.OnScheduleTimer(name, delay);
         public void OnCancelTimer(string name) => _inner.OnCancelTimer(name);
@@ -87,7 +88,7 @@ public sealed class Http11UpgradeH2cSpec
             "\r\n"));
 
         Assert.Single(ops.Requests);
-        Assert.Equal("GET", ops.Requests[0].Request.Method);
+        Assert.Equal("GET", ops.Requests[0].Get<IHttpRequestFeature>().Method);
     }
 
     [Fact(Timeout = 5000)]

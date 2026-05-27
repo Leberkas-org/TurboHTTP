@@ -1,7 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.Tests.Context.Features;
 
@@ -36,13 +35,14 @@ public sealed class TurboFeatureCollectionSpec
     public void Set_and_Get_should_round_trip_for_connection_feature()
     {
         var collection = new TurboFeatureCollection();
-        var info = new TurboConnectionInfo(
-            "test-connection",
-            IPAddress.Loopback,
-            12345,
-            IPAddress.Loopback,
-            80);
-        var feature = new TurboHttpConnectionFeature(info);
+        var feature = new TurboHttpConnectionFeature
+        {
+            ConnectionId = "test-connection",
+            RemoteIpAddress = IPAddress.Loopback,
+            RemotePort = 12345,
+            LocalIpAddress = IPAddress.Loopback,
+            LocalPort = 80
+        };
         collection.Set<IHttpConnectionFeature>(feature);
         Assert.Same(feature, collection.Get<IHttpConnectionFeature>());
     }

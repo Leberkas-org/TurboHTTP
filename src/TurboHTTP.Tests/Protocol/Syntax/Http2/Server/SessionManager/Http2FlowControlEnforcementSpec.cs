@@ -18,7 +18,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 /// </summary>
 public sealed class Http2FlowControlEnforcementSpec
 {
-    private static RequestContext CreateResponseContext(long streamId)
+    private static IFeatureCollection CreateResponseContext(long streamId)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -27,7 +27,7 @@ public sealed class Http2FlowControlEnforcementSpec
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
-        return new RequestContext { Features = features };
+        return features;
     }
 
 
@@ -150,12 +150,12 @@ public sealed class Http2FlowControlEnforcementSpec
         // Request should be emitted
         Assert.Single(ops.Requests);
         var requestContext = ops.Requests[0];
-        var requestStreamIdFeature = requestContext.Features.Get<IHttpStreamIdFeature>();
+        var requestStreamIdFeature = requestContext.Get<IHttpStreamIdFeature>();
         var streamId = requestStreamIdFeature?.StreamId ?? 1;
 
-        // Step 2: Send response with ContentLength=0 to close the stream
-        requestContext.Response.StatusCode = 200;
-        requestContext.Response.ContentLength = 0;
+        // Step 2: Send response with no body to close the stream
+        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>().Headers["Content-Length"] = "0";
         sm.OnResponse(requestContext);
 
         // Stream 1 should be closed after response with no body

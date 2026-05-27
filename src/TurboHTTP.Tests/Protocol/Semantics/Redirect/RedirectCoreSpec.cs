@@ -6,6 +6,7 @@ using Akka.Streams.TestKit;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Streams.Stages.Features;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Semantics.Redirect;
 

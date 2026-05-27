@@ -4,6 +4,7 @@ using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Streaming;
 
@@ -108,7 +109,7 @@ public sealed class Http2ServerBodyStreamingSpec
         var context = ops.Requests[0];
 
         // Request should have a body stream
-        var bodyStream = context.Request.Body;
+        var bodyStream = context.Get<IHttpRequestFeature>().Body;
         Assert.NotNull(bodyStream);
         Assert.True(bodyStream.CanRead);
 
@@ -151,7 +152,7 @@ public sealed class Http2ServerBodyStreamingSpec
         var context = ops.Requests[0];
 
         // Request should have empty body stream
-        var bodyStream = context.Request.Body;
+        var bodyStream = context.Get<IHttpRequestFeature>().Body;
         Assert.NotNull(bodyStream);
         using var ms = new MemoryStream();
         bodyStream.CopyTo(ms);
@@ -232,7 +233,7 @@ public sealed class Http2ServerBodyStreamingSpec
 
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        var bodyStream = context.Request.Body;
+        var bodyStream = context.Get<IHttpRequestFeature>().Body;
         Assert.NotNull(bodyStream);
 
         // Send first DATA frame
@@ -281,7 +282,7 @@ public sealed class Http2ServerBodyStreamingSpec
 
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        var bodyStream = context.Request.Body;
+        var bodyStream = context.Get<IHttpRequestFeature>().Body;
         Assert.NotNull(bodyStream);
 
         // Send partial DATA frame
@@ -323,5 +324,6 @@ public sealed class Http2ServerBodyStreamingSpec
         sm.DecodeClientData(new TransportData(buffer2));
     }
 }
+
 
 

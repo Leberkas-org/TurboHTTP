@@ -4,6 +4,7 @@ using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
@@ -142,7 +143,7 @@ public sealed class Http2ContinuationStateSpec
         // Now request should be emitted
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        Assert.Equal("GET", context.Request.Method);
+        Assert.Equal("GET", context.Get<IHttpRequestFeature>().Method);
     }
 
     [Fact(Timeout = 5000)]
@@ -212,7 +213,7 @@ public sealed class Http2ContinuationStateSpec
         // Request should be emitted immediately
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        Assert.Equal("GET", context.Request.Method);
+        Assert.Equal("GET", context.Get<IHttpRequestFeature>().Method);
 
         // No timer should be scheduled (END_HEADERS was set)
         Assert.Empty(ops.ScheduledTimers);

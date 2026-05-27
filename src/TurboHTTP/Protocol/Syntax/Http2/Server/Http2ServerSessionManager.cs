@@ -138,7 +138,7 @@ internal sealed class Http2ServerSessionManager
 
         var responseFeature = features.Get<IHttpResponseFeature>();
         var contentLength = ExtractContentLength(responseFeature);
-        var hasBody = contentLength is not 0;
+        var hasBody = contentLength is not null and not 0;
 
         var frames = _responseEncoder.EncodeHeaders(features, streamId, hasBody);
         for (var i = 0; i < frames.Count; i++)

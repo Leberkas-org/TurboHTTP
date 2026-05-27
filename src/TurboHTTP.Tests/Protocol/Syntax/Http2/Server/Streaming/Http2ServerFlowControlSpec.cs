@@ -148,7 +148,7 @@ public sealed class Http2ServerFlowControlSpec
         // Request should be emitted immediately when headers arrive (with endStream=false)
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>();
+        var bodyFeature = context.Get<IHttpResponseBodyFeature>();
         Assert.NotNull(bodyFeature);
 
         ops.Outbound.Clear();

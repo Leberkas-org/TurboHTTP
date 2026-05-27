@@ -11,7 +11,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerConnectionPersistenceSpec
 {
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -19,7 +19,7 @@ public sealed class Http11ServerConnectionPersistenceSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
     [Fact(Timeout = 5000)]

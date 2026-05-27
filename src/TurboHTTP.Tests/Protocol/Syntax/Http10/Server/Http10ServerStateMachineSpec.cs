@@ -16,7 +16,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
 {
     private static FakeServerOps MakeOps() => new();
 
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -24,13 +24,13 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
-    private static async Task<RequestContext> CreateResponseContextWithBody(string body)
+    private static async Task<IFeatureCollection> CreateResponseContextWithBody(string body)
     {
         var context = CreateResponseContext();
-        var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>()!;
+        var bodyFeature = context.Get<IHttpResponseBodyFeature>()!;
         var bytes = Encoding.ASCII.GetBytes(body);
         await bodyFeature.Writer.WriteAsync(bytes);
         await bodyFeature.Writer.CompleteAsync();
@@ -58,7 +58,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         sm.DecodeClientData(new TransportData(requestBuffer));
 
         Assert.Single(ops.Requests);
-        var req = ops.Requests[0].Features.Get<IHttpRequestFeature>()!;
+        var req = ops.Requests[0].Get<IHttpRequestFeature>()!;
         Assert.Equal("GET", req.Method);
         Assert.Equal("/path", req.Path);
     }
@@ -193,7 +193,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         sm.DecodeClientData(new TransportData(requestBuffer));
 
         Assert.Single(ops.Requests);
-        var req = ops.Requests[0].Features.Get<IHttpRequestFeature>()!;
+        var req = ops.Requests[0].Get<IHttpRequestFeature>()!;
         Assert.Equal("PATCH", req.Method);
     }
 
@@ -222,7 +222,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
 
         if (ops.Requests.Count > 0)
         {
-            var req = ops.Requests[0].Features.Get<IHttpRequestFeature>()!;
+            var req = ops.Requests[0].Get<IHttpRequestFeature>()!;
             var contentLength = req.Headers["Content-Length"];
             Assert.True(string.IsNullOrEmpty(contentLength));
         }

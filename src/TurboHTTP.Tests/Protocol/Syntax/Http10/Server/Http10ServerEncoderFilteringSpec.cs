@@ -2,6 +2,7 @@ using System.Text;
 using TurboHTTP.Protocol.Syntax.Http10.Options;
 using TurboHTTP.Protocol.Syntax.Http10.Server;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http10.Server;
 
@@ -23,7 +24,7 @@ public sealed class Http10ServerEncoderFilteringSpec
     public void EncodeDeferred_should_strip_hop_by_hop_header(string headerName)
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers[headerName] = "some-value";
+        ctx.Get<IHttpResponseFeature>().Headers[headerName] = "some-value";
 
         var buf = new byte[512];
         var written = MakeEncoder(withDate: false).EncodeDeferred(buf, ctx, ReadOnlySpan<byte>.Empty);
@@ -38,7 +39,7 @@ public sealed class Http10ServerEncoderFilteringSpec
     public void EncodeDeferred_should_not_duplicate_existing_date_header()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["Date"] = DateTimeOffset.UtcNow.ToString("R");
+        ctx.Get<IHttpResponseFeature>().Headers["Date"] = DateTimeOffset.UtcNow.ToString("R");
 
         var buf = new byte[512];
         var written = MakeEncoder(withDate: true).EncodeDeferred(buf, ctx, ReadOnlySpan<byte>.Empty);
@@ -80,7 +81,7 @@ public sealed class Http10ServerEncoderFilteringSpec
 
         foreach (var headerName in hopByHopHeaders)
         {
-            ctx.Response.Headers[headerName] = "some-value";
+            ctx.Get<IHttpResponseFeature>().Headers[headerName] = "some-value";
         }
 
         var buf = new byte[512];
@@ -124,3 +125,4 @@ public sealed class Http10ServerEncoderFilteringSpec
         Assert.StartsWith("HTTP/1.0 200", wireOutput);
     }
 }
+

@@ -16,7 +16,7 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
 {
     private static FakeServerOps MakeOps() => new();
 
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -24,13 +24,13 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
-    private static async Task<RequestContext> CreateResponseContextWithBody(string body)
+    private static async Task<IFeatureCollection> CreateResponseContextWithBody(string body)
     {
         var context = CreateResponseContext();
-        var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>()!;
+        var bodyFeature = context.Get<IHttpResponseBodyFeature>()!;
         var bytes = Encoding.ASCII.GetBytes(body);
         await bodyFeature.Writer.WriteAsync(bytes);
         await bodyFeature.Writer.CompleteAsync();

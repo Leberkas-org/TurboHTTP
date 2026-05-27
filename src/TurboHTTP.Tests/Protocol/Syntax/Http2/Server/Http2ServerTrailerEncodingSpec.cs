@@ -47,24 +47,26 @@ public sealed class Http2ServerTrailerEncodingSpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.1")]
-    public void TurboHttpResponse_should_expose_DeclareTrailer_and_AppendTrailer()
+    public void ResponseTrailersFeature_should_store_and_expose_trailers()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
-        features.Set<IHttpResponseTrailersFeature>(new TurboHttpResponseTrailersFeature());
+        var trailersFeature = new TurboHttpResponseTrailersFeature();
+        features.Set<IHttpResponseTrailersFeature>(trailersFeature);
 
-        var response = new TurboHttpResponse(features);
+        // Set trailers directly on the feature
+        trailersFeature.Trailers["grpc-status"] = "0";
+        trailersFeature.Trailers["grpc-message"] = "OK";
 
-        response.DeclareTrailer("grpc-status");
-        response.AppendTrailer("grpc-status", "0");
-        response.AppendTrailer("grpc-message", "OK");
+        // Verify trailers are stored
+        Assert.Equal("0", trailersFeature.Trailers["grpc-status"]);
+        Assert.Equal("OK", trailersFeature.Trailers["grpc-message"]);
 
-        var trailers = response.GetTrailers();
-
-        Assert.Equal("0", trailers["grpc-status"]);
-        Assert.Equal("OK", trailers["grpc-message"]);
-        Assert.Contains("grpc-status", response.Headers["Trailer"].ToString());
+        // Verify we can retrieve them via the feature
+        var retrieved = features.Get<IHttpResponseTrailersFeature>();
+        Assert.NotNull(retrieved);
+        Assert.Equal("0", retrieved.Trailers["grpc-status"]);
     }
 
     [Fact(Timeout = 5000)]

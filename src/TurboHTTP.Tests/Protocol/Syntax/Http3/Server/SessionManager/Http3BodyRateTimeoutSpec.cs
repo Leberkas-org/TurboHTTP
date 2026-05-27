@@ -157,7 +157,7 @@ public sealed class Http3BodyRateTimeoutSpec
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
 
-        var requestFeature = context.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature = context.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
         Assert.NotNull(requestFeature);
         Assert.Equal("GET", requestFeature.Method);
         Assert.Equal("https", requestFeature.Scheme);

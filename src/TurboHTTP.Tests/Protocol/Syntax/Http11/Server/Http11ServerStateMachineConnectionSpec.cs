@@ -13,7 +13,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerStateMachineConnectionSpec
 {
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -21,7 +21,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
     private static TransportBuffer MakeBuffer(string raw)
@@ -218,8 +218,8 @@ public sealed class Http11ServerStateMachineConnectionSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         var context = CreateResponseContext();
-        context.Response.StatusCode = 200;
-        context.Response.ContentType = "text/event-stream";
+        context.Get<IHttpResponseFeature>().StatusCode = 200;
+        context.Get<IHttpResponseFeature>().Headers["Content-Type"] = "text/event-stream";
 
         sm.OnResponse(context);
 
@@ -243,8 +243,8 @@ public sealed class Http11ServerStateMachineConnectionSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         var context = CreateResponseContext();
-        context.Response.StatusCode = 200;
-        context.Response.Headers["Content-Length"] = "5";
+        context.Get<IHttpResponseFeature>().StatusCode = 200;
+        context.Get<IHttpResponseFeature>().Headers["Content-Length"] = "5";
 
         sm.OnResponse(context);
 

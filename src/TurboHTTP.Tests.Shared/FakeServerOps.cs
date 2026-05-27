@@ -3,8 +3,6 @@ using Akka.Event;
 using Akka.Streams;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context;
-using TurboHTTP.Server;
 using TurboHTTP.Streams;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -12,14 +10,14 @@ namespace TurboHTTP.Tests.Shared;
 
 internal sealed class FakeServerOps : IServerStageOperations
 {
-    private readonly List<RequestContext> _contexts = [];
+    private readonly List<IFeatureCollection> _features = [];
 
-    public List<RequestContext> Requests => _contexts;
+    public List<IFeatureCollection> Requests => _features;
     public List<ITransportOutbound> Outbound { get; } = [];
     public List<(string Name, TimeSpan Delay)> ScheduledTimers { get; } = [];
     public List<string> CancelledTimers { get; } = [];
 
-    public void OnRequest(RequestContext context) => _contexts.Add(context);
+    public void OnRequest(IFeatureCollection features) => _features.Add(features);
     public void OnOutbound(ITransportOutbound item) => Outbound.Add(item);
 
     public void OnScheduleTimer(string name, TimeSpan delay)

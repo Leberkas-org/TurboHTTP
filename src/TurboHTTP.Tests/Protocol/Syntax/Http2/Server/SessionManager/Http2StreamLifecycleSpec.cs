@@ -18,7 +18,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 /// </summary>
 public sealed class Http2StreamLifecycleSpec
 {
-    private static RequestContext CreateResponseContext(long streamId = 99)
+    private static IFeatureCollection CreateResponseContext(long streamId = 99)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -27,7 +27,7 @@ public sealed class Http2StreamLifecycleSpec
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
-        return new RequestContext { Features = features };
+        return features;
     }
 
 
@@ -249,7 +249,7 @@ public sealed class Http2StreamLifecycleSpec
         var context = ops.Requests[0];
 
         // Request should have stream ID set
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(1, streamIdFeature.StreamId);
     }

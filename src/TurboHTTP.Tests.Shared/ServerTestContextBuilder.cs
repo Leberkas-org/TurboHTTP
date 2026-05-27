@@ -5,8 +5,6 @@ using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
-using TurboHTTP.Server;
-using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Shared;
 
@@ -21,7 +19,7 @@ internal sealed class ServerTestContextBuilder
     private readonly HeaderDictionary _headers = new();
     private Stream _body = Stream.Null;
     private Source<ReadOnlyMemory<byte>, NotUsed>? _bodySource;
-    private TurboConnectionInfo? _connection;
+    private IHttpConnectionFeature? _connection;
     private IServiceProvider? _services;
     private CancellationToken _cancellationToken;
     private IMaterializer? _materializer;
@@ -122,7 +120,7 @@ internal sealed class ServerTestContextBuilder
         return this;
     }
 
-    public ServerTestContextBuilder Connection(TurboConnectionInfo connection)
+    public ServerTestContextBuilder Connection(IHttpConnectionFeature connection)
     {
         _connection = connection;
         return this;
@@ -166,10 +164,8 @@ internal sealed class ServerTestContextBuilder
         };
     }
 
-    public RequestContext Build()
+    public IFeatureCollection Build()
     {
-        var conn = _connection ?? new TurboConnectionInfo("test", null, 0, null, 0);
-
         var features = new TurboFeatureCollection();
         var requestFeature = BuildRequestFeature();
         features.Set<IHttpRequestFeature>(requestFeature);
@@ -179,14 +175,19 @@ internal sealed class ServerTestContextBuilder
             BodySource = _bodySource ?? Source.Empty<ReadOnlyMemory<byte>>()
         };
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
-        features.Set<IHttpConnectionFeature>(new TurboHttpConnectionFeature(conn));
+        if (_connection is not null)
+        {
+            features.Set<IHttpConnectionFeature>(_connection);
+        }
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-
-        return new RequestContext
+        var lifetimeFeature = new TurboHttpRequestLifetimeFeature();
+        if (_cancellationToken != CancellationToken.None)
         {
-            Features = features,
-            RequestAborted = _cancellationToken
-        };
+            lifetimeFeature.RequestAborted = _cancellationToken;
+        }
+        features.Set<IHttpRequestLifetimeFeature>(lifetimeFeature);
+
+        return features;
     }
 }

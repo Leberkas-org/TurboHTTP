@@ -11,7 +11,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerPipeliningSpec
 {
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -19,7 +19,7 @@ public sealed class Http11ServerPipeliningSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
     [Fact(Timeout = 5000)]
@@ -42,8 +42,8 @@ public sealed class Http11ServerPipeliningSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         Assert.Equal(2, ops.Requests.Count);
-        Assert.Equal("/", ops.Requests[0].Request.Path);
-        Assert.Equal("/page2", ops.Requests[1].Request.Path);
+        Assert.Equal("/", ops.Requests[0].Get<IHttpRequestFeature>().Path);
+        Assert.Equal("/page2", ops.Requests[1].Get<IHttpRequestFeature>().Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -110,9 +110,9 @@ public sealed class Http11ServerPipeliningSpec
         sm.DecodeClientData(new TransportData(buffer));
 
         Assert.Equal(3, ops.Requests.Count);
-        Assert.Equal("/page1", ops.Requests[0].Request.Path);
-        Assert.Equal("/page2", ops.Requests[1].Request.Path);
-        Assert.Equal("/page3", ops.Requests[2].Request.Path);
+        Assert.Equal("/page1", ops.Requests[0].Get<IHttpRequestFeature>().Path);
+        Assert.Equal("/page2", ops.Requests[1].Get<IHttpRequestFeature>().Path);
+        Assert.Equal("/page3", ops.Requests[2].Get<IHttpRequestFeature>().Path);
     }
 
     private static TransportBuffer MakeBuffer(string raw)

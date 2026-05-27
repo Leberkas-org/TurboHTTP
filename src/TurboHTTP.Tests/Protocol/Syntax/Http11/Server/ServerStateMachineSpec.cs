@@ -34,8 +34,8 @@ public sealed class ServerStateMachineSpec
 
         Assert.Single(ops.Requests);
         var ctx = ops.Requests[0];
-        Assert.Equal("GET", ctx.Request.Method);
-        Assert.Equal("/", ctx.Request.Path);
+        Assert.Equal("GET", ctx.Get<IHttpRequestFeature>().Method);
+        Assert.Equal("/", ctx.Get<IHttpRequestFeature>().Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -367,10 +367,10 @@ public sealed class ServerStateMachineSpec
         // which is responsible for inspecting TE and returning 501. The SM correctly decodes
         // the request structure and preserves the TE header for application inspection.
         Assert.Single(ops.Requests);
-        Assert.Equal("POST", ops.Requests[0].Request.Method);
+        Assert.Equal("POST", ops.Requests[0].Get<IHttpRequestFeature>().Method);
     }
 
-    private static RequestContext MakeResponseContext(HttpResponseMessage response)
+    private static IFeatureCollection MakeResponseContext(HttpResponseMessage response)
     {
         var features = new TurboFeatureCollection();
         var responseFeature = new TurboHttpResponseFeature
@@ -400,6 +400,6 @@ public sealed class ServerStateMachineSpec
         }
 
         features.Set<IHttpResponseFeature>(responseFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 }

@@ -16,7 +16,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 /// </summary>
 public sealed class Http2ServerStateMachineSpec
 {
-    private static RequestContext CreateResponseContext()
+    private static IFeatureCollection CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -24,7 +24,7 @@ public sealed class Http2ServerStateMachineSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new RequestContext { Features = features };
+        return features;
     }
 
 
@@ -153,13 +153,13 @@ public sealed class Http2ServerStateMachineSpec
         var context = ops.Requests[0];
 
         // Verify stream ID was stored in request features
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(1, streamIdFeature.StreamId);
 
         // Verify request properties
-        Assert.Equal("GET", context.Request.Method);
-        Assert.Equal("/", context.Request.Path);
+        Assert.Equal("GET", context.Get<IHttpRequestFeature>().Method);
+        Assert.Equal("/", context.Get<IHttpRequestFeature>().Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -268,7 +268,7 @@ public sealed class Http2ServerStateMachineSpec
         // Now send a response
         ops.Outbound.Clear();
         var requestContext = ops.Requests[0];
-        requestContext.Response.StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
         sm.OnResponse(requestContext);
 
         // Should emit response frames

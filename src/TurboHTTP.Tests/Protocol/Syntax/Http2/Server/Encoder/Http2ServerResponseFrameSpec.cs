@@ -1,7 +1,8 @@
-﻿using TurboHTTP.Protocol.Syntax.Http2;
+using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 
@@ -43,8 +44,8 @@ public sealed class Http2ServerResponseFrameSpec
     public void EncodeHeaders_status_pseudo_header_is_first_in_header_block()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["x-first"] = "value";
-        ctx.Response.Headers["x-second"] = "value";
+        ctx.Get<IHttpResponseFeature>().Headers["x-first"] = "value";
+        ctx.Get<IHttpResponseFeature>().Headers["x-second"] = "value";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -99,9 +100,9 @@ public sealed class Http2ServerResponseFrameSpec
     public void EncodeHeaders_filters_forbidden_connection_specific_headers()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["connection"] = "close";
-        ctx.Response.Headers["transfer-encoding"] = "chunked";
-        ctx.Response.Headers["x-allowed"] = "yes";
+        ctx.Get<IHttpResponseFeature>().Headers["connection"] = "close";
+        ctx.Get<IHttpResponseFeature>().Headers["transfer-encoding"] = "chunked";
+        ctx.Get<IHttpResponseFeature>().Headers["x-allowed"] = "yes";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -121,8 +122,8 @@ public sealed class Http2ServerResponseFrameSpec
     public void EncodeHeaders_header_names_lowercased()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["X-Custom-Header"] = "value";
-        ctx.Response.Headers["X-Another-Header"] = "another";
+        ctx.Get<IHttpResponseFeature>().Headers["X-Custom-Header"] = "value";
+        ctx.Get<IHttpResponseFeature>().Headers["X-Another-Header"] = "another";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);

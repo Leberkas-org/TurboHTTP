@@ -1,7 +1,8 @@
-﻿using TurboHTTP.Protocol.Syntax.Http2;
+using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Tests.Shared;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 
@@ -41,7 +42,7 @@ public sealed class Http2ServerResponseEncoderSpec
     public void EncodeHeaders_response_headers_are_HPACK_encoded()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["x-custom-header"] = "test-value";
+        ctx.Get<IHttpResponseFeature>().Headers["x-custom-header"] = "test-value";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -61,7 +62,7 @@ public sealed class Http2ServerResponseEncoderSpec
     public void EncodeHeaders_status_pseudo_header_is_first()
     {
         var ctx = ServerTestContext.CreateResponse(201);
-        ctx.Response.Headers["x-first"] = "value";
+        ctx.Get<IHttpResponseFeature>().Headers["x-first"] = "value";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -76,9 +77,9 @@ public sealed class Http2ServerResponseEncoderSpec
     public void EncodeHeaders_filters_forbidden_headers()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["connection"] = "close";
-        ctx.Response.Headers["transfer-encoding"] = "chunked";
-        ctx.Response.Headers["x-allowed"] = "yes";
+        ctx.Get<IHttpResponseFeature>().Headers["connection"] = "close";
+        ctx.Get<IHttpResponseFeature>().Headers["transfer-encoding"] = "chunked";
+        ctx.Get<IHttpResponseFeature>().Headers["x-allowed"] = "yes";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -110,8 +111,8 @@ public sealed class Http2ServerResponseEncoderSpec
     public void EncodeHeaders_response_with_content_headers()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["content-type"] = "application/json";
-        ctx.Response.Headers["content-length"] = "4";
+        ctx.Get<IHttpResponseFeature>().Headers["content-type"] = "application/json";
+        ctx.Get<IHttpResponseFeature>().Headers["content-length"] = "4";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);
@@ -130,7 +131,7 @@ public sealed class Http2ServerResponseEncoderSpec
     public void EncodeHeaders_response_headers_are_lowercase()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Response.Headers["X-Custom-Header"] = "value";
+        ctx.Get<IHttpResponseFeature>().Headers["X-Custom-Header"] = "value";
 
         var frames = _encoder.EncodeHeaders(ctx, streamId: 1, hasBody: false);
         var headersFrame = Assert.IsType<HeadersFrame>(frames[0]);

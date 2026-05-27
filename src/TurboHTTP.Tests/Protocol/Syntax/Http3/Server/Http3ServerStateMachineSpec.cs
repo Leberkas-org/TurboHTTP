@@ -130,12 +130,12 @@ public sealed class Http3ServerStateMachineSpec
         var context = ops.Requests[0];
 
         // Verify stream ID was stored in request feature
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(streamId, streamIdFeature.StreamId);
 
         // Verify request properties
-        var requestFeature = context.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature = context.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
         Assert.NotNull(requestFeature);
         Assert.Equal("GET", requestFeature.Method);
         Assert.Equal("https", requestFeature.Scheme);
@@ -181,12 +181,12 @@ public sealed class Http3ServerStateMachineSpec
         var context = ops.Requests[0];
 
         // Verify stream ID
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(streamId, streamIdFeature.StreamId);
 
         // Verify request properties
-        var requestFeature = context.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature = context.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
         Assert.NotNull(requestFeature);
         Assert.Equal("POST", requestFeature.Method);
         Assert.Equal("https", requestFeature.Scheme);
@@ -194,7 +194,7 @@ public sealed class Http3ServerStateMachineSpec
         Assert.Equal("/api/data", requestFeature.Path);
 
         // Verify body was accumulated
-        var bodyFeature = context.Features.Get<TurboRequestBodyFeature>();
+        var bodyFeature = context.Get<TurboRequestBodyFeature>();
         Assert.NotNull(bodyFeature);
         var bodyStream = bodyFeature.Body;
         var content = await new StreamReader(bodyStream).ReadToEndAsync(TestContext.Current.CancellationToken);
@@ -227,7 +227,7 @@ public sealed class Http3ServerStateMachineSpec
         var context = ops.Requests[0];
 
         // Verify StreamIdKey is set
-        var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature = context.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature);
         Assert.Equal(streamId, streamIdFeature.StreamId);
 
@@ -235,8 +235,7 @@ public sealed class Http3ServerStateMachineSpec
         ops.Outbound.Clear();
 
         // Send response without body
-        context.Response.StatusCode = 200;
-        context.Response.ContentLength = 0;
+        context.Get<IHttpResponseFeature>().StatusCode = 200;
         sm.OnResponse(context);
 
         // Should emit HEADERS frame + CompleteWrites immediately (no body)
@@ -279,7 +278,8 @@ public sealed class Http3ServerStateMachineSpec
         ops.Outbound.Clear();
 
         // Send response with body
-        context.Response.StatusCode = 200;
+        context.Get<IHttpResponseFeature>().StatusCode = 200;
+        context.Get<IHttpResponseFeature>().Headers["Content-Length"] = "100";
         sm.OnResponse(context);
 
         // Should emit HEADERS frame immediately
@@ -332,16 +332,16 @@ public sealed class Http3ServerStateMachineSpec
         var ctx2 = ops.Requests[1];
 
         // Verify stream IDs
-        var streamIdFeature1 = ctx1.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature1 = ctx1.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature1);
-        var streamIdFeature2 = ctx2.Features.Get<IHttpStreamIdFeature>();
+        var streamIdFeature2 = ctx2.Get<IHttpStreamIdFeature>();
         Assert.NotNull(streamIdFeature2);
         Assert.Equal(stream1, streamIdFeature1.StreamId);
         Assert.Equal(stream2, streamIdFeature2.StreamId);
 
         // Verify different requests
-        var requestFeature1 = ctx1.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
-        var requestFeature2 = ctx2.Features.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature1 = ctx1.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
+        var requestFeature2 = ctx2.Get<IHttpRequestFeature>() as TurboHttpRequestFeature;
         Assert.NotNull(requestFeature1);
         Assert.NotNull(requestFeature2);
         Assert.Equal("GET", requestFeature1.Method);
