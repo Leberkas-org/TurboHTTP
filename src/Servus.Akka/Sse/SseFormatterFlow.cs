@@ -3,9 +3,9 @@ using System.Text;
 using Akka;
 using Akka.Streams.Dsl;
 
-namespace TurboHTTP.Features.Sse;
+namespace Servus.Akka.Sse;
 
-internal static class SseFormatterFlow
+public static class SseFormatterFlow
 {
     private const byte Lf = (byte)'\n';
 

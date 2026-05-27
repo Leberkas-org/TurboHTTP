@@ -126,4 +126,38 @@ public sealed class FeatureCollectionFactorySpec
         var reset = ctx.Get<IHttpResetFeature>();
         Assert.Null(reset);
     }
+
+    [Fact(Timeout = 5000)]
+    public void Create_should_set_max_request_body_size_feature()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var features = FeatureCollectionFactory.Create(requestFeature, hasBody: false, maxRequestBodySize: 10 * 1024 * 1024);
+
+        var maxBodyFeature = features.Get<IHttpMaxRequestBodySizeFeature>();
+        Assert.NotNull(maxBodyFeature);
+        Assert.Equal(10 * 1024 * 1024, maxBodyFeature.MaxRequestBodySize);
+        Assert.False(maxBodyFeature.IsReadOnly);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Create_should_set_null_max_body_size_when_unlimited()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var features = FeatureCollectionFactory.Create(requestFeature, hasBody: false, maxRequestBodySize: null);
+
+        var maxBodyFeature = features.Get<IHttpMaxRequestBodySizeFeature>();
+        Assert.NotNull(maxBodyFeature);
+        Assert.Null(maxBodyFeature.MaxRequestBodySize);
+    }
+
+    [Fact(Timeout = 5000)]
+    public void Create_should_set_body_control_feature_with_sync_io_disabled()
+    {
+        var requestFeature = new TurboHttpRequestFeature();
+        var features = FeatureCollectionFactory.Create(requestFeature, hasBody: false);
+
+        var bodyControl = features.Get<IHttpBodyControlFeature>();
+        Assert.NotNull(bodyControl);
+        Assert.False(bodyControl.AllowSynchronousIO);
+    }
 }

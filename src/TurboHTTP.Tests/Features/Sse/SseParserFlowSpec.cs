@@ -3,7 +3,7 @@ using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.TestKit.Xunit;
-using TurboHTTP.Features.Sse;
+using Servus.Akka.Sse;
 
 namespace TurboHTTP.Tests.Features.Sse;
 

@@ -1,4 +1,4 @@
-namespace TurboHTTP.Features.Sse;
+namespace Servus.Akka.Sse;
 
 public sealed record ServerSentEvent(
     string Data,

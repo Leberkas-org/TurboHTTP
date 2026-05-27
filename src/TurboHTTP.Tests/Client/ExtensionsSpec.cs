@@ -4,7 +4,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.TestKit.Xunit;
 using TurboHTTP.Client;
-using TurboHTTP.Features.Sse;
+using Servus.Akka.Sse;
 using TurboHTTP.Internal;
 
 namespace TurboHTTP.Tests.Client;

@@ -3,7 +3,7 @@ using System.Text.Json;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using TurboHTTP.Client;
-using TurboHTTP.Features.Sse;
+using Servus.Akka.Sse;
 using TurboHTTP.IntegrationTests.Client.Shared;
 using TurboHTTP.Tests.Shared;
 

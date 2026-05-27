@@ -45,7 +45,6 @@
         <InternalsVisibleTo Include="TurboHTTP.IntegrationTests.Server"/>
         <InternalsVisibleTo Include="TurboHTTP.Tests.Shared"/>
         <InternalsVisibleTo Include="TurboHTTP.Benchmarks"/>
-        <InternalsVisibleTo Include="TurboHTTP.MicroBenchmarks"/>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Servus.Akka\Servus.Akka.csproj"/>

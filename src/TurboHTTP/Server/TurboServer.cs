@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Servus.Akka.Transport;
 using TurboHTTP.Streams.Lifecycle;
 using TurboHTTP.Streams.Stages.Server;
 
@@ -72,7 +73,7 @@ public sealed class TurboServer : IServer
         foreach (var endpoint in resolvedEndpoints)
         {
             var opts = endpoint.Options;
-            var scheme = opts.ServerCertificate is not null ? "https" : "http";
+            var scheme = (opts is TcpListenerOptions tcp && tcp.ServerCertificate is not null) ? "https" : "http";
             var host = opts.Host ?? "localhost";
             if (host == "0.0.0.0" || host == "::")
             {

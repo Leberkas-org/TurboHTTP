@@ -4,21 +4,14 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 
-namespace TurboHTTP.Features.Sse;
+namespace Servus.Akka.Sse;
 
-/// <summary>
-/// Exposes the SSE parser as a reusable Flow.
-/// </summary>
-internal static class SseParserFlow
+public static class SseParserFlow
 {
     public static Flow<ReadOnlyMemory<byte>, ServerSentEvent, NotUsed> Instance { get; }
         = Flow.FromGraph(new SseParserStage());
 }
 
-/// <summary>
-/// Stateful GraphStage that transforms raw byte chunks into parsed SSE events.
-/// Handles multi-line data, comments, BOM stripping, CRLF/LF/CR line endings, and split chunks.
-/// </summary>
 internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>, ServerSentEvent>>
 {
     private readonly Inlet<ReadOnlyMemory<byte>> _in = new("SseParserStage.in");
@@ -54,7 +47,6 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
                     var chunk = Grab(stage._in);
                     var bytes = chunk.ToArray();
 
-                    // Strip BOM if at start of stream (check bytes before decoding)
                     var startIndex = 0;
                     if (!_bomChecked)
                     {
@@ -73,14 +65,12 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
                 {
                     _upstreamFinished = true;
 
-                    // Process any remaining buffered line as a field
                     if (_lineBuffer.Length > 0)
                     {
                         ProcessField(_lineBuffer.ToString());
                         _lineBuffer.Clear();
                     }
 
-                    // Emit pending event if has data
                     if (_hasData)
                     {
                         var data = _dataAccumulator.ToString();
@@ -109,36 +99,29 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
 
         public override void PreStart()
         {
-            // Pull the first element from upstream to start the stream
             Pull(_stage._in);
             _upstreamWaiting = true;
         }
 
         private void DrainPending(SseParserStage stage)
         {
-            // Keep pushing while downstream is ready and we have events
             while (IsAvailable(stage._out) && _pending.Count > 0)
             {
                 var evt = _pending.Dequeue();
                 Push(stage._out, evt);
             }
 
-            // After draining, check if we should pull more or complete
             if (!IsAvailable(stage._out))
             {
-                // Downstream is not ready, we'll wait for next pull
                 return;
             }
 
-            // Downstream is ready. Check if we should pull more or complete
             if (_upstreamFinished && _pending.Count == 0)
             {
-                // Upstream finished and no pending events - complete
                 CompleteStage();
             }
             else if (!_upstreamWaiting && !_upstreamFinished)
             {
-                // Pull more from upstream
                 Pull(stage._in);
                 _upstreamWaiting = true;
             }
@@ -149,11 +132,9 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
             var i = 0;
             while (i < text.Length)
             {
-                // Find next line ending
                 var lineEnd = -1;
                 var endLength = 0;
 
-                // Search for next line ending from position i
                 for (var j = i; j < text.Length; j++)
                 {
                     if (j < text.Length - 1 && text[j] == '\r' && text[j + 1] == '\n')
@@ -173,16 +154,13 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
 
                 if (lineEnd >= 0)
                 {
-                    // Found a line ending
                     var lineContent = text.Substring(i, lineEnd - i);
                     _lineBuffer.Append(lineContent);
                     var completeLine = _lineBuffer.ToString();
                     _lineBuffer.Clear();
 
-                    // Process the complete line
                     if (completeLine == string.Empty)
                     {
-                        // Empty line = event boundary
                         if (_hasData)
                         {
                             var data = _dataAccumulator.ToString();
@@ -199,12 +177,10 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
                             _pending.Enqueue(evt);
                         }
 
-                        // Reset for next event
                         ResetEvent();
                     }
                     else if (!completeLine.StartsWith(":"))
                     {
-                        // Not a comment
                         ProcessField(completeLine);
                     }
 
@@ -212,7 +188,6 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
                 }
                 else
                 {
-                    // No line ending found - buffer remaining text
                     var remaining = text[i..];
                     _lineBuffer.Append(remaining);
                     break;
@@ -236,7 +211,6 @@ internal sealed class SseParserStage : GraphStage<FlowShape<ReadOnlyMemory<byte>
                 fieldName = line[..colonIndex];
                 var valueStart = colonIndex + 1;
 
-                // Strip leading space after colon
                 if (valueStart < line.Length && line[valueStart] == ' ')
                 {
                     valueStart++;

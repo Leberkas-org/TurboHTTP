@@ -4,7 +4,6 @@
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.Client")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.End2End")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.IntegrationTests.Server")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.MicroBenchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Tests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("TurboHTTP.Tests.Shared")]
 [assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]
@@ -30,7 +29,7 @@ namespace TurboHTTP.Client
     }
     public static class Extensions
     {
-        public static Akka.Streams.Dsl.Source<TurboHTTP.Features.Sse.ServerSentEvent, Akka.NotUsed> AsEventStream(this System.Net.Http.HttpResponseMessage response) { }
+        public static Akka.Streams.Dsl.Source<Servus.Akka.Sse.ServerSentEvent, Akka.NotUsed> AsEventStream(this System.Net.Http.HttpResponseMessage response) { }
         public static System.Threading.Tasks.ValueTask<System.Net.Http.HttpResponseMessage> GetResponseAsync(this System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken ct = default) { }
     }
     public sealed class Http1Options
@@ -253,51 +252,6 @@ namespace TurboHTTP.Context
         System.Collections.Generic.ICollection<string> Keys { get; }
         bool ContainsKey(string key);
     }
-    public sealed class TurboHttpRequest
-    {
-        public TurboHttpRequest(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
-        public System.IO.Stream Body { get; set; }
-        public System.IO.Pipelines.PipeReader BodyReader { get; }
-        public Akka.Streams.Dsl.Source<System.ReadOnlyMemory<byte>, Akka.NotUsed> BodySource { get; }
-        public System.Net.Http.HttpContent? Content { get; }
-        public long? ContentLength { get; set; }
-        public string? ContentType { get; set; }
-        public Microsoft.AspNetCore.Http.IRequestCookieCollection Cookies { get; set; }
-        public Microsoft.AspNetCore.Http.IFormCollection Form { get; set; }
-        public bool HasFormContentType { get; }
-        public Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
-        public string Host { get; set; }
-        public TurboHTTP.Server.TurboHttpContext HttpContext { get; }
-        public bool IsHttps { get; set; }
-        public string Method { get; set; }
-        public string Path { get; set; }
-        public string PathBase { get; set; }
-        public string Protocol { get; set; }
-        public Microsoft.AspNetCore.Http.IQueryCollection Query { get; set; }
-        public string QueryString { get; set; }
-        public System.Uri? RequestUri { get; }
-        public System.Collections.Generic.Dictionary<string, object?> RouteValues { get; set; }
-        public string Scheme { get; set; }
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Http.IFormCollection> ReadFormAsync(System.Threading.CancellationToken cancellationToken = default) { }
-    }
-    public sealed class TurboHttpResponse
-    {
-        public TurboHttpResponse(Microsoft.AspNetCore.Http.Features.IFeatureCollection features) { }
-        public System.IO.Stream Body { get; set; }
-        public System.IO.Pipelines.PipeWriter BodyWriter { get; }
-        public long? ContentLength { get; set; }
-        public string? ContentType { get; set; }
-        public bool HasStarted { get; }
-        public Microsoft.AspNetCore.Http.IHeaderDictionary Headers { get; }
-        public TurboHTTP.Server.TurboHttpContext HttpContext { get; }
-        public int StatusCode { get; set; }
-        public void AppendTrailer(string name, string value) { }
-        public void DeclareTrailer(string name) { }
-        public Microsoft.AspNetCore.Http.IHeaderDictionary GetTrailers() { }
-        public void OnCompleted(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
-        public void OnStarting(System.Func<object, System.Threading.Tasks.Task> callback, object state) { }
-        public void Redirect(string location, bool permanent = false) { }
-    }
 }
 namespace TurboHTTP.Diagnostics
 {
@@ -499,57 +453,12 @@ namespace TurboHTTP.Server
     {
         public static System.Collections.Generic.List<System.Net.Security.SslApplicationProtocol> ToAlpnProtocols(this TurboHTTP.Server.HttpProtocols protocols) { }
     }
-    public interface IRouteDispatcher
-    {
-        System.Threading.Tasks.Task DispatchAsync(TurboHTTP.Server.TurboHttpContext context, System.Threading.CancellationToken cancellationToken);
-    }
     public sealed class ListenerBinding
     {
         public ListenerBinding() { }
         public string? ConnectionLoggingCategory { get; init; }
         public required Servus.Akka.Transport.IListenerFactory Factory { get; init; }
         public required Servus.Akka.Transport.ListenerOptions Options { get; init; }
-    }
-    public sealed class RouteMatchResult : System.IEquatable<TurboHTTP.Server.RouteMatchResult>
-    {
-        public RouteMatchResult(bool IsMatch, TurboHTTP.Server.IRouteDispatcher? Dispatcher, System.Collections.Generic.IDictionary<string, string>? RouteValues, object? Metadata) { }
-        public TurboHTTP.Server.IRouteDispatcher? Dispatcher { get; init; }
-        public bool IsMatch { get; init; }
-        public object? Metadata { get; init; }
-        public System.Collections.Generic.IDictionary<string, string>? RouteValues { get; init; }
-    }
-    public abstract class RouteTable
-    {
-        protected RouteTable() { }
-        public virtual TurboHTTP.Server.RouteMatchResult Match(string method, string path) { }
-    }
-    public sealed class TurboConnectionInfo
-    {
-        public TurboConnectionInfo(string id, System.Net.IPAddress? remoteIpAddress, int remotePort, System.Net.IPAddress? localIpAddress, int localPort) { }
-        public System.Security.Cryptography.X509Certificates.X509Certificate2? ClientCertificate { get; set; }
-        public string Id { get; set; }
-        public System.Net.IPAddress? LocalIpAddress { get; set; }
-        public int LocalPort { get; set; }
-        public System.Net.IPAddress? RemoteIpAddress { get; set; }
-        public int RemotePort { get; set; }
-        public System.Threading.Tasks.Task<System.Security.Cryptography.X509Certificates.X509Certificate2?> GetClientCertificateAsync(System.Threading.CancellationToken cancellationToken = default) { }
-    }
-    public sealed class TurboHttpContext
-    {
-        public TurboHttpContext(Microsoft.AspNetCore.Http.Features.IFeatureCollection features, TurboHTTP.Server.TurboConnectionInfo connectionInfo, System.IServiceProvider? services, System.Threading.CancellationToken requestAborted, Akka.Streams.IMaterializer materializer) { }
-        public TurboHTTP.Server.TurboConnectionInfo Connection { get; }
-        public Microsoft.AspNetCore.Http.Features.IFeatureCollection Features { get; }
-        public System.Collections.Generic.IDictionary<object, object?> Items { get; set; }
-        public Akka.Streams.IMaterializer Materializer { get; set; }
-        public TurboHTTP.Context.TurboHttpRequest Request { get; }
-        public System.Threading.CancellationToken RequestAborted { get; set; }
-        public System.IServiceProvider RequestServices { get; set; }
-        public TurboHTTP.Context.TurboHttpResponse Response { get; }
-        public string TraceIdentifier { get; set; }
-        public TurboHTTP.Context.TurboHttpRequest TurboRequest { get; }
-        public TurboHTTP.Context.TurboHttpResponse TurboResponse { get; }
-        public System.Security.Claims.ClaimsPrincipal User { get; set; }
-        public void Abort() { }
     }
     public sealed class TurboHttpsOptions
     {
@@ -577,12 +486,6 @@ namespace TurboHTTP.Server
         public void UseHttps(System.Security.Cryptography.X509Certificates.X509Certificate2 certificate, System.Action<TurboHTTP.Server.TurboHttpsOptions> configure) { }
         public void UseHttps(string path, string? password = null) { }
         public void UseHttps(string path, string? password, System.Action<TurboHTTP.Server.TurboHttpsOptions> configure) { }
-    }
-    public sealed class TurboRouteTable : TurboHTTP.Server.RouteTable
-    {
-        public TurboRouteTable() { }
-        public TurboHTTP.Server.TurboRouteTable Add(string method, string path, System.Delegate handler) { }
-        public TurboHTTP.Server.TurboRouteTable Freeze() { }
     }
     public sealed class TurboServer : Microsoft.AspNetCore.Hosting.Server.IServer, System.IDisposable
     {
@@ -620,15 +523,7 @@ namespace TurboHTTP.Server
         public TurboHTTP.Server.Http1ServerOptions Http1 { get; }
         public TurboHTTP.Server.Http2ServerOptions Http2 { get; }
         public TurboHTTP.Server.Http3ServerOptions Http3 { get; }
-        [System.Obsolete("Use Limits.KeepAliveTimeout instead")]
-        public System.TimeSpan KeepAliveTimeout { get; set; }
         public TurboHTTP.Server.TurboServerLimits Limits { get; }
-        [System.Obsolete("Use Limits.MaxConcurrentConnections instead")]
-        public int MaxConcurrentConnections { get; set; }
-        [System.Obsolete("Use Limits.MaxConcurrentUpgradedConnections instead")]
-        public int MaxConcurrentUpgradedConnections { get; set; }
-        [System.Obsolete("Use Limits.RequestHeadersTimeout instead")]
-        public System.TimeSpan RequestHeadersTimeout { get; set; }
         public int ResponseBodyChunkSize { get; set; }
         public System.Collections.Generic.IList<string> Urls { get; }
         public void Bind(Servus.Akka.Transport.QuicListenerOptions options) { }
@@ -645,12 +540,6 @@ namespace TurboHTTP.Server
         public void ListenAnyIP(ushort port, System.Action<TurboHTTP.Server.TurboListenOptions> configure) { }
         public void ListenLocalhost(ushort port) { }
         public void ListenLocalhost(ushort port, System.Action<TurboHTTP.Server.TurboListenOptions> configure) { }
-    }
-    public static class TurboServerServiceCollectionExtensions
-    {
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboKestrel(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboKestrel(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddTurboServer(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<TurboHTTP.Server.TurboServerOptions>? configure = null) { }
     }
     public static class TurboServerWebHostBuilderExtensions
     {
