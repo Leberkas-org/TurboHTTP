@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Akka.Streams;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context;
-using TurboHTTP.Routing;
 
 namespace TurboHTTP.Server;
 
@@ -15,7 +14,6 @@ public sealed class TurboHttpContext
     private ClaimsPrincipal? _user;
     private IDictionary<object, object?>? _items;
     private string? _traceIdentifier;
-    private TurboEndpointMetadata? _endpointMetadata;
 
     public TurboHttpContext(
         IFeatureCollection features,
@@ -80,12 +78,6 @@ public sealed class TurboHttpContext
 
     public IMaterializer Materializer { get; set; } = null!;
 
-    internal TurboEndpointMetadata? EndpointMetadata
-    {
-        get => _endpointMetadata;
-        set => _endpointMetadata = value;
-    }
-
     internal void Reset(
         IFeatureCollection features,
         TurboConnectionInfo connectionInfo,
@@ -98,7 +90,6 @@ public sealed class TurboHttpContext
         _user = null;
         _items = null;
         _traceIdentifier = null;
-        _endpointMetadata = null;
         RequestAborted = requestAborted;
         RequestServices = services!;
         Materializer = materializer;

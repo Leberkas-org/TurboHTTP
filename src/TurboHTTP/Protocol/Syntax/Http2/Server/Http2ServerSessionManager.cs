@@ -126,7 +126,7 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    public void OnResponse(TurboHttpContext context)
+    public void OnResponse(RequestContext context)
     {
         var streamId = GetStreamIdFromContext(context);
         if (!_streams.TryGetValue(streamId, out var state))
@@ -555,7 +555,7 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    private int GetStreamIdFromContext(TurboHttpContext context)
+    private int GetStreamIdFromContext(RequestContext context)
     {
         var streamIdFeature = context.Features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)

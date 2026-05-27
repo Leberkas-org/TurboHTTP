@@ -2,9 +2,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using TurboHTTP.Routing;
 using TurboHTTP.Server.Hosting;
-using TurboHTTP.Server.Middleware;
 
 namespace TurboHTTP.Server;
 
@@ -30,8 +28,6 @@ public static class TurboServerServiceCollectionExtensions
         configure?.Invoke(options);
 
         services.TryAddSingleton(options);
-        services.TryAddSingleton<TurboRouteTable>();
-        services.TryAddSingleton<TurboPipelineBuilder>();
         services.AddTurboServer();
 
         return services;
@@ -47,8 +43,6 @@ public static class TurboServerServiceCollectionExtensions
         configure?.Invoke(options);
 
         services.TryAddSingleton(options);
-        services.TryAddSingleton<TurboRouteTable>();
-        services.TryAddSingleton<TurboPipelineBuilder>();
         services.AddTurboServer();
 
         return services;
@@ -59,8 +53,6 @@ public static class TurboServerServiceCollectionExtensions
         TurboServerOptions options)
     {
         services.TryAddSingleton(options);
-        services.TryAddSingleton<TurboRouteTable>();
-        services.TryAddSingleton<TurboPipelineBuilder>();
         services.AddTurboServer();
 
         return services;

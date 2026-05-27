@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http3.Server;
 
@@ -30,7 +32,7 @@ internal sealed class Http3ServerEncoder
     /// Encodes a response to HTTP/3 HEADERS frame only.
     /// Body is handled asynchronously via IBodyEncoder and StreamState outbound buffer.
     /// </summary>
-    public HeadersFrame EncodeHeaders(TurboHttpContext context)
+    public HeadersFrame EncodeHeaders(RequestContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -42,18 +44,24 @@ internal sealed class Http3ServerEncoder
         return new HeadersFrame(headerBlock);
     }
 
-    private static void BuildHeaderList(TurboHttpContext context, List<(string Name, string Value)> headers)
+    private static void BuildHeaderList(RequestContext context, List<(string Name, string Value)> headers)
     {
         // RFC 9114 §6.3: :status pseudo-header (required, must be first)
-        headers.Add((WellKnownHeaders.Status, WellKnownHeaders.GetStatusCodeString(context.Response.StatusCode)));
+        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var statusCode = responseFeature?.StatusCode ?? 500;
+        headers.Add((WellKnownHeaders.Status, WellKnownHeaders.GetStatusCodeString(statusCode)));
 
         // Add regular headers (lowercase per RFC 9114)
-        foreach (var h in context.Response.Headers)
+        var responseHeaders = responseFeature?.Headers;
+        if (responseHeaders is not null)
         {
-            if (!ContentHeaderClassifier.IsForbiddenConnectionHeader(h.Key))
+            foreach (var h in responseHeaders)
             {
-                var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value);
-                headers.Add((ContentHeaderClassifier.ToLowerAscii(h.Key), value));
+                if (!ContentHeaderClassifier.IsForbiddenConnectionHeader(h.Key))
+                {
+                    var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value);
+                    headers.Add((ContentHeaderClassifier.ToLowerAscii(h.Key), value));
+                }
             }
         }
     }

@@ -16,7 +16,7 @@ internal sealed class Http20ServerEngine : IServerProtocolEngine
         _options = options;
     }
 
-    public BidiFlow<ITransportInbound, TurboHttpContext, TurboHttpContext, ITransportOutbound, NotUsed> CreateFlow(IServiceProvider? services = null)
+    public BidiFlow<ITransportInbound, RequestContext, RequestContext, ITransportOutbound, NotUsed> CreateFlow(IServiceProvider? services = null)
     {
         return BidiFlow.FromGraph(GraphDsl.Create(b =>
         {
@@ -24,8 +24,8 @@ internal sealed class Http20ServerEngine : IServerProtocolEngine
 
             return new BidiShape<
                 ITransportInbound,
-                TurboHttpContext,
-                TurboHttpContext,
+                RequestContext,
+                RequestContext,
                 ITransportOutbound>(
                 connection.InNetwork,
                 connection.OutRequest,

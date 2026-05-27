@@ -164,7 +164,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(TurboHttpContext context)
+    public void OnResponse(RequestContext context)
     {
         if (_pendingResponseCount == 0)
         {
@@ -294,7 +294,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         return null;
     }
 
-    private bool TryHandleH2cUpgrade(TurboHttpContext context)
+    private bool TryHandleH2cUpgrade(RequestContext context)
     {
         if (_ops is not IProtocolSwitchCapable switchable)
         {

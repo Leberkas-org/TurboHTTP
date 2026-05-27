@@ -19,7 +19,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     private readonly Http10ServerEncoder _encoder;
     private readonly long _maxRequestBodySize;
 
-    private TurboHttpContext? _deferredContext;
+    private RequestContext? _deferredContext;
     private IMemoryOwner<byte>? _deferredBodyOwner;
     private int _deferredBodyLength;
     private IBodyEncoder? _activeBodyEncoder;
@@ -89,7 +89,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         }
     }
 
-    public void OnResponse(TurboHttpContext context)
+    public void OnResponse(RequestContext context)
     {
         _deferredContext = context;
 

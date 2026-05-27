@@ -1,5 +1,5 @@
 using Servus.Akka.Transport;
-using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol;
 
@@ -10,7 +10,7 @@ internal interface IServerStateMachine
     int MaxQueuedRequests { get; }
 
     void PreStart();
-    void OnResponse(TurboHttpContext context);
+    void OnResponse(RequestContext context);
     void DecodeClientData(ITransportInbound data);
     void OnDownstreamFinished();
     void OnTimerFired(string name);

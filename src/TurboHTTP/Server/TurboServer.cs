@@ -9,8 +9,6 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using TurboHTTP.Routing;
-using TurboHTTP.Server.Middleware;
 using TurboHTTP.Streams.Lifecycle;
 
 namespace TurboHTTP.Server;
@@ -60,6 +58,8 @@ public sealed class TurboServer : IServer
 
         var materializer = _system.Materializer();
 
+        // TODO: Task 4 will replace this with ApplicationBridgeStage
+        // For now, routing is disabled - all requests get 404
         TurboRequestDelegate pipeline = _ => Task.CompletedTask;
         var routeTable = new TurboRouteTable().Freeze();
 

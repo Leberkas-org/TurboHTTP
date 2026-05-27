@@ -9,8 +9,8 @@ namespace TurboHTTP.Streams.Stages.Server;
 internal sealed class ProtocolNegotiatorConnectionStage : GraphStage<ServerConnectionShape>
 {
     private readonly Inlet<ITransportInbound> _inNetwork = new("NegotiatorConnection.In.Network");
-    private readonly Outlet<TurboHttpContext> _outRequest = new("NegotiatorConnection.Out.Request");
-    private readonly Inlet<TurboHttpContext> _inResponse = new("NegotiatorConnection.In.Response");
+    private readonly Outlet<RequestContext> _outRequest = new("NegotiatorConnection.Out.Request");
+    private readonly Inlet<RequestContext> _inResponse = new("NegotiatorConnection.In.Response");
     private readonly Outlet<ITransportOutbound> _outNetwork = new("NegotiatorConnection.Out.Network");
     private readonly TurboServerOptions _options;
     private readonly IServiceProvider? _services;

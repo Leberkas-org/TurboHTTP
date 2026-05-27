@@ -1,10 +1,13 @@
 using System.Net;
 using Akka.Actor;
+using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Context;
 using TurboHTTP.Protocol.LineBased;
 using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http11.Options;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Protocol.Syntax.Http11.Server;
 
@@ -32,26 +35,32 @@ internal sealed class Http11ServerEncoder
         _activeBodyEncoder = null;
     }
 
-    public int Encode(Span<byte> destination, TurboHttpContext context, bool isChunked = false, bool connectionClose = false)
+    public int Encode(Span<byte> destination, RequestContext context, bool isChunked = false, bool connectionClose = false)
     {
         var writer = SpanWriter.Create(destination);
 
-        StatusLineWriter.Write(ref writer, HttpVersion.Version11, context.Response.StatusCode);
+        var responseFeature = context.Features.Get<IHttpResponseFeature>();
+        var statusCode = responseFeature?.StatusCode ?? 500;
+        StatusLineWriter.Write(ref writer, HttpVersion.Version11, statusCode);
 
         _reusableHeaders.Clear();
         var headers = _reusableHeaders;
-        foreach (var h in context.Response.Headers)
+        var responseHeaders = responseFeature?.Headers;
+        if (responseHeaders is not null)
         {
-            if (ConnectionSemantics.IsHopByHop(h.Key))
+            foreach (var h in responseHeaders)
             {
-                continue;
-            }
-
-            foreach (var v in h.Value)
-            {
-                if (v is not null)
+                if (ConnectionSemantics.IsHopByHop(h.Key))
                 {
-                    headers.Add(h.Key, v);
+                    continue;
+                }
+
+                foreach (var v in h.Value)
+                {
+                    if (v is not null)
+                    {
+                        headers.Add(h.Key, v);
+                    }
                 }
             }
         }
@@ -62,7 +71,8 @@ internal sealed class Http11ServerEncoder
         }
         else
         {
-            var contentLength = context.Response.ContentLength ?? 0L;
+            var contentLengthFeature = context.Features.Get<IHttpResponseBodyFeature>();
+            var contentLength = 0L;
             headers.Add(WellKnownHeaders.ContentLength, ContentLengthCache.GetValue(contentLength));
         }
 
@@ -78,7 +88,7 @@ internal sealed class Http11ServerEncoder
 
         HeaderBlockWriter.Write(ref writer, headers);
 
-        // For TurboHttpContext, body encoding is handled separately via the BodySink
+        // For RequestContext, body encoding is handled separately via the BodySink
         return writer.BytesWritten;
     }
 }

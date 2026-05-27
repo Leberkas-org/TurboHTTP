@@ -1,16 +1,17 @@
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Server;
 
 internal static class ServerContextFactory
 {
     [ThreadStatic]
-    private static Stack<TurboHttpContext>? t_pool;
+    private static Stack<RequestContext>? t_pool;
 
     private const int MaxPoolSize = 32;
 
-    public static TurboHttpContext Create(
+    public static RequestContext Create(
         TurboHttpRequestFeature requestFeature,
         bool hasBody,
         IServiceProvider? services = null,
@@ -41,40 +42,31 @@ internal static class ServerContextFactory
             features.Set<ITlsHandshakeFeature>(tlsFeature);
         }
 
-        TurboHttpContext ctx;
-        var pooledConnection = connectionInfo is not null;
-        var pooledServices = services is not null;
+        RequestContext context;
 
-        if ((t_pool?.Count ?? 0) > 0 && pooledConnection && pooledServices)
+        if ((t_pool?.Count ?? 0) > 0)
         {
-            ctx = t_pool!.Pop();
-            ctx.Reset(features, connectionInfo!, services, CancellationToken.None, null!);
-        }
-        else if (pooledConnection)
-        {
-            ctx = new TurboHttpContext(features, connectionInfo, services, CancellationToken.None, null!);
+            context = t_pool!.Pop();
+            context.Features = features;
+            context.Lifetime = null;
         }
         else
         {
-            ctx = new TurboHttpContext(features);
-            if (services is not null)
-            {
-                ctx.RequestServices = services;
-            }
+            context = new RequestContext { Features = features };
         }
 
-        var lifetimeFeature = new TurboHttpRequestLifetimeFeature(ctx);
+        var lifetimeFeature = new TurboHttpRequestLifetimeFeature(context);
         features.Set<IHttpRequestLifetimeFeature>(lifetimeFeature);
 
-        var identifierFeature = new TurboHttpRequestIdentifierFeature(ctx);
+        var identifierFeature = new TurboHttpRequestIdentifierFeature(context);
         features.Set<IHttpRequestIdentifierFeature>(identifierFeature);
 
-        return ctx;
+        return context;
     }
 
-    internal static void Return(TurboHttpContext context)
+    internal static void Return(RequestContext context)
     {
-        t_pool ??= new Stack<TurboHttpContext>(MaxPoolSize);
+        t_pool ??= new Stack<RequestContext>(MaxPoolSize);
 
         if (t_pool.Count < MaxPoolSize)
         {
