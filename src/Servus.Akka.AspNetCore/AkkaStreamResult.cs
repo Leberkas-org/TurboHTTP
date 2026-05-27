@@ -2,6 +2,7 @@ using Akka;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
+using Servus.Akka.Streams.IO;
 
 namespace Servus.Akka.AspNetCore;
 
@@ -14,9 +15,6 @@ internal sealed class AkkaStreamResult(
     {
         httpContext.Response.StatusCode = 200;
         httpContext.Response.ContentType = contentType;
-        var body = httpContext.Response.Body;
-        await source.RunForeach(
-            async chunk => await body.WriteAsync(chunk),
-            materializer);
+        await source.RunWith(StreamSink.To(httpContext.Response.Body), materializer);
     }
 }

@@ -12,4 +12,8 @@
         <ProjectReference Include="..\Servus.Akka\Servus.Akka.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Servus.Akka.AspNetCore.Tests" />
+    </ItemGroup>
+
 </Project>

@@ -14,7 +14,7 @@ public static class AkkaResults
         return new AkkaStreamResult(source, materializer, contentType);
     }
 
-    public static IResult Sse(Source<ServerSentEvent, NotUsed> source, IMaterializer materializer)
+    public static IResult ServerSentEvent(Source<ServerSentEvent, NotUsed> source, IMaterializer materializer)
     {
         return new AkkaSseResult(source, materializer);
     }

@@ -3,6 +3,7 @@ using Akka.Streams;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http;
 using Servus.Akka.Sse;
+using Servus.Akka.Streams.IO;
 
 namespace Servus.Akka.AspNetCore;
 
@@ -12,11 +13,8 @@ internal sealed class AkkaSseResult(Source<ServerSentEvent, NotUsed> source, IMa
     {
         httpContext.Response.StatusCode = 200;
         httpContext.Response.ContentType = "text/event-stream";
-        var body = httpContext.Response.Body;
         await source
             .Via(SseFormatterFlow.Instance)
-            .RunForeach(
-                async chunk => await body.WriteAsync(chunk),
-                materializer);
+            .RunWith(StreamSink.To(httpContext.Response.Body), materializer);
     }
 }
