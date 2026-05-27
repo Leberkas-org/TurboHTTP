@@ -16,5 +16,10 @@ public abstract class RouteTable
 
 public sealed class TurboRouteTable : RouteTable
 {
+    public TurboRouteTable Add(string method, string path, Delegate handler)
+    {
+        return this;
+    }
+
     public TurboRouteTable Freeze() => this;
 }

@@ -10,7 +10,6 @@ public sealed class TurboHttpContext
     private static readonly ClaimsPrincipal AnonymousPrincipal = new();
 
     private IFeatureCollection _features;
-    private TurboConnectionInfo _connectionInfo;
     private ClaimsPrincipal? _user;
     private IDictionary<object, object?>? _items;
     private string? _traceIdentifier;
@@ -23,7 +22,7 @@ public sealed class TurboHttpContext
         IMaterializer materializer)
     {
         _features = features;
-        _connectionInfo = connectionInfo;
+        Connection = connectionInfo;
         RequestServices = services!;
         RequestAborted = requestAborted;
         Materializer = materializer;
@@ -51,7 +50,7 @@ public sealed class TurboHttpContext
 
     public TurboHttpResponse Response => TurboResponse;
     public TurboHttpResponse TurboResponse { get; }
-    public TurboConnectionInfo Connection => _connectionInfo;
+    public TurboConnectionInfo Connection { get; private set; }
 
     public ClaimsPrincipal User
     {
@@ -86,7 +85,7 @@ public sealed class TurboHttpContext
         IMaterializer materializer)
     {
         _features = features;
-        _connectionInfo = connectionInfo;
+        Connection = connectionInfo;
         _user = null;
         _items = null;
         _traceIdentifier = null;

@@ -55,8 +55,6 @@ public sealed class Http2ServerTrailerEncodingSpec
         features.Set<IHttpResponseTrailersFeature>(new TurboHttpResponseTrailersFeature());
 
         var response = new TurboHttpResponse(features);
-        var httpContext = new TurboHttpContext(features);
-        response.SetHttpContext(httpContext);
 
         response.DeclareTrailer("grpc-status");
         response.AppendTrailer("grpc-status", "0");

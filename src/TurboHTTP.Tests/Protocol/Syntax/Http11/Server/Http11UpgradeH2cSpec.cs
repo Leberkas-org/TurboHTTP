@@ -18,7 +18,7 @@ public sealed class Http11UpgradeH2cSpec
         private readonly FakeServerOps _inner = new();
         public Func<IServerStageOperations, IServerStateMachine>? SwitchFactory { get; private set; }
 
-        public List<TurboHttpContext> Requests => _inner.Requests;
+        public List<RequestContext> Requests => _inner.Requests;
         public List<ITransportOutbound> Outbound => _inner.Outbound;
         public List<(string Name, TimeSpan Delay)> ScheduledTimers => _inner.ScheduledTimers;
         public List<string> CancelledTimers => _inner.CancelledTimers;
@@ -26,7 +26,7 @@ public sealed class Http11UpgradeH2cSpec
         public IActorRef StageActor { get => _inner.StageActor; set => _inner.StageActor = value; }
         public IMaterializer Materializer { get => _inner.Materializer; set => _inner.Materializer = value; }
 
-        public void OnRequest(TurboHttpContext context) => _inner.OnRequest(context);
+        public void OnRequest(RequestContext context) => _inner.OnRequest(context);
         public void OnOutbound(ITransportOutbound item) => _inner.OnOutbound(item);
         public void OnScheduleTimer(string name, TimeSpan delay) => _inner.OnScheduleTimer(name, delay);
         public void OnCancelTimer(string name) => _inner.OnCancelTimer(name);

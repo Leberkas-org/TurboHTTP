@@ -4,7 +4,6 @@ using Akka.Streams.Dsl;
 using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Routing;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Streaming;

@@ -6,12 +6,13 @@ using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
 public sealed class Http11ServerStateMachineTimerSpec
 {
-    private static TurboHttpContext CreateResponseContext()
+    private static RequestContext CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -19,7 +20,7 @@ public sealed class Http11ServerStateMachineTimerSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
     private static TransportBuffer MakeBuffer(string raw)

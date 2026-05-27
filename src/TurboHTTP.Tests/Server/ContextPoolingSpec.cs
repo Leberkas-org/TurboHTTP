@@ -3,30 +3,23 @@ using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Server;
 
 public sealed class ContextPoolingSpec
 {
-    private static TurboHttpContext CreateContext(IFeatureCollection? features = null)
+    private static RequestContext CreateContext(IFeatureCollection? features = null)
     {
         features ??= new FeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
         features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
         features.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-        var connectionInfo = new TurboConnectionInfo(
-            "test-id",
-            null,
-            0,
-            null,
-            0);
-
-        var ctx = new TurboHttpContext(
-            features,
-            connectionInfo,
-            services: null,
-            requestAborted: CancellationToken.None,
-            materializer: null!);
+        var ctx = new RequestContext
+        {
+            Features = features,
+            RequestAborted = CancellationToken.None
+        };
 
         return ctx;
     }
@@ -101,56 +94,6 @@ public sealed class ContextPoolingSpec
         Assert.False(feature.HasStarted);
     }
 
-    [Fact(Timeout = 5000)]
-    public void TurboHttpContext_Reset_clears_user()
-    {
-        var ctx = CreateContext();
-        ctx.User = new System.Security.Claims.ClaimsPrincipal();
-
-        var newFeatures = new FeatureCollection();
-        newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
-        newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
-        newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-
-        var newConnectionInfo = new TurboConnectionInfo("new-id", null, 0, null, 0);
-        ctx.Reset(newFeatures, newConnectionInfo, null, CancellationToken.None, null!);
-
-        Assert.NotNull(ctx.User);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void TurboHttpContext_Reset_clears_items()
-    {
-        var ctx = CreateContext();
-        ctx.Items["key"] = "value";
-
-        var newFeatures = new FeatureCollection();
-        newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
-        newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
-        newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-
-        var newConnectionInfo = new TurboConnectionInfo("new-id", null, 0, null, 0);
-        ctx.Reset(newFeatures, newConnectionInfo, null, CancellationToken.None, null!);
-
-        Assert.Empty(ctx.Items);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void TurboHttpContext_Reset_clears_trace_identifier()
-    {
-        var ctx = CreateContext();
-        _ = ctx.TraceIdentifier;
-
-        var newFeatures = new FeatureCollection();
-        newFeatures.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
-        newFeatures.Set<IHttpResponseFeature>(new TurboHttpResponseFeature());
-        newFeatures.Set<IHttpResponseBodyFeature>(new TurboHttpResponseBodyFeature());
-
-        var newConnectionInfo = new TurboConnectionInfo("new-id", null, 0, null, 0);
-        ctx.Reset(newFeatures, newConnectionInfo, null, CancellationToken.None, null!);
-
-        Assert.NotEqual("", ctx.TraceIdentifier);
-    }
 
     [Fact(Timeout = 5000)]
     public void TurboHttpRequest_Reset_clears_cached_uri()

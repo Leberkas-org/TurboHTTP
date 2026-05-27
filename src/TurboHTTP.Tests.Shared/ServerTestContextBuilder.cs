@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Shared;
 
@@ -165,7 +166,7 @@ internal sealed class ServerTestContextBuilder
         };
     }
 
-    public TurboHttpContext Build()
+    public RequestContext Build()
     {
         var conn = _connection ?? new TurboConnectionInfo("test", null, 0, null, 0);
 
@@ -182,6 +183,10 @@ internal sealed class ServerTestContextBuilder
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
 
-        return new TurboHttpContext(features, conn, _services, _cancellationToken, _materializer!);
+        return new RequestContext
+        {
+            Features = features,
+            RequestAborted = _cancellationToken
+        };
     }
 }

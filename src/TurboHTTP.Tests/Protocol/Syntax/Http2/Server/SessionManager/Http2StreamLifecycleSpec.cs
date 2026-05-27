@@ -7,6 +7,7 @@ using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using TurboHTTP.Streams.Stages.Server;
 
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
@@ -17,7 +18,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 /// </summary>
 public sealed class Http2StreamLifecycleSpec
 {
-    private static TurboHttpContext CreateResponseContext(long streamId = 99)
+    private static RequestContext CreateResponseContext(long streamId = 99)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -26,7 +27,7 @@ public sealed class Http2StreamLifecycleSpec
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
 

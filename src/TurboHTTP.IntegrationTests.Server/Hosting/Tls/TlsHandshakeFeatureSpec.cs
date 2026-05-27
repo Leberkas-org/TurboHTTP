@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.Context.Features;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Routing;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;

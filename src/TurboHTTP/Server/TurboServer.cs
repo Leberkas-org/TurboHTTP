@@ -27,10 +27,7 @@ public sealed class TurboServer : IServer
     private bool _ownsSystem;
     private IActorRef _supervisor = ActorRefs.Nobody;
 
-    public TurboServer(
-        IOptions<TurboServerOptions> options,
-        ILoggerFactory loggerFactory,
-        IServiceProvider services)
+    public TurboServer(IOptions<TurboServerOptions> options, ILoggerFactory loggerFactory, IServiceProvider services)
     {
         _options = options.Value;
         _loggerFactory = loggerFactory;

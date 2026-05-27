@@ -106,7 +106,7 @@ public sealed class TurboHttpResponse
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(value);
 
-        var feature = HttpContext.Features.Get<IHttpResponseTrailersFeature>();
+        var feature = _features.Get<IHttpResponseTrailersFeature>();
         if (feature is null)
         {
             throw new InvalidOperationException(
@@ -118,7 +118,7 @@ public sealed class TurboHttpResponse
 
     public IHeaderDictionary GetTrailers()
     {
-        var feature = HttpContext.Features.Get<IHttpResponseTrailersFeature>();
+        var feature = _features.Get<IHttpResponseTrailersFeature>();
         return feature?.Trailers ?? new HeaderDictionary();
     }
 

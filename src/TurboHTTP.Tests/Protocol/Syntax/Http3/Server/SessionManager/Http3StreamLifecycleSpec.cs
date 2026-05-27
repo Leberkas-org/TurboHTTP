@@ -7,6 +7,7 @@ using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
@@ -16,7 +17,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 /// </summary>
 public sealed class Http3StreamLifecycleSpec
 {
-    private static TurboHttpContext CreateResponseContext(long streamId = 999)
+    private static RequestContext CreateResponseContext(long streamId = 999)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -25,7 +26,7 @@ public sealed class Http3StreamLifecycleSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
 

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Routing;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Routing;
@@ -44,7 +43,7 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
         });
     }
 
-    private sealed class ResultAdapter(IResult inner) : ITurboResult
+    private sealed class ResultAdapter(IResult inner)
     {
         public async Task ExecuteAsync(TurboHttpContext httpContext)
         {

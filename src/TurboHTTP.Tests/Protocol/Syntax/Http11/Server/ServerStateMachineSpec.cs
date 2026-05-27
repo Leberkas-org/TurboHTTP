@@ -7,6 +7,7 @@ using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
@@ -369,7 +370,7 @@ public sealed class ServerStateMachineSpec
         Assert.Equal("POST", ops.Requests[0].Request.Method);
     }
 
-    private static TurboHttpContext MakeResponseContext(HttpResponseMessage response)
+    private static RequestContext MakeResponseContext(HttpResponseMessage response)
     {
         var features = new TurboFeatureCollection();
         var responseFeature = new TurboHttpResponseFeature
@@ -399,6 +400,6 @@ public sealed class ServerStateMachineSpec
         }
 
         features.Set<IHttpResponseFeature>(responseFeature);
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 }

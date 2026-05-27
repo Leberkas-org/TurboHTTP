@@ -7,6 +7,7 @@ using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http10.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http10.Server;
@@ -15,7 +16,7 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
 {
     private static FakeServerOps MakeOps() => new();
 
-    private static TurboHttpContext CreateResponseContext()
+    private static RequestContext CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -23,10 +24,10 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
-    private static async Task<TurboHttpContext> CreateResponseContextWithBody(string body)
+    private static async Task<RequestContext> CreateResponseContextWithBody(string body)
     {
         var context = CreateResponseContext();
         var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>()!;
@@ -130,4 +131,3 @@ public sealed class Http10ServerStateMachineErrorSpec : TestKit
         Assert.Null(ex);
     }
 }
-

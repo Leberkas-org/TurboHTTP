@@ -12,8 +12,9 @@ public sealed class ServerContextFactorySpec
         var requestFeature = new TurboHttpRequestFeature { Method = "POST", Path = "/api" };
         var ctx = ServerContextFactory.Create(requestFeature, hasBody: false);
 
-        Assert.Equal("POST", ctx.Request.Method);
-        Assert.Equal("/api", ctx.Request.Path);
+        var reqFeature = ctx.Features.Get<IHttpRequestFeature>()!;
+        Assert.Equal("POST", reqFeature.Method);
+        Assert.Equal("/api", reqFeature.Path);
     }
 
     [Fact(Timeout = 5000)]

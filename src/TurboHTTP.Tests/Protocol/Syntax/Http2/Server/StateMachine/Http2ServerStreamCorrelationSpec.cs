@@ -6,6 +6,7 @@ using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 
@@ -15,7 +16,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 /// </summary>
 public sealed class Http2ServerStreamCorrelationSpec
 {
-    private static TurboHttpContext CreateResponseContext(long streamId)
+    private static RequestContext CreateResponseContext(long streamId)
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -24,7 +25,7 @@ public sealed class Http2ServerStreamCorrelationSpec
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
 

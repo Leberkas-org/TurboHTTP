@@ -3,7 +3,6 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Routing;
 using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;

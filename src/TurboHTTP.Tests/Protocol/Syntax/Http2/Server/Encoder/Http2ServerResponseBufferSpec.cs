@@ -6,6 +6,7 @@ using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 
@@ -15,7 +16,7 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 /// </summary>
 public sealed class Http2ServerResponseBufferSpec
 {
-    private static TurboHttpContext CreateResponseContext()
+    private static RequestContext CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -23,7 +24,7 @@ public sealed class Http2ServerResponseBufferSpec
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
 

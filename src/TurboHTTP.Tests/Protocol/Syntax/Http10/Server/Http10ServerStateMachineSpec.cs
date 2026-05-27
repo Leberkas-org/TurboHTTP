@@ -7,6 +7,7 @@ using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http10.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http10.Server;
@@ -15,7 +16,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
 {
     private static FakeServerOps MakeOps() => new();
 
-    private static TurboHttpContext CreateResponseContext()
+    private static RequestContext CreateResponseContext()
     {
         var features = new TurboFeatureCollection();
         features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
@@ -23,10 +24,10 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         var bodyFeature = new TurboHttpResponseBodyFeature();
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return new TurboHttpContext(features);
+        return new RequestContext { Features = features };
     }
 
-    private static async Task<TurboHttpContext> CreateResponseContextWithBody(string body)
+    private static async Task<RequestContext> CreateResponseContextWithBody(string body)
     {
         var context = CreateResponseContext();
         var bodyFeature = context.Features.Get<IHttpResponseBodyFeature>()!;
@@ -57,8 +58,9 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         sm.DecodeClientData(new TransportData(requestBuffer));
 
         Assert.Single(ops.Requests);
-        Assert.Equal("GET", ops.Requests[0].Request.Method);
-        Assert.Equal("/path", ops.Requests[0].Request.Path);
+        var req = ops.Requests[0].Features.Get<IHttpRequestFeature>()!;
+        Assert.Equal("GET", req.Method);
+        Assert.Equal("/path", req.Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -191,7 +193,8 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         sm.DecodeClientData(new TransportData(requestBuffer));
 
         Assert.Single(ops.Requests);
-        Assert.Equal("PATCH", ops.Requests[0].Request.Method);
+        var req = ops.Requests[0].Features.Get<IHttpRequestFeature>()!;
+        Assert.Equal("PATCH", req.Method);
     }
 
     [Fact(Timeout = 5000)]
@@ -217,6 +220,11 @@ public sealed class Http10ServerStateMachineSpec : TestKit
         var requestBuffer = CreateRequestBuffer("POST /path HTTP/1.0\r\nHost: example.com\r\n\r\n");
         sm.DecodeClientData(new TransportData(requestBuffer));
 
-        Assert.True(ops.Requests.Count == 0 || ops.Requests[0].Request.ContentLength is null or 0);
+        if (ops.Requests.Count > 0)
+        {
+            var req = ops.Requests[0].Features.Get<IHttpRequestFeature>()!;
+            var contentLength = req.Headers["Content-Length"];
+            Assert.True(string.IsNullOrEmpty(contentLength));
+        }
     }
 }

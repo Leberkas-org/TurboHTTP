@@ -44,7 +44,7 @@ public sealed class ListenerActorConnectionLimitSpec : TestKit
                     MaxConcurrentConnections = msg.MaxConcurrentConnections
                 };
                 TurboRequestDelegate pipeline = _ => Task.CompletedTask;
-                var routeTable = new TurboHTTP.Routing.RouteTable([]);
+                var routeTable = new TurboRouteTable();
                 var services = new ServiceCollection().BuildServiceProvider();
                 var materializer = Context.System.Materializer();
 
