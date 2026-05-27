@@ -298,6 +298,14 @@ internal sealed class StreamManager
     /// </summary>
     public void Dispose()
     {
+        var exception = new HttpRequestException("HTTP/3 connection closed while requests were in flight.");
+        foreach (var (_, request) in _correlationMap)
+        {
+            request.Fail(exception);
+        }
+
+        _correlationMap.Clear();
+
         ResetAllDecoders();
 
         foreach (var decoder in _decoderPool)

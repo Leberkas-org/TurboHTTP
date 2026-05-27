@@ -216,7 +216,13 @@ internal sealed class Http11ClientStateMachine : IClientStateMachine
 
     public void Cleanup()
     {
-        _inFlightQueue.Clear();
+        var exception = new HttpRequestException("HTTP/1.1 connection closed while requests were in flight.");
+        RequestFault.FailAll(_inFlightQueue, exception);
+        if (_reconnectBufferedQueue is { Count: > 0 })
+        {
+            RequestFault.FailAll(_reconnectBufferedQueue, exception);
+        }
+
         _pendingBodyResponse?.Dispose();
         _pendingBodyResponse = null;
         _outboundBodyPending = false;
