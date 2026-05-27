@@ -10,19 +10,22 @@ namespace TurboHTTP.Context.Features;
 internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
 {
     private readonly Pipe _pipe = new();
-    private readonly TaskCompletionSource _headerCommit = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private Func<Task>? _onStarting;
-    private bool _completed;
+    private readonly ResponsePipeWriter _writer;
 
-    internal void SetOnStarting(Func<Task> onStarting) => _onStarting = onStarting;
+    public TurboHttpResponseBodyFeature()
+    {
+        _writer = new ResponsePipeWriter(_pipe.Writer);
+    }
 
-    internal bool HasStarted { get; private set; }
+    internal void SetOnStarting(Func<Task> onStarting) => _writer.SetOnStarting(onStarting);
 
-    internal Task WhenHeadersReady => _headerCommit.Task;
+    internal bool HasStarted => _writer.HasStarted;
 
-    public Stream Stream => field ??= _pipe.Writer.AsStream();
+    internal Task WhenHeadersReady => _writer.WhenHeadersReady;
 
-    public PipeWriter Writer => _pipe.Writer;
+    public Stream Stream => field ??= _writer.AsStream();
+
+    public PipeWriter Writer => _writer;
 
     public Task WhenSinkCompleted => Task.CompletedTask;
 
@@ -34,10 +37,10 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
             {
                 var pipeSink = PipeSink.To(_pipe.Writer);
                 field = Flow.Create<ReadOnlyMemory<byte>>()
-                    .SelectAsync(1, async chunk =>
+                    .SelectAsync(1, chunk =>
                     {
-                        await EnsureStartedAsync();
-                        return chunk;
+                        _writer.CommitHeaders();
+                        return Task.FromResult(chunk);
                     })
                     .ToMaterialized(pipeSink, Keep.Right);
             }
@@ -46,15 +49,15 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
         }
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
-        await EnsureStartedAsync();
+        _writer.CommitHeaders();
+        return Task.CompletedTask;
     }
 
     public async Task SendFileAsync(string path, long offset, long? count,
         CancellationToken cancellationToken = default)
     {
-        await EnsureStartedAsync();
         await using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4 * 1024,
             useAsync: true);
         if (offset > 0)
@@ -75,10 +78,10 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
                     break;
                 }
 
-                var dest = _pipe.Writer.GetMemory(read);
+                var dest = _writer.GetMemory(read);
                 buffer.AsSpan(0, read).CopyTo(dest.Span);
-                _pipe.Writer.Advance(read);
-                await _pipe.Writer.FlushAsync(cancellationToken);
+                _writer.Advance(read);
+                await _writer.FlushAsync(cancellationToken);
                 remaining -= read;
             }
         }
@@ -90,20 +93,12 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
 
     internal void Complete()
     {
-        if (!_completed)
-        {
-            _completed = true;
-            _pipe.Writer.Complete();
-        }
+        _writer.Complete();
     }
 
-    public async Task CompleteAsync()
+    public Task CompleteAsync()
     {
-        if (!_completed)
-        {
-            _completed = true;
-            await _pipe.Writer.CompleteAsync();
-        }
+        return _writer.CompleteAsync().AsTask();
     }
 
     public void DisableBuffering()
@@ -117,17 +112,86 @@ internal sealed class TurboHttpResponseBodyFeature : IHttpResponseBodyFeature
 
     internal Stream GetResponseStream() => _pipe.Reader.AsStream();
 
-    private async Task EnsureStartedAsync()
+    internal sealed class ResponsePipeWriter : PipeWriter
     {
-        if (!HasStarted)
+        private readonly PipeWriter _inner;
+        private readonly TaskCompletionSource _headerCommit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private Func<Task>? _onStarting;
+        private bool _started;
+        private bool _completed;
+        private long _bytesWritten;
+
+        public ResponsePipeWriter(PipeWriter inner)
         {
-            HasStarted = true;
+            _inner = inner;
+        }
+
+        public Task WhenHeadersReady => _headerCommit.Task;
+        public bool HasStarted => _started;
+        public long BytesWritten => _bytesWritten;
+
+        public void SetOnStarting(Func<Task> onStarting) => _onStarting = onStarting;
+
+        public void CommitHeaders()
+        {
+            if (!_started)
+            {
+                _started = true;
+                _headerCommit.TrySetResult();
+            }
+        }
+
+        public override Memory<byte> GetMemory(int sizeHint = 0) => _inner.GetMemory(sizeHint);
+        public override Span<byte> GetSpan(int sizeHint = 0) => _inner.GetSpan(sizeHint);
+
+        public override void Advance(int bytes)
+        {
+            _inner.Advance(bytes);
+            _bytesWritten += bytes;
+        }
+
+        public override void CancelPendingFlush() => _inner.CancelPendingFlush();
+
+        public override ValueTask<FlushResult> FlushAsync(CancellationToken cancellationToken = default)
+        {
+            if (_started)
+            {
+                return _inner.FlushAsync(cancellationToken);
+            }
+
+            return CommitAndFlushAsync(cancellationToken);
+        }
+
+        private async ValueTask<FlushResult> CommitAndFlushAsync(CancellationToken cancellationToken)
+        {
+            _started = true;
             if (_onStarting is not null)
             {
                 await _onStarting();
             }
 
             _headerCommit.TrySetResult();
+            return await _inner.FlushAsync(cancellationToken);
+        }
+
+        public override void Complete(Exception? exception = null)
+        {
+            if (!_completed)
+            {
+                _completed = true;
+                _inner.Complete(exception);
+            }
+        }
+
+        public override ValueTask CompleteAsync(Exception? exception = null)
+        {
+            if (!_completed)
+            {
+                _completed = true;
+                return _inner.CompleteAsync(exception);
+            }
+
+            return default;
         }
     }
 }
