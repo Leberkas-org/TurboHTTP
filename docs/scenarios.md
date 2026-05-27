@@ -4,11 +4,31 @@ TurboHTTP combines a full HTTP stack with Akka Streams, giving you streaming, ba
 
 ---
 
-## Actor-Based Entity Routing
+## Standard ASP.NET Core with Actor Backends
 
-Building a REST API usually means writing controllers, wiring up routes, and manually dispatching to your domain layer. TurboHTTP integrates with Akka.NET actors directly — define message factories for each HTTP verb and let TurboHTTP handle actor resolution, Ask/Tell, timeouts, and response mapping for you.
+TurboHTTP is a transport layer — your application code uses standard ASP.NET Core routing and DI. Combine it with Akka.NET actors for stateful backends by injecting `ActorSystem` or typed actor references into your handlers:
 
-See the [Actor Integration Guide](/server/actors) for complete examples of routing to stateful actors.
+```csharp
+app.MapGet("/orders/{id}", async (int id, ActorSystem system) =>
+{
+    var orderActor = system.ActorSelection($"/user/orders/order-{id}");
+    var order = await orderActor.Ask<OrderResponse>(
+        new GetOrder(id), TimeSpan.FromSeconds(5));
+    return Results.Ok(order);
+});
+
+app.MapPost("/orders", async (CreateOrderRequest req, ActorSystem system) =>
+{
+    var manager = system.ActorSelection("/user/orders");
+    var result = await manager.Ask<OrderCreated>(
+        new CreateOrder(req.Items), TimeSpan.FromSeconds(5));
+    return Results.Created($"/orders/{result.Id}", result);
+});
+```
+
+::: tip Key Insight
+TurboHTTP reuses an existing `ActorSystem` from DI if one is registered (e.g. via Akka.Hosting). Your server connections and your domain actors share the same system — no extra infrastructure.
+:::
 
 ---
 

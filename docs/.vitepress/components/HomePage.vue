@@ -13,8 +13,8 @@ const features = [
         description: 'Idempotency-aware retries + in-memory LRU cache with ETag support. Built in, not bolted on.',
     },
     {
-        title: 'Middleware & Routing',
-        description: 'ASP.NET Core-style pipeline with Use/Run/Map. Entity gateway routes requests to Akka.NET actors.',
+        title: 'IServer Drop-In',
+        description: 'Replaces Kestrel as IServer — use standard ASP.NET Core middleware, routing, and DI unchanged.',
     },
     {
         title: 'Connection Pooling',
@@ -49,13 +49,13 @@ const clientCode = `builder.Services.AddTurboHttpClient("api", options =>
 var client = factory.CreateClient("api");
 var response = await client.SendAsync(request, ct);`
 
-const serverCode = `builder.Services.AddTurboKestrel(options =>
+const serverCode = `builder.Host.UseTurboHttp(options =>
 {
     options.ListenLocalhost(5100);
 });
 
-app.MapTurboGet("/health", () => new { status = "ok" });
-app.MapTurboGet("/users/{id}", (int id) =>
+app.MapGet("/health", () => new { status = "ok" });
+app.MapGet("/users/{id}", (int id) =>
     new { id, name = "User " + id });
 
 await app.RunAsync();`
