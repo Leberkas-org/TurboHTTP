@@ -6,6 +6,7 @@
   </Configurations>
   <Folder Name="/Benchmarks/">
     <Project Path="TurboHTTP.Benchmarks/TurboHTTP.Benchmarks.csproj" />
+    <Project Path="TurboHTTP.StressBenchmarks/TurboHTTP.StressBenchmarks.csproj" />
   </Folder>
   <Folder Name="/Items/">
     <File Path="../.github/workflows/ci.yml" />
