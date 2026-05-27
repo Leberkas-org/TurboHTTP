@@ -216,10 +216,67 @@ internal sealed class HttpConnectionStageLogic<TSM> : TimerGraphStageLogic, ICli
 
     private void TryPushOutbound()
     {
-        if (_outboundQueue.Count > 0 && IsAvailable(_outNetwork))
+        if (_outboundQueue.Count == 0 || !IsAvailable(_outNetwork))
+        {
+            return;
+        }
+
+        if (_outboundQueue.Count == 1)
+        {
+            Push(_outNetwork, _outboundQueue.Dequeue());
+            return;
+        }
+
+        if (!TryCoalesceOutbound())
         {
             Push(_outNetwork, _outboundQueue.Dequeue());
         }
+    }
+
+    private bool TryCoalesceOutbound()
+    {
+        var totalSize = 0;
+        var coalesceCount = 0;
+        const int maxCoalesce = 8;
+
+        foreach (var item in _outboundQueue)
+        {
+            if (item is not TransportData { Buffer: var buf })
+            {
+                break;
+            }
+
+            totalSize += buf.Length;
+            coalesceCount++;
+            if (coalesceCount >= maxCoalesce)
+            {
+                break;
+            }
+        }
+
+        if (coalesceCount < 2)
+        {
+            return false;
+        }
+
+        var merged = TransportBuffer.Rent(totalSize);
+        var dest = merged.FullMemory.Span;
+        var offset = 0;
+
+        for (var i = 0; i < coalesceCount; i++)
+        {
+            var item = _outboundQueue.Dequeue();
+            if (item is TransportData { Buffer: var buf })
+            {
+                buf.Span.CopyTo(dest[offset..]);
+                offset += buf.Length;
+                buf.Dispose();
+            }
+        }
+
+        merged.Length = offset;
+        Push(_outNetwork, new TransportData(merged));
+        return true;
     }
 
     private void TryPullRequest()
