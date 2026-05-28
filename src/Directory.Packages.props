@@ -9,7 +9,7 @@
     <PackageVersion Include="Akka.Streams.TestKit" Version="1.5.68" />
     <PackageVersion Include="Akka.TestKit.Xunit" Version="1.5.68" />
     <PackageVersion Include="Servus.Akka" Version="0.3.10" />
-    <PackageVersion Include="Servus.Core" Version="0.33.10" />
+    <PackageVersion Include="Servus.Core" Version="0.33.11" />
     <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
   </ItemGroup>
   <ItemGroup Label="Testing">
