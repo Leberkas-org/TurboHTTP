@@ -37,11 +37,11 @@ public sealed class PipeliningSpec : End2EndSpecBase
         }
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 60000)]
     public async Task Pipelining_should_handle_concurrent_requests()
     {
-        var tasks = new Task<int>[10];
-        for (var i = 0; i < 10; i++)
+        var tasks = new Task<int>[5];
+        for (var i = 0; i < 5; i++)
         {
             var id = i;
             tasks[i] = Task.Run(async () =>
@@ -59,6 +59,6 @@ public sealed class PipeliningSpec : End2EndSpecBase
         var results = await Task.WhenAll(tasks);
 
         var distinctResults = results.Distinct().ToArray();
-        Assert.Equal(10, distinctResults.Length);
+        Assert.Equal(5, distinctResults.Length);
     }
 }

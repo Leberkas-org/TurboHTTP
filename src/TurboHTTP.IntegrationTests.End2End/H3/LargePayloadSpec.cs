@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Quic;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -47,14 +46,9 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
     public async Task LargePayload_should_roundtrip_body_over_64kb()
     {
-        if (!QuicConnection.IsSupported)
-        {
-            return;
-        }
-
         var payload = new byte[128 * 1024];
         RandomNumberGenerator.Fill(payload);
 
@@ -70,14 +64,9 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         Assert.Equal(payload, responseBytes);
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
     public async Task LargePayload_should_receive_large_server_response()
     {
-        if (!QuicConnection.IsSupported)
-        {
-            return;
-        }
-
         var size = 256 * 1024;
         var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/generate?size={size}");
 
@@ -89,14 +78,9 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         Assert.True(responseBytes.All(b => b == 0xAB));
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
     public async Task LargePayload_should_handle_empty_body()
     {
-        if (!QuicConnection.IsSupported)
-        {
-            return;
-        }
-
         var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseUri}/empty-echo")
         {
             Content = new ByteArrayContent(Array.Empty<byte>())

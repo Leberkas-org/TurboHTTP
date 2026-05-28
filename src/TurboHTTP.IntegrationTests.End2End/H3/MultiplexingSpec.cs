@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Quic;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -23,14 +22,9 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
     public async Task Multiplexing_should_handle_parallel_streams()
     {
-        if (!QuicConnection.IsSupported)
-        {
-            return;
-        }
-
         var tasks = new Task<int>[20];
         for (var i = 0; i < 20; i++)
         {
@@ -53,14 +47,9 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         Assert.Equal(20, distinctResults.Length);
     }
 
-    [Fact(Timeout = 30000)]
+    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
     public async Task Multiplexing_should_not_starve_fast_streams()
     {
-        if (!QuicConnection.IsSupported)
-        {
-            return;
-        }
-
         var slowTask = Task.Run(async () =>
         {
             var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/delay/2000");
