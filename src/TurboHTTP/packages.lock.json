@@ -115,7 +115,7 @@
         "type": "Project",
         "dependencies": {
           "Akka.Hosting": "[1.5.68, )",
-          "Servus.Core": "[0.33.10, )"
+          "Servus.Core": "[0.33.11, )"
         }
       },
       "OpenTelemetry": {
@@ -144,9 +144,9 @@
       },
       "Servus.Core": {
         "type": "CentralTransitive",
-        "requested": "[0.33.10, )",
-        "resolved": "0.33.10",
-        "contentHash": "31KtCHbrqw6IXPaMqdVPUqQmZwDHtDL9SPWgqYUnmk6hoSi8FgoUOjv6GiMoUGDlJHiCtaNbW+UADjpCl8tv0A=="
+        "requested": "[0.33.11, )",
+        "resolved": "0.33.11",
+        "contentHash": "j3MSNKNN9T53Uzkhktgwqi0cnITq/eX6CU/cwy5wN/UVCUwf2Q7al0u6ofGrQoDoqtCObRgvanU02PjYwQWCGw=="
       }
     }
   }
