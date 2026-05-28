@@ -13,7 +13,7 @@ public sealed class HeaderSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H2, Tls: true);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H2, tls: true);
 
     [Fact(Timeout = 15000)]
     public async Task Header_should_forward_custom_header()

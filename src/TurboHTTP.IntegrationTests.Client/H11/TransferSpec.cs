@@ -14,7 +14,7 @@ public sealed class TransferSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H11, Tls: false);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H11, tls: false);
 
     [Theory(Timeout = 15000)]
     [InlineData(128)]
@@ -150,7 +150,7 @@ public sealed class TransferSpec : IntegrationSpecBase
     [InlineData(102400)]
     public async Task Transfer_should_receive_large_body_over_tls(int size)
     {
-        await using var helper = CreateClient(new ProtocolVariant(TestHttpVersion.H11, Tls: true));
+        await using var helper = CreateClient(new ProtocolVariant(TestHttpVersion.H11, tls: true));
         var response = await helper.Client.SendAsync(
             new HttpRequestMessage(HttpMethod.Get, $"/bytes/{size}"), CancellationToken);
 
@@ -163,7 +163,7 @@ public sealed class TransferSpec : IntegrationSpecBase
     [Fact(Timeout = 15000)]
     public async Task Transfer_should_receive_streaming_response_over_tls()
     {
-        await using var helper = CreateClient(new ProtocolVariant(TestHttpVersion.H11, Tls: true));
+        await using var helper = CreateClient(new ProtocolVariant(TestHttpVersion.H11, tls: true));
         var response = await helper.Client.SendAsync(
             new HttpRequestMessage(HttpMethod.Get, "/stream/3"), CancellationToken);
 

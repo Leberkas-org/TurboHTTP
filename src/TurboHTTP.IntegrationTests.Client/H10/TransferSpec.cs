@@ -13,7 +13,7 @@ public sealed class TransferSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, Tls: false);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, tls: false);
 
     [Theory(Timeout = 15000)]
     [InlineData(128)]

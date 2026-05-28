@@ -14,7 +14,7 @@ public sealed class SmokeSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, Tls: false);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, tls: false);
 
     [Fact(Timeout = 15000)]
     public async Task Get_should_return_200()

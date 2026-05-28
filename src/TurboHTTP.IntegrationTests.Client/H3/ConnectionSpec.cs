@@ -14,7 +14,7 @@ public sealed class ConnectionSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H3, Tls: true);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H3, tls: true);
 
     [Fact(Timeout = 15000)]
     public async Task Connection_should_reuse_for_sequential_requests()

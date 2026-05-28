@@ -85,16 +85,6 @@ internal sealed class H2ResponseBuilder
     }
 
     /// <summary>
-    /// Appends a PING frame (8 bytes of opaque data).
-    /// </summary>
-    public H2ResponseBuilder Ping(ReadOnlyMemory<byte>? data = null, bool isAck = false)
-    {
-        var pingData = data ?? new byte[8];
-        _frames.Add(new PingFrame(pingData, isAck: isAck));
-        return this;
-    }
-
-    /// <summary>
     /// Appends a GOAWAY frame on stream 0.
     /// </summary>
     public H2ResponseBuilder GoAway(int lastStreamId, Http2ErrorCode errorCode = Http2ErrorCode.NoError)

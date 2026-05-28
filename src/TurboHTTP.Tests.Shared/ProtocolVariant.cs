@@ -12,10 +12,10 @@ public sealed class ProtocolVariant : IXunitSerializable
     {
     }
 
-    public ProtocolVariant(TestHttpVersion Version, bool Tls)
+    public ProtocolVariant(TestHttpVersion version, bool tls)
     {
-        this.Version = Version;
-        this.Tls = Tls;
+        Version = version;
+        Tls = tls;
     }
 
     public void Serialize(IXunitSerializationInfo info)

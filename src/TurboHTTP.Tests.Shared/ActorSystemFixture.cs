@@ -11,8 +11,7 @@ namespace TurboHTTP.Tests.Shared;
 
 public sealed class ActorSystemFixture : IAsyncLifetime
 {
-    private static readonly Config QuietConfig = ConfigurationFactory.ParseString(
-        "akka.loglevel = WARNING");
+    private static readonly Config QuietConfig = ConfigurationFactory.ParseString("akka.loglevel = WARNING");
 
     public ActorSystem System { get; private set; } = null!;
 

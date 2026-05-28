@@ -14,7 +14,7 @@ public sealed class ConnectionSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, Tls: false);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, tls: false);
 
     [Fact(Timeout = 15000)]
     public async Task Connection_should_complete_single_request_response_cycle()
