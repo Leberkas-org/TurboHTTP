@@ -88,6 +88,7 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
     private sealed class SubflowGroup
     {
         private readonly Dictionary<int, SubflowState> _slotsById = new();
+        private int _roundRobinIndex;
 
         public int Count => _slotsById.Count;
         public IEnumerable<SubflowState> AllSlots => _slotsById.Values;
@@ -159,6 +160,30 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
             }
 
             return best;
+        }
+
+        /// <summary>Returns the next alive slot in round-robin order, or null if all slots are dead.</summary>
+        public SubflowState? NextRoundRobin()
+        {
+            if (_slotsById.Count == 0)
+            {
+                return null;
+            }
+
+            var startIndex = _roundRobinIndex;
+
+            for (var i = 0; i < _slotsById.Count; i++)
+            {
+                var idx = (startIndex + i) % _slotsById.Count;
+                var slot = _slotsById.Values.ElementAt(idx);
+                if (!slot.IsDead)
+                {
+                    _roundRobinIndex = (idx + 1) % _slotsById.Count;
+                    return slot;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>Removes all dead slots from the lookup dictionary. Returns number removed.</summary>
@@ -409,48 +434,34 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
                 return;
             }
 
-            // 2. Existing slot with capacity
-            if (group.FindCapacitySlot() is { } capSlot)
-            {
-                Log.Debug("GroupByHostKeyStage: routed to existing slot key={0}:{1}", key.Host, key.Port);
-                TagAffinitySlot(item, capSlot);
-                capSlot.Pending.Enqueue(item);
-                DrainPending(key, capSlot);
-                return;
-            }
-
-            // 3. All slots busy — try creating or use least-loaded
-            RouteWhenAllBusy(key, group, item);
-        }
-
-        private void RouteWhenAllBusy(RequestEndpoint key, SubflowGroup group, T item)
-        {
+            // 2. Open new connection if under limit
             var removed = group.RemoveDead();
             _totalSlotCount -= removed;
 
-            var canCreate = group.Count < _stage._maxSubstreamsPerKey(key) &&
+            var maxPerKey = _stage._maxSubstreamsPerKey(key);
+            var canCreate = group.Count < maxPerKey &&
                             (_stage._maxSubstreams <= 0 || _totalSlotCount < _stage._maxSubstreams);
 
             if (canCreate)
             {
-                Log.Debug("GroupByHostKeyStage: creating additional slot for key={0}:{1}, slot={2}", key.Host,
+                Log.Debug("GroupByHostKeyStage: creating slot for key={0}:{1}, slot={2}", key.Host,
                     key.Port, group.Count + 1);
                 CreateSubstreamInGroup(key, group, item);
                 return;
             }
 
-            var leastLoaded = group.FindLeastLoaded();
-            if (leastLoaded != null)
+            // 3. Round-robin across existing connections
+            var slot = group.NextRoundRobin();
+            if (slot != null)
             {
-                Log.Debug("GroupByHostKeyStage: all slots busy, routing to least-loaded key={0}:{1}",
-                    key.Host, key.Port);
-                TagAffinitySlot(item, leastLoaded);
-                leastLoaded.Pending.Enqueue(item);
-                DrainPending(key, leastLoaded);
+                Log.Debug("GroupByHostKeyStage: round-robin to slot key={0}:{1}", key.Host, key.Port);
+                TagAffinitySlot(item, slot);
+                slot.Pending.Enqueue(item);
+                DrainPending(key, slot);
                 return;
             }
 
-            // All slots dead (edge case) — create replacement
+            // 4. All slots dead — create replacement
             CreateSubstreamInGroup(key, group, item);
         }
 
