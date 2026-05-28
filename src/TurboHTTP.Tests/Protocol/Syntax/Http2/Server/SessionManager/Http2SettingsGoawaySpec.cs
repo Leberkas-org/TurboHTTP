@@ -2,6 +2,7 @@ using Servus.Akka.Transport;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
@@ -12,7 +13,8 @@ public sealed class Http2SettingsGoawaySpec
     {
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        return new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+        var options = new TurboServerOptions();
+        return new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
     }
 
     private static byte[] BuildSettingsFrame(bool isAck = false)
@@ -206,10 +208,13 @@ public sealed class Http2SettingsGoawaySpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        var customStreamWindow = 256 * 1024;
+        const int customStreamWindow = 256 * 1024;
+        var options = new TurboServerOptions
+        {
+            Http2 = { InitialConnectionWindowSize = customStreamWindow }
+        };
         var sessionManager = new Http2ServerSessionManager(
-            encoderOptions, decoderOptions, ops,
-            initialStreamWindowSize: customStreamWindow);
+            encoderOptions, decoderOptions, ops, options);
 
         sessionManager.PreStart();
 

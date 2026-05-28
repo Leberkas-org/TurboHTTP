@@ -19,21 +19,15 @@ internal sealed class BodyRateState
     /// <summary>
     /// Timestamp (in milliseconds from Environment.TickCount64) of last rate check.
     /// </summary>
-    public long LastCheckTimestamp { get; set; }
+    public long LastCheckTimestamp { get; set; } = Environment.TickCount64;
 
     /// <summary>
     /// Timestamp (in milliseconds from Environment.TickCount64) when grace period started.
     /// </summary>
-    public long GracePeriodStartTimestamp { get; set; }
+    public long GracePeriodStartTimestamp { get; set; } = Environment.TickCount64;
 
     /// <summary>
     /// Whether the stream is currently in its grace period (allowed to have slow data rate).
     /// </summary>
     public bool InGracePeriod { get; set; }
-
-    public BodyRateState()
-    {
-        LastCheckTimestamp = Environment.TickCount64;
-        GracePeriodStartTimestamp = Environment.TickCount64;
-    }
 }

@@ -4,6 +4,7 @@ using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server;
 using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
@@ -22,7 +23,6 @@ public sealed class Http2StreamLifecycleSpec
         features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
         return features;
     }
-
 
     private static byte[] BuildHeadersFrame(int streamId, bool endStream = false)
     {
@@ -93,7 +93,9 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions { MaxConcurrentStreams = 2 };
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear(); // Clear initial SETTINGS frame
@@ -123,7 +125,9 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions { MaxConcurrentStreams = 1 };
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear(); // Clear initial SETTINGS frame
@@ -174,7 +178,9 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear();
@@ -203,7 +209,8 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear();
@@ -227,7 +234,8 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear();
@@ -253,7 +261,8 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear();
@@ -281,7 +290,8 @@ public sealed class Http2StreamLifecycleSpec
         var ops = new FakeServerOps();
         var encoderOptions = new Http2ServerEncoderOptions();
         var decoderOptions = new Http2ServerDecoderOptions();
-        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops);
+        var options = new TurboServerOptions();
+        var sm = new Http2ServerSessionManager(encoderOptions, decoderOptions, ops, options);
 
         sm.PreStart();
         ops.Outbound.Clear();
