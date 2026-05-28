@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.1...v1.3.2) (2026-05-28)
+
+
+### Dependencies
+
+* Bump Verify.XunitV3 from 31.17.0 to 31.18.0 ([f742761](https://github.com/Leberkas-org/TurboHTTP/commit/f74276109b66c0d874cb25b987d891cdac2f8feb))
+
 ## [1.3.1](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.0...v1.3.1) (2026-05-28)
 
 
