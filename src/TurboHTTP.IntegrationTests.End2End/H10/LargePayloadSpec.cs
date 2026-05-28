@@ -83,7 +83,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseUri}/empty-echo")
         {
-            Content = new ByteArrayContent(Array.Empty<byte>())
+            Content = new ByteArrayContent([])
         };
 
         var response = await Client.SendAsync(request, CancellationToken);

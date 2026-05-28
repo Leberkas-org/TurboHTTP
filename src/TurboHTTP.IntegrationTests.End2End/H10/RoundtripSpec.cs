@@ -22,7 +22,7 @@ public sealed class RoundtripSpec : End2EndSpecBase
             return Results.Ok(body);
         });
 
-        app.MapDelete("/delete-me", () => Results.NoContent());
+        app.MapDelete("/delete-me", Results.NoContent);
     }
 
     [Fact(Timeout = 15000)]

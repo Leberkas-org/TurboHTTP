@@ -34,8 +34,8 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
 
         app.MapGet("/cache-headers", (HttpContext ctx) =>
         {
-            ctx.Response.Headers["Cache-Control"] = "no-cache, no-store";
-            ctx.Response.Headers["ETag"] = "\"v1\"";
+            ctx.Response.Headers.CacheControl = "no-cache, no-store";
+            ctx.Response.Headers.ETag = "\"v1\"";
             return Results.Ok("cached");
         });
     }

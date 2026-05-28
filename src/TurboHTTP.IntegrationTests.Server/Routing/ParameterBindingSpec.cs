@@ -21,7 +21,7 @@ public sealed class ParameterBindingSpec : ServerSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapGet("/users/{id}", (int id) =>
+        app.MapGet("/users/{id:int}", (int id) =>
             Results.Ok(new { id }));
 
         app.MapGet("/search", (string q) =>

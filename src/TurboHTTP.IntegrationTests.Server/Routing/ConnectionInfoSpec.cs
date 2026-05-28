@@ -20,21 +20,15 @@ public sealed class ConnectionInfoSpec : ServerSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapGet("/connection", (HttpContext ctx) =>
+        app.MapGet("/connection", (HttpContext ctx) => Results.Ok(new
         {
-            return Results.Ok(new
-            {
-                remoteIp = ctx.Connection.RemoteIpAddress?.ToString(),
-                remotePort = ctx.Connection.RemotePort,
-                localIp = ctx.Connection.LocalIpAddress?.ToString(),
-                localPort = ctx.Connection.LocalPort
-            });
-        });
+            remoteIp = ctx.Connection.RemoteIpAddress?.ToString(),
+            remotePort = ctx.Connection.RemotePort,
+            localIp = ctx.Connection.LocalIpAddress?.ToString(),
+            localPort = ctx.Connection.LocalPort
+        }));
 
-        app.MapGet("/protocol", (HttpContext ctx) =>
-        {
-            return Results.Ok(new { protocol = ctx.Request.Protocol });
-        });
+        app.MapGet("/protocol", (HttpContext ctx) => Results.Ok(new { protocol = ctx.Request.Protocol }));
     }
 
     [Fact(Timeout = 15000)]

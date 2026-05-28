@@ -126,8 +126,7 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
         var response = await Client.SendAsync(request, CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var json = JsonDocument.Parse(
-            await response.Content.ReadAsStringAsync(CancellationToken));
+        var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(CancellationToken));
         Assert.Equal("test.txt", json.RootElement.GetProperty("fileName").GetString());
         Assert.Equal(fileBytes.Length, json.RootElement.GetProperty("size").GetInt64());
         Assert.Equal(fileContent, json.RootElement.GetProperty("content").GetString());

@@ -21,7 +21,7 @@ public sealed class MiddlewareSpec : ServerSpecBase
     {
         app.Use(async (ctx, next) =>
         {
-            ctx.Response.Headers["X-Powered-By"] = "TurboHTTP";
+            ctx.Response.Headers.XPoweredBy = "TurboHTTP";
             await next(ctx);
         });
 
