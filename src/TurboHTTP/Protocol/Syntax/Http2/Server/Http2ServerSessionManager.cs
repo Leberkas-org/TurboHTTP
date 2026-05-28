@@ -155,8 +155,10 @@ internal sealed class Http2ServerSessionManager
         state.SetFeatures(features);
 
         var responseFeature = features.Get<IHttpResponseFeature>();
+        var responseBody = features.Get<IHttpResponseBodyFeature>();
         var contentLength = ExtractContentLength(responseFeature);
-        var hasBody = contentLength is not null and not 0;
+        var hasBody = contentLength is not null and not 0
+                      || (contentLength is null && responseBody is TurboHttpResponseBodyFeature { HasStarted: true });
 
         var frames = _responseEncoder.EncodeHeaders(features, streamId, hasBody);
         for (var i = 0; i < frames.Count; i++)
@@ -169,8 +171,6 @@ internal sealed class Http2ServerSessionManager
             CloseStream(streamId);
             return;
         }
-
-        var responseBody = features.Get<IHttpResponseBodyFeature>();
         if (responseBody is not TurboHttpResponseBodyFeature turboBody)
         {
             CloseStream(streamId);
