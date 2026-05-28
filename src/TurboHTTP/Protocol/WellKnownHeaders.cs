@@ -52,6 +52,7 @@ internal static class WellKnownHeaders
 {
     public static readonly WellKnownHeader Colon = new(":");
     public static readonly WellKnownHeader Comma = new(",");
+    public static readonly WellKnownHeader SemiColon = new(";");
     public static readonly WellKnownHeader Space = new(" ");
     public static readonly WellKnownHeader Crlf = new("\r\n");
 
@@ -235,6 +236,7 @@ internal static class WellKnownHeaders
 
     public static readonly WellKnownHeader ColonSpace = Colon + Space;
     public static readonly WellKnownHeader CommaSpace = Comma + Space;
+    public static readonly WellKnownHeader SemiColonSpace = SemiColon + Space;
 
     public static bool TryResolve(ReadOnlySpan<byte> bytes, [NotNullWhen(true)] out string? result)
     {

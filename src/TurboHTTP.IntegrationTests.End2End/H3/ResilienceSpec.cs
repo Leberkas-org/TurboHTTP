@@ -15,7 +15,7 @@ public sealed class ResilienceSpec : End2EndSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapGet("/fast", () => Results.Ok("ok"));
+        app.MapGet("/fast", () => Results.Text("ok"));
 
         app.MapGet("/slow", async () =>
         {

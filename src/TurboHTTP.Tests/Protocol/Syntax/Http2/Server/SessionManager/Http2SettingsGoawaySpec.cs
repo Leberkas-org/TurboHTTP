@@ -211,7 +211,7 @@ public sealed class Http2SettingsGoawaySpec
         const int customStreamWindow = 256 * 1024;
         var options = new TurboServerOptions
         {
-            Http2 = { InitialConnectionWindowSize = customStreamWindow }
+            Http2 = { InitialStreamWindowSize = customStreamWindow }
         };
         var sessionManager = new Http2ServerSessionManager(
             encoderOptions, decoderOptions, ops, options);
