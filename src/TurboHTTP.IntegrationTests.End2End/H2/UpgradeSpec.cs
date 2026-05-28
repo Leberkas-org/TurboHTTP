@@ -9,6 +9,7 @@ using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H2;
 
+[Collection("H2")]
 public sealed class UpgradeSpec : End2EndSpecBase
 {
     protected override Version ProtocolVersion => HttpVersion.Version20;

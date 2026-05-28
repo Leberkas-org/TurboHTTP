@@ -8,6 +8,7 @@ using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H3;
 
+[Collection("H3")]
 public sealed class LargePayloadSpec : End2EndSpecBase
 {
     protected override Version ProtocolVersion => HttpVersion.Version30;
