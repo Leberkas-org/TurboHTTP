@@ -6,36 +6,6 @@ on:
     paths:
       - "docs/**"
 
-concurrency:
-  group: docs-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          lfs: 'true'
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: docs/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build VitePress site
-        run: npm run build
+  docs:
+    uses: Leberkas-org/template.pipeline.github/.github/workflows/docs-build.yml@v0
