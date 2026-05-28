@@ -1,5 +1,114 @@
 # Changelog
 
+## [2.0.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.0...v2.0.0) (2026-05-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* delete RequestContext, TurboHttpContext, RoutingStage, and all custom routing types
+* wire IHttpApplication through actors to ApplicationBridgeStage
+* rewrite ApplicationBridgeStage as generic with IHttpApplication<TContext>
+* delete app-framework layer
+* implement TurboServer as IServer replacement
+* remove ITurbo*Feature interfaces, use IHttp*Feature only
+* replace FrameworkReference with targeted NuGet packages
+
+* replace FrameworkReference with targeted NuGet packages ([bd25a46](https://github.com/Leberkas-org/TurboHTTP/commit/bd25a4680cf9b62e39bd0f114b2f04e0fd6b750d))
+
+
+### Features
+
+* add AddTurboServerInstrumentation registration methods ([4d156fb](https://github.com/Leberkas-org/TurboHTTP/commit/4d156fbf2d5e886f8a55f0f20cdc130ebddd234d))
+* add CLI orchestration for stress benchmarks ([df87944](https://github.com/Leberkas-org/TurboHTTP/commit/df879440bfb11270c087c42cba60d6503a022498))
+* add connection metrics and tracing to ListenerActor ([9ad8c7a](https://github.com/Leberkas-org/TurboHTTP/commit/9ad8c7a41fdc9b8b4d369bd8017f3d5e88c4349c))
+* add fast-path slots for IHttpMaxRequestBodySizeFeature and IHttpBodyControlFeature ([ccfde96](https://github.com/Leberkas-org/TurboHTTP/commit/ccfde961fd515e1f7eaa543904f8368bb44c98cc))
+* add FeatureCollectionFactory returning IFeatureCollection ([71110c6](https://github.com/Leberkas-org/TurboHTTP/commit/71110c69eddf29485d9fbeaab071ee4473f9f3c2))
+* add four stress scenarios (slow-handler, connection-storm, body-flood, memory-endurance) ([727f28a](https://github.com/Leberkas-org/TurboHTTP/commit/727f28a5041d013e91d7a9f91af6f2416ba8e66d))
+* add IHttpMaxRequestBodySizeFeature and IHttpBodyControlFeature implementations ([2e6c426](https://github.com/Leberkas-org/TurboHTTP/commit/2e6c426b1dc1e915463e1aac8af3031332678373))
+* add LoadGenerator with concurrent worker loops ([5b50b78](https://github.com/Leberkas-org/TurboHTTP/commit/5b50b78839acb2e0cf17147769cc8ebe53f3048f))
+* add MetricsCollector with per-second time-series aggregation ([a09b2a4](https://github.com/Leberkas-org/TurboHTTP/commit/a09b2a421bbe5958e6e12678663d3414ace6ea2f))
+* add OTel-standard server metric instruments ([602eeb3](https://github.com/Leberkas-org/TurboHTTP/commit/602eeb3c0749acf7d26a77cb32a493ee9a65d9bd))
+* add pipeline metrics and backpressure events to ApplicationBridgeStage ([b84bf7a](https://github.com/Leberkas-org/TurboHTTP/commit/b84bf7ad64afc25e00b0f5cd87442f3ec38d389e))
+* add protocol negotiation metrics to ConnectionActor ([3879a89](https://github.com/Leberkas-org/TurboHTTP/commit/3879a8915d0ec3e5d023f12ab051db68438a15d2))
+* add request metrics and tracing to HttpConnectionServerStageLogic ([6049d29](https://github.com/Leberkas-org/TurboHTTP/commit/6049d29b368e8ea5c19032d4e3abe04c934cc93f))
+* add RequestTimestamp and RequestActivity to TurboFeatureCollection ([bc1e98a](https://github.com/Leberkas-org/TurboHTTP/commit/bc1e98a12eabf20221df7d960951756b98220ca9))
+* add ResponsePipeWriter for writer-side header commit ([93d1bb9](https://github.com/Leberkas-org/TurboHTTP/commit/93d1bb9d13336c1fefced770912931e35e7074d4))
+* Add server instrumentation methods ([251fcf2](https://github.com/Leberkas-org/TurboHTTP/commit/251fcf21327e0e4b8312e34f6dd38caaf99ee13b))
+* add server-side Activity lifecycle (connection + request tracing) ([6989cfe](https://github.com/Leberkas-org/TurboHTTP/commit/6989cfe13aef5cf5ed21264379553035bab4ae82))
+* add ServerHarness for Turbo/Kestrel lifecycle ([95cf049](https://github.com/Leberkas-org/TurboHTTP/commit/95cf0496b5f16a579bd4102bc0f704435c0b6c09))
+* add Servus.Akka.AspNetCore with AkkaResults and MapEntity ([739a1a5](https://github.com/Leberkas-org/TurboHTTP/commit/739a1a581cdb97b1547fc9e1b4a4246a398671a1))
+* add StressReport and JsonExporter for benchmark output ([855ed9d](https://github.com/Leberkas-org/TurboHTTP/commit/855ed9db414c37dbd9a23e72e6efd9e3a024243f))
+* add turbo.server.* differenzierung metric instruments ([a826af1](https://github.com/Leberkas-org/TurboHTTP/commit/a826af13a351d2ac7f273b5c9cca64775734b75f))
+* add TurboServer vs Kestrel server benchmarks ([a5eba3e](https://github.com/Leberkas-org/TurboHTTP/commit/a5eba3e0389fd8f602796014056f0100a644dafc))
+* **client:** round-robin connection routing in GroupByRequestEndpointStage ([b180d21](https://github.com/Leberkas-org/TurboHTTP/commit/b180d21f5343e63e839eade8e018d812f491ba03))
+* **e2e:** add End2EndSpecBase infrastructure for TurboHTTP client-server tests ([9051d71](https://github.com/Leberkas-org/TurboHTTP/commit/9051d715944b82cf8eb3a0ae778a11951921795e))
+* **e2e:** add H1.1 StreamingSpec and PipeliningSpec ([8b5a32b](https://github.com/Leberkas-org/TurboHTTP/commit/8b5a32b7406cbbe291611ce18aa63500200ab31d))
+* **e2e:** add H2 MultiplexingSpec, FlowControlSpec, UpgradeSpec ([156b9e1](https://github.com/Leberkas-org/TurboHTTP/commit/156b9e110444a6daf7b9a44b8b9ffe3eee7b8740))
+* **e2e:** add H3 MultiplexingSpec ([85af05e](https://github.com/Leberkas-org/TurboHTTP/commit/85af05e5d4f5dfb15e2b291fb87cf60ab36b676f))
+* **e2e:** add LargePayloadSpecs for all protocols ([0361829](https://github.com/Leberkas-org/TurboHTTP/commit/0361829b0dfc22eb49cbec843ef1834983d891f5))
+* **e2e:** add ResilienceSpecs for all protocols ([43719c0](https://github.com/Leberkas-org/TurboHTTP/commit/43719c069d2acfe316bfeee4cd79ee57f8747e5b))
+* **e2e:** add RoundtripSpecs for H1.0, H1.1, H2, H3 ([58b8a9c](https://github.com/Leberkas-org/TurboHTTP/commit/58b8a9ccf25e8a8bd4c9a915df469db9f9c60efb))
+* **http3:** Stream 3 is unidirectional by default ([0609bd2](https://github.com/Leberkas-org/TurboHTTP/commit/0609bd261897bacf59bf70277193225db4eb782a))
+* implement TurboServer as IServer replacement ([ebfb865](https://github.com/Leberkas-org/TurboHTTP/commit/ebfb865c58457644c64d153a0e626c09ef102e0f))
+* register body size and body control features in FeatureCollectionFactory ([8850337](https://github.com/Leberkas-org/TurboHTTP/commit/88503375ed4abca5aaed8ebbbe6d7eb766987798))
+* scaffold TurboHTTP.StressBenchmarks project with data records ([c619b2d](https://github.com/Leberkas-org/TurboHTTP/commit/c619b2d8ee2f179f51bd3c4622e772cef2eed595))
+* **server:** auto-detect response ordering from HTTP version ([32192f7](https://github.com/Leberkas-org/TurboHTTP/commit/32192f7b44bd57619cefc860ce3d587db241890a))
+* **server:** support unordered response emission in ApplicationBridgeStage ([dc819fc](https://github.com/Leberkas-org/TurboHTTP/commit/dc819fc7542f431343473c1ac09d7296e5f1bb88))
+
+
+### Bug Fixes
+
+* add missing PipeWriter overrides and leaveOpen to ResponsePipeWriter ([503c32b](https://github.com/Leberkas-org/TurboHTTP/commit/503c32bbffcfa6c5b257663776228cc73a9c08db))
+* duplicate Content-Length in H1.1 server encoder + test fixes ([1880611](https://github.com/Leberkas-org/TurboHTTP/commit/18806116892e58b9037a8c263021d07fae66511b))
+* **e2e:** add missing using directives and fix empty-echo response format ([7b96bd4](https://github.com/Leberkas-org/TurboHTTP/commit/7b96bd4c2441e5ffabc6e56f41af5342338edef5))
+* **e2e:** skip H3 tests properly, reduce H11 pipelining concurrency ([e10ec98](https://github.com/Leberkas-org/TurboHTTP/commit/e10ec98e0b5cde2f64fcdfdfc8423e7e435cf4a5))
+* **e2e:** use Results.Text for plain string assertions in ResilienceSpecs ([f4d0370](https://github.com/Leberkas-org/TurboHTTP/commit/f4d0370fc14a570d4c2fe0baac1f6edd7beae1fa))
+* guard _headerCommit in CommitAndFlushAsync with try-finally ([730f9ef](https://github.com/Leberkas-org/TurboHTTP/commit/730f9ef1ebc0f8b741e9d927e6631dbc83ef66ea))
+* **h2:** detect response body via HasStarted for H2 responses without Content-Length ([d84bcef](https://github.com/Leberkas-org/TurboHTTP/commit/d84bcef8005ea86e29f7c1749447fa18fb5e59fd))
+* **h2:** detect response body via HasStarted when no Content-Length ([5ad82ad](https://github.com/Leberkas-org/TurboHTTP/commit/5ad82adb81a3a9c6a3f0c21dcf3d1ce593be1776))
+* **h2:** sync HPACK decoder table size with announced SETTINGS + skip connection preface ([53205b7](https://github.com/Leberkas-org/TurboHTTP/commit/53205b79dd39756be9faadd430e71b9d995a52ea))
+* populate IServerAddressesFeature with resolved endpoint URLs ([23ebbd5](https://github.com/Leberkas-org/TurboHTTP/commit/23ebbd53cb2f72741573494340ed33817bc714e0))
+* resolve HTTP/2 and HTTP/3 response body encoding logic ([38f3c1d](https://github.com/Leberkas-org/TurboHTTP/commit/38f3c1d155afd22f57479fb560adbdfef44c8717))
+* skip H2 connection preface in server FrameDecoder + fix client ActorSystem setup ([5b8736b](https://github.com/Leberkas-org/TurboHTTP/commit/5b8736b47d1e954a91a949eec3688850950181b8))
+* update tests for RequestContext pipeline type ([754747f](https://github.com/Leberkas-org/TurboHTTP/commit/754747f64aa9e528c375279a86b38510ae9023ec))
+
+
+### Performance
+
+* batch HTTP/3 frame serialization into single TransportBuffer per request ([e7346bb](https://github.com/Leberkas-org/TurboHTTP/commit/e7346bb71d46b20280b5b451e66e5bfe169e1858))
+* batch QPACK encoder instruction flushes in HTTP/3 client ([84e02d4](https://github.com/Leberkas-org/TurboHTTP/commit/84e02d4f4fa8c44852c3f74bd1428d657d0da1e2))
+* coalesce queued outbound TransportData writes into single buffer ([cdaf83b](https://github.com/Leberkas-org/TurboHTTP/commit/cdaf83b0f35fbcc2e1bc1b8777b2ff0349009d6f))
+* direct-push bypass and pre-sized queues in HttpConnectionStageLogic ([758300f](https://github.com/Leberkas-org/TurboHTTP/commit/758300fab2ac39fa0ae4771ee4f2e7d4d3c8d12a))
+* increase H3 StreamState pool 16→256, reduce encoder buffer 8K→4K ([7585b11](https://github.com/Leberkas-org/TurboHTTP/commit/7585b1158f4d18f5c194d83b9a18ac9f55849c0b))
+* reuse HeaderCollection in H1.1 encoder, increase benchmark pipeline depth ([ed65553](https://github.com/Leberkas-org/TurboHTTP/commit/ed65553ffe45f660631addb6c2bf418a8ac06e72))
+
+
+### Documentation
+
+* accept API surface changes from app-framework layer deletion ([5044639](https://github.com/Leberkas-org/TurboHTTP/commit/504463931159599a62a3f972e585fecdffe47429))
+* add IServer pipeline redesign spec and implementation plan ([9db902d](https://github.com/Leberkas-org/TurboHTTP/commit/9db902d9b0776d94111292d763436bc6f6205ca3))
+* escape angle brackets in generic types to fix Vue parser ([88261dc](https://github.com/Leberkas-org/TurboHTTP/commit/88261dc11a08120f4a9fc36d7f1c6d98498929e4))
+* fix table rendering in installation and aspnet-core pages ([0004b9c](https://github.com/Leberkas-org/TurboHTTP/commit/0004b9c06c3ff9b08a7b10e04c8cbe8cf7a7722b))
+* restructure server documentation for IServer architecture ([cc3b2b5](https://github.com/Leberkas-org/TurboHTTP/commit/cc3b2b5fa77e779a1f931a4633c8bc269398c988))
+* update CLAUDE.md for IServer pipeline architecture ([09ea765](https://github.com/Leberkas-org/TurboHTTP/commit/09ea7651e722f58cc4802ca390f058286539b535))
+* update landing page and scenarios for IServer architecture ([3dc1919](https://github.com/Leberkas-org/TurboHTTP/commit/3dc1919247b842d318c56da562a9cd6f66d63d6e))
+
+
+### Refactoring
+
+* delete app-framework layer ([fcdf04d](https://github.com/Leberkas-org/TurboHTTP/commit/fcdf04d49ec5eb7e71eb44cb550ab330b1af7fc4))
+* delete RequestContext, TurboHttpContext, RoutingStage, and all custom routing types ([d60a68d](https://github.com/Leberkas-org/TurboHTTP/commit/d60a68d1ac3eb64472219f750dd9993f3d4ca992))
+* **e2e:** add protocol collections for partial runs, skip timeout tests ([8a95029](https://github.com/Leberkas-org/TurboHTTP/commit/8a9502903aa32d7ff6ea63843a84324a5a9090e5))
+* exclude integration server tests pending IServer rewrite ([c743555](https://github.com/Leberkas-org/TurboHTTP/commit/c743555f1f24887e66275444920da39e499c6035))
+* make lifetime and identifier features self-contained ([c60be42](https://github.com/Leberkas-org/TurboHTTP/commit/c60be42c32d95f89174f676df7a832dfc0ed745e))
+* remove ITurbo*Feature interfaces, use IHttp*Feature only ([55c5c12](https://github.com/Leberkas-org/TurboHTTP/commit/55c5c1290dcdc40e5fb7ab708150f2d257fe54d7))
+* rewrite ApplicationBridgeStage as generic with IHttpApplication&lt;TContext&gt; ([7eb5117](https://github.com/Leberkas-org/TurboHTTP/commit/7eb5117156ebb625d4529404228500c0f54e543c))
+* update all state machines and session managers to IFeatureCollection ([1a353af](https://github.com/Leberkas-org/TurboHTTP/commit/1a353afcbbbf3c566aea65de7923821bfa8a41f9))
+* update protocol encoders to accept IFeatureCollection ([d386282](https://github.com/Leberkas-org/TurboHTTP/commit/d386282ae5791477d5567df93acd85b88c1adec2))
+* update stage logic, connection stages, and engines to IFeatureCollection ([6940dce](https://github.com/Leberkas-org/TurboHTTP/commit/6940dce3258a3e0c70e864ca6e087463a54b89e5))
+* Use lowercase property names in ProtocolVariant ([d5d6eef](https://github.com/Leberkas-org/TurboHTTP/commit/d5d6eef2912c6d7d496f593112273fd07de3361e))
+* wire IHttpApplication through actors to ApplicationBridgeStage ([853f142](https://github.com/Leberkas-org/TurboHTTP/commit/853f1424bf288ba8879985a9b5a256239e94261a))
+
 ## [1.3.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.2.0...v1.3.0) (2026-05-26)
 
 
