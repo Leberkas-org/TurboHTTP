@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.0...v1.3.1) (2026-05-28)
+
+
+### Dependencies
+
+* Bump Servus.Core from 0.33.10 to 0.33.11 ([d0947e8](https://github.com/Leberkas-org/TurboHTTP/commit/d0947e8f8c8cad8310942133812d39eff908f071))
+
 ## [1.3.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.2.0...v1.3.0) (2026-05-26)
 
 
