@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
@@ -40,7 +41,8 @@ public sealed class LargePayloadSpec : End2EndSpecBase
             using var stream = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(stream, CancellationToken);
             var length = stream.Length;
-            return Results.Ok(length.ToString());
+            ctx.Response.ContentType = "text/plain";
+            await ctx.Response.WriteAsync(length.ToString(), CancellationToken);
         });
     }
 
@@ -48,10 +50,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
     public async Task LargePayload_should_roundtrip_body_over_64kb()
     {
         var payload = new byte[128 * 1024];
-        using (var rng = new System.Security.Cryptography.RNGCryptoServiceProvider())
-        {
-            rng.GetBytes(payload);
-        }
+        RandomNumberGenerator.Fill(payload);
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseUri}/echo-bytes")
         {

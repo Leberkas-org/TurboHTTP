@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
@@ -37,10 +38,7 @@ public sealed class FlowControlSpec : End2EndSpecBase
     public async Task FlowControl_should_transfer_large_body_under_backpressure()
     {
         var payload = new byte[512 * 1024];
-        using (var rng = new System.Security.Cryptography.RNGCryptoServiceProvider())
-        {
-            rng.GetBytes(payload);
-        }
+        RandomNumberGenerator.Fill(payload);
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseUri}/echo-bytes")
         {

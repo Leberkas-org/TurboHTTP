@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Quic;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
 using Xunit;
 
@@ -70,7 +71,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
             return JsonSerializer.Deserialize<int>(body);
         });
 
-        await Task.Delay(100);
+        await Task.Delay(100, CancellationToken);
 
         var fastStart = DateTime.UtcNow;
         var fastRequest = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/id/42");

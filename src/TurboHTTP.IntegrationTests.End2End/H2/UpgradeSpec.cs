@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport.Tcp.Listener;
+using Servus.Akka.Transport;
 using TurboHTTP.Server;
 using TurboHTTP.IntegrationTests.End2End.Shared;
 using Xunit;

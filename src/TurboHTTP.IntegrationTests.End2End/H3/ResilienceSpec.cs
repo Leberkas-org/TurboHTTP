@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Quic;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
 using Xunit;
 
