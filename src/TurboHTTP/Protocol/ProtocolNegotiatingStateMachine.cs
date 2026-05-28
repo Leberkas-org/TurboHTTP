@@ -3,6 +3,7 @@ using Akka.Actor;
 using Akka.Event;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
+using TurboHTTP.Protocol.Syntax.Http10.Server;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
@@ -92,6 +93,9 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
         _phase = Phase.Sniffing;
     }
 
+    private static ReadOnlySpan<byte> Http2PrefixMagic => "PRI "u8;
+    private static ReadOnlySpan<byte> Http10VersionTag => "HTTP/1.0\r\n"u8;
+
     private void OnSniffing(ITransportInbound data)
     {
         _buffered.Add(data);
@@ -107,16 +111,53 @@ internal sealed class ProtocolNegotiatingStateMachine : IServerStateMachine
             return;
         }
 
-        if (span[0] == 'P' && span[1] == 'R' && span[2] == 'I' && span[3] == ' ')
+        if (span.StartsWith(Http2PrefixMagic))
         {
             Activate(ops => new Http2ServerStateMachine(_options, ops));
+            ReplayBuffered();
+            return;
         }
-        else
+
+        if (DetectHttp10())
+        {
+            Activate(ops => new Http10ServerStateMachine(_options, ops));
+        }
+        else if (ContainsRequestLineCrlf())
         {
             Activate(ops => new Http11ServerStateMachine(_options, ops));
         }
+        else
+        {
+            return;
+        }
 
         ReplayBuffered();
+    }
+
+    private bool DetectHttp10()
+    {
+        foreach (var item in _buffered)
+        {
+            if (item is TransportData { Buffer: var buf } && buf.Memory.Span.IndexOf(Http10VersionTag) >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool ContainsRequestLineCrlf()
+    {
+        foreach (var item in _buffered)
+        {
+            if (item is TransportData { Buffer: var buf } && buf.Memory.Span.IndexOf((byte)'\n') >= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void Activate(Func<IServerStageOperations, IServerStateMachine> factory)

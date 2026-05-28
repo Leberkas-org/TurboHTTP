@@ -73,6 +73,12 @@ internal sealed class Http2ServerSessionManager
 
         var settingsFrame = new SettingsFrame(settingsParams, isAck: false);
         EmitFrame(settingsFrame);
+
+        var connectionWindowIncrement = _flow.RecvConnectionWindow - 65535;
+        if (connectionWindowIncrement > 0)
+        {
+            EmitFrame(new WindowUpdateFrame(0, connectionWindowIncrement));
+        }
     }
 
     public void DecodeClientData(TransportBuffer buffer)

@@ -176,6 +176,18 @@ internal sealed class StreamState
         _outboundBuffer.Enqueue(chunk);
     }
 
+    public void PrependBodyChunk(StreamBodyChunk<int> chunk)
+    {
+        _outboundBuffer ??= new Queue<StreamBodyChunk<int>>();
+        var existing = _outboundBuffer.ToArray();
+        _outboundBuffer.Clear();
+        _outboundBuffer.Enqueue(chunk);
+        foreach (var item in existing)
+        {
+            _outboundBuffer.Enqueue(item);
+        }
+    }
+
     public void MarkBodyEncoderComplete()
     {
         IsBodyEncoderComplete = true;

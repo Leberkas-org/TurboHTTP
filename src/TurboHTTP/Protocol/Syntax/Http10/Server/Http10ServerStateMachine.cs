@@ -24,9 +24,10 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
     private IMemoryOwner<byte>? _deferredBodyOwner;
     private int _deferredBodyLength;
     private IBodyEncoder? _activeBodyEncoder;
+    private bool _errorOccurred;
 
     public bool CanAcceptResponse => true;
-    public bool ShouldComplete { get; private set; }
+    public bool ShouldComplete => _errorOccurred;
     public int MaxQueuedRequests => 1;
 
     public Http10ServerStateMachine(TurboServerOptions options, IServerStageOperations ops)
@@ -58,6 +59,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
 
     public void DecodeClientData(ITransportInbound data)
     {
+
         if (data is not TransportData { Buffer: var buffer })
         {
             return;
@@ -72,9 +74,9 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
 
             var outcome = _decoder.Feed(buffer.Memory.Span, out _);
 
+
             if (outcome == DecodeOutcome.Complete)
             {
-                ShouldComplete = true;
                 var feature = _decoder.GetRequestFeature();
                 var hasBody = feature.Body != Stream.Null;
                 var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature, _serverOptions.Limits.MaxRequestBodySize);
@@ -83,7 +85,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         }
         catch (Exception)
         {
-            ShouldComplete = true;
+            _errorOccurred = true;
         }
         finally
         {
@@ -93,6 +95,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
 
     public void OnResponse(IFeatureCollection features)
     {
+
         _deferredFeatures = features;
 
         var responseBody = features.Get<IHttpResponseBodyFeature>();
@@ -103,9 +106,12 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
             if (encoder is not null)
             {
                 _activeBodyEncoder = encoder;
-                encoder.Start(bodyStream, _ops.StageActor);
+                encoder.Start(bodyStream!, _ops.StageActor);
+                return;
             }
         }
+
+        EncodeDeferredResponse(ReadOnlySpan<byte>.Empty);
     }
 
     public void OnDownstreamFinished()
@@ -118,6 +124,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
 
     public void OnBodyMessage(object msg)
     {
+
         switch (msg)
         {
             case OutboundBodyChunk chunk when _deferredFeatures is not null:
@@ -126,28 +133,13 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
                 _deferredBodyLength = chunk.Length;
                 break;
 
-            case OutboundBodyComplete when _deferredFeatures is not null && _deferredBodyOwner is not null:
-                TransportBuffer? item = null;
-                try
-                {
-                    var body = _deferredBodyOwner.Memory.Span[.._deferredBodyLength];
-                    var bufferSize = 8192 + _deferredBodyLength;
-                    item = TransportBuffer.Rent(bufferSize);
-                    var written = _encoder.EncodeDeferred(item.FullMemory.Span, _deferredFeatures, body);
-                    item.Length = written;
-                    _ops.OnOutbound(new TransportData(item));
-                }
-                catch (Exception ex)
-                {
-                    item?.Dispose();
-                    Tracing.For("Protocol").Error(this, "Failed to encode HTTP/1.0 response body: {0}", ex.Message);
-                }
-                finally
-                {
-                    _deferredBodyOwner.Dispose();
-                    _deferredBodyOwner = null;
-                    _deferredFeatures = null;
-                }
+            case OutboundBodyComplete when _deferredFeatures is not null:
+                var body = _deferredBodyOwner is not null
+                    ? _deferredBodyOwner.Memory.Span[.._deferredBodyLength]
+                    : ReadOnlySpan<byte>.Empty;
+                EncodeDeferredResponse(body);
+                _deferredBodyOwner?.Dispose();
+                _deferredBodyOwner = null;
                 break;
 
             case OutboundBodyFailed failed:
@@ -157,8 +149,38 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
                 {
                     Tracing.For("Protocol").Error(this, "Failed to read HTTP/1.0 response body: {0}", failed.Reason.Message);
                     _deferredFeatures = null;
+                    _errorOccurred = true;
                 }
                 break;
+        }
+    }
+
+    private void EncodeDeferredResponse(ReadOnlySpan<byte> body)
+    {
+        if (_deferredFeatures is null)
+        {
+            return;
+        }
+
+        TransportBuffer? item = null;
+        try
+        {
+            var bufferSize = 8192 + body.Length;
+            item = TransportBuffer.Rent(bufferSize);
+            var written = _encoder.EncodeDeferred(item.FullMemory.Span, _deferredFeatures, body);
+            item.Length = written;
+
+            _ops.OnOutbound(new TransportData(item));
+        }
+        catch (Exception ex)
+        {
+            item?.Dispose();
+
+            Tracing.For("Protocol").Error(this, "Failed to encode HTTP/1.0 response: {0}", ex.Message);
+        }
+        finally
+        {
+            _deferredFeatures = null;
         }
     }
 

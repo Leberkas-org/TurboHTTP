@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Servus.Akka.AspNetCore.Tests;
 

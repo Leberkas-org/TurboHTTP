@@ -135,7 +135,11 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
         Pull(_inNetwork);
     }
 
-    private void OnStageActorMessage((IActorRef sender, object message) args) => _sm.OnBodyMessage(args.message);
+    private void OnStageActorMessage((IActorRef sender, object message) args)
+    {
+        _sm.OnBodyMessage(args.message);
+        TryPushOutbound();
+    }
 
     private void OnNetworkPush()
     {

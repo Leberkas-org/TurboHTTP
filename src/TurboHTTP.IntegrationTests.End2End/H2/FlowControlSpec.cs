@@ -33,7 +33,7 @@ public sealed class FlowControlSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 30000, Skip = "H2 large request body encoding not yet supported")]
+    [Fact(Timeout = 30000)]
     public async Task FlowControl_should_transfer_large_body_under_backpressure()
     {
         var payload = new byte[512 * 1024];

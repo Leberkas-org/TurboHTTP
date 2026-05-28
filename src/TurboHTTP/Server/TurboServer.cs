@@ -62,6 +62,7 @@ public sealed class TurboServer : IServer
         var bridgeStage = new ApplicationBridgeStage<TContext>(
             application,
             parallelism,
+            orderedResponses: false,
             _options.HandlerTimeout,
             _options.HandlerGracePeriod);
         var bridgeFlow = Flow.FromGraph(bridgeStage);

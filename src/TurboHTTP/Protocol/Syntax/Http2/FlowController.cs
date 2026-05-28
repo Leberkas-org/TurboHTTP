@@ -12,6 +12,8 @@ internal sealed class FlowController : IFlowController<int>
     private int _recvConnectionWindow;
     private int _initialRecvStreamWindow;
 
+    public int RecvConnectionWindow => _recvConnectionWindow;
+
     private long _connectionSendWindow;
     private long _initialSendStreamWindow;
     private readonly Dictionary<int, long> _streamSendWindows = new();

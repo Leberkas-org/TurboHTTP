@@ -572,12 +572,21 @@ internal sealed class Http2ClientSessionManager
             return;
         }
 
-        var window = _flow.GetSendWindow(streamId);
+        var window = (int)Math.Min(_flow.GetSendWindow(streamId), int.MaxValue);
         if (window >= chunk.Length)
         {
-            EmitDataFrames(streamId, chunk.Owner.Memory[..chunk.Length]);
+            EmitDataFrames(streamId, chunk.Data);
             _flow.OnDataSent(streamId, chunk.Length);
             chunk.Owner.Dispose();
+            return;
+        }
+
+        if (window > 0)
+        {
+            EmitDataFrames(streamId, chunk.Data[..window]);
+            _flow.OnDataSent(streamId, window);
+            var remainder = chunk with { Offset = chunk.Offset + window, Length = chunk.Length - window };
+            state.EnqueueBodyChunk(remainder);
             return;
         }
 
@@ -616,16 +625,27 @@ internal sealed class Http2ClientSessionManager
 
         while (state.PeekBodyChunk() is { } next)
         {
-            var window = _flow.GetSendWindow(streamId);
-            if (window < next.Length)
+            var window = (int)Math.Min(_flow.GetSendWindow(streamId), int.MaxValue);
+            if (window <= 0)
             {
                 break;
             }
 
             state.TryDequeueBodyChunk(out var chunk);
-            EmitDataFrames(streamId, chunk!.Owner.Memory[..chunk.Length]);
-            _flow.OnDataSent(streamId, chunk.Length);
-            chunk.Owner.Dispose();
+
+            if (window >= chunk!.Length)
+            {
+                EmitDataFrames(streamId, chunk.Data);
+                _flow.OnDataSent(streamId, chunk.Length);
+                chunk.Owner.Dispose();
+            }
+            else
+            {
+                EmitDataFrames(streamId, chunk.Data[..window]);
+                _flow.OnDataSent(streamId, window);
+                state.PrependBodyChunk(chunk with { Offset = chunk.Offset + window, Length = chunk.Length - window });
+                break;
+            }
         }
 
         if (state is { HasPendingOutbound: false, IsBodyEncoderComplete: true })

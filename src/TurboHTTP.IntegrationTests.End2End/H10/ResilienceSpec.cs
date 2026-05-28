@@ -35,7 +35,7 @@ public sealed class ResilienceSpec : End2EndSpecBase
         await base.DisposeAsync();
     }
 
-    [Fact(Timeout = 15000, Skip = "H1.0 server support not yet complete")]
+    [Fact(Timeout = 15000)]
     public async Task Resilience_should_complete_fast_request()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/fast");
@@ -52,7 +52,7 @@ public sealed class ResilienceSpec : End2EndSpecBase
         await Task.CompletedTask;
     }
 
-    [Fact(Timeout = 15000, Skip = "H1.0 server support not yet complete")]
+    [Fact(Timeout = 15000)]
     public async Task Resilience_should_cancel_via_cancellation_token()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));

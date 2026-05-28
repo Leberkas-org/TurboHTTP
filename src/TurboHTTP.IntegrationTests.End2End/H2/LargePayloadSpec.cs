@@ -46,7 +46,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 30000, Skip = "H2 large request body encoding not yet supported")]
+    [Fact(Timeout = 30000)]
     public async Task LargePayload_should_roundtrip_body_over_64kb()
     {
         var payload = new byte[128 * 1024];

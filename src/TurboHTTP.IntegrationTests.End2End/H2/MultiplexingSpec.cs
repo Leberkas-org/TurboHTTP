@@ -47,7 +47,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         Assert.Equal(20, distinctResults.Length);
     }
 
-    [Fact(Timeout = 30000, Skip = "H2 multiplexing starvation timing issue")]
+    [Fact(Timeout = 30000, Skip = "Server pipeline serializes responses — needs mapAsyncUnordered for true H2 multiplexing")]
     public async Task Multiplexing_should_not_starve_fast_streams()
     {
         var slowTask = Task.Run(async () =>

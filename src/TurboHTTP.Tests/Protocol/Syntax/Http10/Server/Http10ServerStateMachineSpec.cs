@@ -64,7 +64,7 @@ public sealed class Http10ServerStateMachineSpec : TestKit
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC1945-5")]
-    public void DecodeClientData_should_mark_should_complete()
+    public void DecodeClientData_should_not_complete_before_response()
     {
         var ops = MakeOps();
         var sm = new Http10ServerStateMachine(new TurboServerOptions(), ops);
@@ -73,7 +73,8 @@ public sealed class Http10ServerStateMachineSpec : TestKit
 
         sm.DecodeClientData(new TransportData(requestBuffer));
 
-        Assert.True(sm.ShouldComplete);
+        Assert.False(sm.ShouldComplete);
+        Assert.Single(ops.Requests);
     }
 
     [Fact(Timeout = 5000)]

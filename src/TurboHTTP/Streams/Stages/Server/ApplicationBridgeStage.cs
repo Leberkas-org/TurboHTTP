@@ -16,6 +16,7 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
 {
     private readonly IHttpApplication<TContext> _application;
     private readonly int _parallelism;
+    private readonly bool _orderedResponses;
     private readonly TimeSpan _handlerTimeout;
     private readonly TimeSpan _handlerGracePeriod;
 
@@ -27,11 +28,13 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
     public ApplicationBridgeStage(
         IHttpApplication<TContext> application,
         int parallelism,
+        bool orderedResponses,
         TimeSpan handlerTimeout,
         TimeSpan handlerGracePeriod)
     {
         _application = application;
         _parallelism = parallelism;
+        _orderedResponses = orderedResponses;
         _handlerTimeout = handlerTimeout;
         _handlerGracePeriod = handlerGracePeriod;
         Shape = new FlowShape<IFeatureCollection, IFeatureCollection>(_in, _out);
@@ -388,16 +391,32 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
 
         private void TryEmitPending()
         {
-            while (_downstreamReady && _pending.Count > 0 && _pending.Keys.First() == _nextToEmit)
+            if (_stage._orderedResponses)
             {
-                _downstreamReady = false;
-                Push(_stage._out, _pending[_nextToEmit]);
-                _pending.Remove(_nextToEmit);
-                _nextToEmit++;
-                if (_metricsEnabled)
+                while (_downstreamReady && _pending.Count > 0 && _pending.Keys.First() == _nextToEmit)
                 {
-                    Metrics.PipelinePending().Add(-1);
+                    EmitOne(_nextToEmit);
+                    _nextToEmit++;
                 }
+            }
+            else
+            {
+                if (_downstreamReady && _pending.Count > 0)
+                {
+                    var seq = _pending.Keys.First();
+                    EmitOne(seq);
+                }
+            }
+        }
+
+        private void EmitOne(int seq)
+        {
+            _downstreamReady = false;
+            Push(_stage._out, _pending[seq]);
+            _pending.Remove(seq);
+            if (_metricsEnabled)
+            {
+                Metrics.PipelinePending().Add(-1);
             }
         }
 

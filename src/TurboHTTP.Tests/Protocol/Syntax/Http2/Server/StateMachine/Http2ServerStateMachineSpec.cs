@@ -111,8 +111,9 @@ public sealed class Http2ServerStateMachineSpec
 
         sm.PreStart();
 
-        Assert.Single(ops.Outbound);
+        Assert.Equal(2, ops.Outbound.Count);
         Assert.IsType<TransportData>(ops.Outbound[0]);
+        Assert.IsType<TransportData>(ops.Outbound[1]);
     }
 
     [Fact(Timeout = 5000)]
