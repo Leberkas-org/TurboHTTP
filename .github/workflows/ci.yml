@@ -31,5 +31,6 @@ jobs:
   build:
     uses: Leberkas-org/template.pipeline.github/.github/workflows/build-test.yml@v0
     with:
-      solution-path: ./src/TurboHTTP.slnx
+      solution-path: TurboHTTP.slnx
       extra-apt-packages: libmsquic
+      locked-mode: true
