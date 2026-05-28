@@ -56,9 +56,7 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
             encoderOpts,
             decoderOpts,
             ops,
-            options.Http2.InitialConnectionWindowSize,
-            options.Http2.InitialStreamWindowSize,
-            options.Http2.MaxRequestBodySize);
+            options);
 
         _keepAliveTimeout = options.Http2.KeepAliveTimeout;
         _requestHeadersTimeout = options.Http2.RequestHeadersTimeout;

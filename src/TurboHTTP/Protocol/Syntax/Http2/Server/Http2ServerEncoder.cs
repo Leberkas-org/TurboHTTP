@@ -93,7 +93,7 @@ internal sealed class Http2ServerEncoder
                     continue;
                 }
 
-                var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value);
+                var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(WellKnownHeaders.CommaSpace, h.Value);
                 headers.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(h.Key), value));
             }
         }
@@ -137,13 +137,13 @@ internal sealed class Http2ServerEncoder
             if (TrailerFieldValidator.IsAllowedInTrailer(header.Key))
             {
                 _reusableHeaders.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(header.Key),
-                    header.Value.ToString() ?? string.Empty));
+                    header.Value.ToString()));
             }
         }
 
         if (_reusableHeaders.Count == 0)
         {
-            return Array.Empty<Http2Frame>();
+            return [];
         }
 
         var hpackOwner = MemoryPool<byte>.Shared.Rent(4096);

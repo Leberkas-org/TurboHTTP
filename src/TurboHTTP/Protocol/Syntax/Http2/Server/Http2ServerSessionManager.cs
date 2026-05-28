@@ -41,18 +41,17 @@ internal sealed class Http2ServerSessionManager
         Http2ServerEncoderOptions encoderOptions,
         Http2ServerDecoderOptions decoderOptions,
         IServerStageOperations ops,
-        int initialConnectionWindowSize = 65535,
-        int initialStreamWindowSize = 65535,
-        long maxRequestBodySize = 30 * 1024 * 1024)
+        TurboServerOptions options)
     {
         _encoderOptions = encoderOptions;
         _decoderOptions = decoderOptions;
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
-        _requestDecoder = new Http2ServerDecoder(16 * 1024, 64 * 1024);
-        _flow = new FlowController(initialConnectionWindowSize, initialStreamWindowSize);
+        
+        _requestDecoder = new Http2ServerDecoder(options.Http2.HeaderTableSize, options.Http2.MaxHeaderListSize);
+        _flow = new FlowController(options.Http2.InitialConnectionWindowSize, options.Http2.InitialStreamWindowSize);
         _tracker = new StreamTracker(initialNextStreamId: 1, decoderOptions.MaxConcurrentStreams);
-        _maxRequestBodySize = maxRequestBodySize;
-        _initialStreamWindowSize = initialStreamWindowSize;
+        _maxRequestBodySize = options.Http2.MaxRequestBodySize;
+        _initialStreamWindowSize = options.Http2.InitialStreamWindowSize;
 
         var statePoolCapacity = Math.Min(
             decoderOptions.MaxConcurrentStreams > 0 ? decoderOptions.MaxConcurrentStreams : 100,
@@ -276,13 +275,13 @@ internal sealed class Http2ServerSessionManager
                 {
                     EmitFrame(trailerFrames[i]);
                 }
-                CloseStream(streamId);
             }
             else
             {
                 EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: true));
-                CloseStream(streamId);
             }
+
+            CloseStream(streamId);
         }
     }
 
@@ -321,13 +320,13 @@ internal sealed class Http2ServerSessionManager
                 {
                     EmitFrame(trailerFrames[i]);
                 }
-                CloseStream(streamId);
             }
             else
             {
                 EmitFrame(new DataFrame(streamId, ReadOnlyMemory<byte>.Empty, endStream: true));
-                CloseStream(streamId);
             }
+
+            CloseStream(streamId);
         }
     }
 
@@ -556,12 +555,13 @@ internal sealed class Http2ServerSessionManager
                 requestFeature.Body = state.GetBodyStream();
             }
 
-            var features = FeatureCollectionFactory.Create(requestFeature, hasBody, _ops.Services, _ops.ConnectionFeature, _ops.TlsHandshakeFeature, _maxRequestBodySize);
+            var features = FeatureCollectionFactory.Create(requestFeature, hasBody, _ops.Services,
+                _ops.ConnectionFeature, _ops.TlsHandshakeFeature, _maxRequestBodySize);
             features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
 
             var capturedStreamId = streamId;
-            features.Set<IHttpResetFeature>(new TurboHttpResetFeature(
-                errorCode => EmitRstStream(capturedStreamId, (Http2ErrorCode)errorCode)));
+            features.Set<IHttpResetFeature>(new TurboHttpResetFeature(errorCode =>
+                EmitRstStream(capturedStreamId, (Http2ErrorCode)errorCode)));
 
             _ops.OnRequest(features);
         }
@@ -573,7 +573,7 @@ internal sealed class Http2ServerSessionManager
         }
     }
 
-    private int GetStreamIdFromFeatures(IFeatureCollection features)
+    private static int GetStreamIdFromFeatures(IFeatureCollection features)
     {
         var streamIdFeature = features.Get<IHttpStreamIdFeature>();
         if (streamIdFeature is not null)
