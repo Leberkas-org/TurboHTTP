@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context.Features;
+using TurboHTTP.Server.Context.Features;
 
 namespace TurboHTTP.Server;
 
 internal static class FeatureCollectionFactory
 {
-    [ThreadStatic]
-    private static Stack<TurboFeatureCollection>? t_pool;
+    [ThreadStatic] private static Stack<TurboFeatureCollection>? _tPool;
 
     private const int MaxPoolSize = 32;
 
@@ -18,21 +17,9 @@ internal static class FeatureCollectionFactory
         TlsHandshakeFeature? tlsFeature = null,
         long? maxRequestBodySize = null)
     {
-        TurboFeatureCollection features;
-
-        if ((t_pool?.Count ?? 0) > 0)
-        {
-            features = t_pool!.Pop();
-        }
-        else
-        {
-            features = new TurboFeatureCollection();
-        }
+        var features = (_tPool?.Count ?? 0) > 0 ? _tPool!.Pop() : new TurboFeatureCollection();
 
         features.Set<IHttpRequestFeature>(requestFeature);
-
-        var bodyFeature = new TurboRequestBodyFeature { Body = requestFeature.Body };
-        features.Set<TurboRequestBodyFeature>(bodyFeature);
 
         var responseFeature = new TurboHttpResponseFeature();
         features.Set<IHttpResponseFeature>(responseFeature);
@@ -48,7 +35,7 @@ internal static class FeatureCollectionFactory
 
         if (connectionFeature is not null)
         {
-            features.Set<IHttpConnectionFeature>(connectionFeature);
+            features.Set(connectionFeature);
         }
 
         if (tlsFeature is not null)
@@ -84,11 +71,11 @@ internal static class FeatureCollectionFactory
         turboFeatures.RequestTimestamp = 0;
         turboFeatures.RequestActivity = null;
 
-        t_pool ??= new Stack<TurboFeatureCollection>(MaxPoolSize);
+        _tPool ??= new Stack<TurboFeatureCollection>(MaxPoolSize);
 
-        if (t_pool.Count < MaxPoolSize)
+        if (_tPool.Count < MaxPoolSize)
         {
-            t_pool.Push(turboFeatures);
+            _tPool.Push(turboFeatures);
         }
     }
 }

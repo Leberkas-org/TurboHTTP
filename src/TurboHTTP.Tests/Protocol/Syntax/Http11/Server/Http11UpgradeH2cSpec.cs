@@ -12,7 +12,7 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
 
-public sealed class Http11UpgradeH2cSpec
+public sealed class Http11UpgradeH2CSpec
 {
     private sealed class SwitchCapableOps : IServerStageOperations, IProtocolSwitchCapable
     {
@@ -24,8 +24,18 @@ public sealed class Http11UpgradeH2cSpec
         public List<(string Name, TimeSpan Delay)> ScheduledTimers => _inner.ScheduledTimers;
         public List<string> CancelledTimers => _inner.CancelledTimers;
         public ILoggingAdapter Log => _inner.Log;
-        public IActorRef StageActor { get => _inner.StageActor; set => _inner.StageActor = value; }
-        public IMaterializer Materializer { get => _inner.Materializer; set => _inner.Materializer = value; }
+
+        public IActorRef StageActor
+        {
+            get => _inner.StageActor;
+            set => _inner.StageActor = value;
+        }
+
+        public IMaterializer Materializer
+        {
+            get => _inner.Materializer;
+            set => _inner.Materializer = value;
+        }
 
         public void OnRequest(IFeatureCollection features) => _inner.OnRequest(features);
         public void OnOutbound(ITransportOutbound item) => _inner.OnOutbound(item);
@@ -88,7 +98,7 @@ public sealed class Http11UpgradeH2cSpec
             "\r\n"));
 
         Assert.Single(ops.Requests);
-        Assert.Equal("GET", ops.Requests[0].Get<IHttpRequestFeature>().Method);
+        Assert.Equal("GET", ops.Requests[0].Get<IHttpRequestFeature>()?.Method);
     }
 
     [Fact(Timeout = 5000)]
@@ -110,5 +120,3 @@ public sealed class Http11UpgradeH2cSpec
         Assert.Single(ops.Requests);
     }
 }
-
-

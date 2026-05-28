@@ -4,14 +4,8 @@ using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Tests.Shared;
 
-
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/2 SessionManager SETTINGS and GOAWAY handling.
-/// Tests frame emission for SETTINGS ACK, PING ACK, and GOAWAY processing.
-/// RFC 9113 §6.5 (SETTINGS), §6.7 (PING), §6.8 (GOAWAY).
-/// </summary>
 public sealed class Http2SettingsGoawaySpec
 {
     private static Http2ServerSessionManager CreateSessionManager(FakeServerOps ops)
@@ -144,7 +138,7 @@ public sealed class Http2SettingsGoawaySpec
         ops.Outbound.Clear();
 
         // Send PING with 8 bytes of data
-        byte[] pingData = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+        byte[] pingData = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
         var pingFrame = BuildPingFrame(pingData, isAck: false);
         sm.DecodeClientData(WrapFrame(pingFrame));
 
@@ -176,7 +170,7 @@ public sealed class Http2SettingsGoawaySpec
         ops.Outbound.Clear();
 
         // Send PING with ACK already set
-        byte[] pingData = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
+        byte[] pingData = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
         var pingFrame = BuildPingFrame(pingData, isAck: true);
         sm.DecodeClientData(WrapFrame(pingFrame));
 
@@ -238,6 +232,7 @@ public sealed class Http2SettingsGoawaySpec
                 Assert.Equal((uint)customStreamWindow, value);
                 found = true;
             }
+
             offset += 6;
         }
 

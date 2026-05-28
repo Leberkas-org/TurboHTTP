@@ -10,9 +10,6 @@ public sealed class Http2RstStreamRestrictionSpec
     private static byte[] MakeWindowUpdateBytes(int streamId, int increment)
         => new WindowUpdateFrame(streamId, increment).Serialize();
 
-    private static byte[] MakeDataBytes(int streamId, bool endStream)
-        => new DataFrame(streamId, "data"u8.ToArray(), endStream).Serialize();
-
     private static byte[] Concat(params byte[][] arrays)
     {
         var result = new byte[arrays.Sum(a => a.Length)];

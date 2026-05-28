@@ -9,13 +9,8 @@ using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/2 SessionManager CONTINUATION state machine.
-/// Tests fragmented header blocks, timer management, and stream correlation.
-/// </summary>
 public sealed class Http2ContinuationStateSpec
 {
-
     private static byte[] BuildHeadersFrame(
         int streamId,
         ReadOnlyMemory<byte> headerBlock,
@@ -143,7 +138,7 @@ public sealed class Http2ContinuationStateSpec
         // Now request should be emitted
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        Assert.Equal("GET", context.Get<IHttpRequestFeature>().Method);
+        Assert.Equal("GET", context.Get<IHttpRequestFeature>()?.Method);
     }
 
     [Fact(Timeout = 5000)]
@@ -178,10 +173,7 @@ public sealed class Http2ContinuationStateSpec
 
         // RFC 9113 §6.10 requires a CONTINUATION on the same stream
         // The FrameDecoder catches this before SessionManager processing
-        var ex = Assert.Throws<HttpProtocolException>(() =>
-        {
-            sm.DecodeClientData(WrapFrame(continuationFrame));
-        });
+        var ex = Assert.Throws<HttpProtocolException>(() => { sm.DecodeClientData(WrapFrame(continuationFrame)); });
 
         Assert.Contains("RFC 9113 §6.10", ex.Message);
         Assert.Contains("stream", ex.Message);
@@ -213,7 +205,7 @@ public sealed class Http2ContinuationStateSpec
         // Request should be emitted immediately
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        Assert.Equal("GET", context.Get<IHttpRequestFeature>().Method);
+        Assert.Equal("GET", context.Get<IHttpRequestFeature>()?.Method);
 
         // No timer should be scheduled (END_HEADERS was set)
         Assert.Empty(ops.ScheduledTimers);

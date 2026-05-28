@@ -221,8 +221,7 @@ public sealed class QpackRoundTripSpec
         var encoder = new QpackEncoder(maxTableCapacity: 4096);
         var decoder = new QpackDecoder(maxTableCapacity: 4096);
 
-        var headers = new List<(string, string)>();
-        var encoded = encoder.Encode(headers);
+        var encoded = encoder.Encode(new List<(string, string)>());
         var decoded = decoder.Decode(encoded.Span);
 
         Assert.Empty(decoded);

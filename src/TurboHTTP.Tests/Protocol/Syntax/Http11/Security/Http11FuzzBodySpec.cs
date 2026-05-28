@@ -38,7 +38,7 @@ public sealed class Http11FuzzBodySpec
             if (decoder.SignalEof() || decoder.IsBodyComplete)
             {
                 var response = decoder.GetResponse();
-                response?.Dispose();
+                response.Dispose();
                 decoder.Reset();
             }
         }

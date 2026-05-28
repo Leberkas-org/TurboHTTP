@@ -1,18 +1,14 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/3 Http3ServerSessionManager stream lifecycle.
-/// Tests request emission, concurrent streams, response handling, and cleanup.
-/// </summary>
 public sealed class Http3StreamLifecycleSpec
 {
     private static IFeatureCollection CreateResponseContext(long streamId = 999)
@@ -28,7 +24,7 @@ public sealed class Http3StreamLifecycleSpec
     }
 
 
-    private static (byte[] Data, long StreamId) BuildRequest(string method, string path, long streamId)
+    private static byte[] BuildRequest(string method, string path)
     {
         var tableSync = new QpackTableSync(0, 0, 0, 0);
         var headers = new List<(string, string)>
@@ -43,13 +39,13 @@ public sealed class Http3StreamLifecycleSpec
         var buf = new byte[frame.SerializedSize];
         var span = buf.AsSpan();
         frame.WriteTo(ref span);
-        return (buf, streamId);
+        return buf;
     }
 
     private static void SendRequest(Http3ServerSessionManager sm, long streamId, string method = "GET",
         string path = "/")
     {
-        var (data, _) = BuildRequest(method, path, streamId);
+        var data = BuildRequest(method, path);
         sm.DecodeClientData(new ServerStreamAccepted(StreamTarget.FromId(streamId),
             StreamDirection.Bidirectional));
         var buffer = TransportBuffer.Rent(data.Length);
@@ -154,7 +150,7 @@ public sealed class Http3StreamLifecycleSpec
 
         ops.Outbound.Clear();
 
-        context.Get<IHttpResponseFeature>().StatusCode = 200;
+        context.Get<IHttpResponseFeature>()?.StatusCode = 200;
         sm.OnResponse(context);
 
         var completeWrites = ops.Outbound.OfType<CompleteWrites>().ToList();
@@ -188,7 +184,7 @@ public sealed class Http3StreamLifecycleSpec
         var sm = CreateSM(ops);
 
         const long streamId = 16;
-        var (data, _) = BuildRequest("GET", "/", streamId);
+        var data = BuildRequest("GET", "/");
 
         sm.DecodeClientData(new ServerStreamAccepted(StreamTarget.FromId(streamId),
             StreamDirection.Bidirectional));

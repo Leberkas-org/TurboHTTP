@@ -151,7 +151,7 @@ public sealed class Http10ServerDecoderSecuritySpec
         var ex1 = Record.Exception(() => decoder.Feed(invalidCL, out _));
         Assert.NotNull(ex1);
 
-        var ex2 = Record.Exception(() => decoder.Feed(validRequest, out _));
+        _ = Record.Exception(() => decoder.Feed(validRequest, out _));
         // Second feed may throw again, but should not crash with NullRef/AccessViolation
         // If it throws, it should be a protocol exception or similar, not a system-level crash
     }

@@ -3,7 +3,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H2;
 
@@ -27,7 +26,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
     public async Task Multiplexing_should_handle_parallel_streams()
     {
         var tasks = new Task<int>[20];
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             var id = i;
             tasks[i] = Task.Run(async () =>

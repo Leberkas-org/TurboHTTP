@@ -4,7 +4,6 @@ using TurboHTTP.Protocol.Syntax.Http3.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
-[Trait("Component", "Http3ServerRequestDecoder")]
 public sealed class ServerRequestDecoderSpec
 {
     private readonly QpackTableSync _encoderTableSync = new(encoderMaxCapacity: 4096, decoderMaxCapacity: 4096);

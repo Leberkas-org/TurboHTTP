@@ -28,7 +28,7 @@ public sealed class Http3SettingsPopulationSpec
 
     private static void SimulateConnect(Http3ClientStateMachine sm)
     {
-        sm.DecodeServerData(new TransportConnected(default!));
+        sm.DecodeServerData(new TransportConnected(null!));
     }
 
     [Fact(Timeout = 5000)]

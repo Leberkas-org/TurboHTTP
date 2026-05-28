@@ -8,14 +8,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Streaming;
 
-/// <summary>
-/// Unit tests for HTTP/2 Http2ServerStateMachine flow control behavior.
-/// Tests window updates, flow control violations, and stream/connection window management.
-/// </summary>
 public sealed class Http2ServerFlowControlSpec
 {
-
-
     private static byte[] BuildDataFrame(int streamId, byte[] data, bool endStream = false)
     {
         const int frameHeaderSize = 9;
@@ -303,5 +297,3 @@ public sealed class Http2ServerFlowControlSpec
         Assert.True(windowUpdateCount > 0, "Expected at least one WINDOW_UPDATE frame");
     }
 }
-
-

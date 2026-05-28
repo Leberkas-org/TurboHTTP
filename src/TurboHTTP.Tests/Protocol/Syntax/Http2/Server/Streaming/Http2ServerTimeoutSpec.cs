@@ -7,13 +7,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Streaming;
 
-/// <summary>
-/// Unit tests for HTTP/2 Http2ServerStateMachine timeout protection.
-/// Tests keep-alive, headers timeout, and body data rate enforcement.
-/// </summary>
 public sealed class Http2ServerTimeoutSpec
 {
-
     private static byte[] BuildHeadersFrame(int streamId, ReadOnlyMemory<byte> headerBlock, bool endStream = false,
         bool endHeaders = true)
     {
@@ -308,5 +303,3 @@ public sealed class Http2ServerTimeoutSpec
         Assert.Equal(TimeSpan.FromSeconds(1), rateTimer.Delay);
     }
 }
-
-

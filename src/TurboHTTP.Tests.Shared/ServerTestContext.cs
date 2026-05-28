@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context.Features;
+using TurboHTTP.Server.Context.Features;
 
 namespace TurboHTTP.Tests.Shared;
 
 internal static class ServerTestContext
 {
-    internal static ServerTestContextBuilder Request() => new();
 
     internal static IFeatureCollection CreateResponse(int statusCode = 200)
     {

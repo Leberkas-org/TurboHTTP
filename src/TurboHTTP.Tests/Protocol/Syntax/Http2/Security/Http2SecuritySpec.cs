@@ -127,8 +127,7 @@ public sealed class Http2SecuritySpec
         decoder.Decode(rst101); // Decoder still accepts it
         rstCount++; // Count reaches 101
 
-        var ex = Assert.Throws<HttpProtocolException>(() =>
-            EnforceRstFloodThreshold(rstCount, threshold: 100));
+        Assert.Throws<HttpProtocolException>(() => EnforceRstFloodThreshold(rstCount, threshold: 100));
     }
 
     [Fact(Timeout = 5000)]

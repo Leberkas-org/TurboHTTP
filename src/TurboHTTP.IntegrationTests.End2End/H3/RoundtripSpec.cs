@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H3;
 

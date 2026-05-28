@@ -110,7 +110,7 @@ public sealed class Http3FieldValidatorSpec
             (name, "value"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -224,7 +224,7 @@ public sealed class Http3FieldValidatorSpec
             ("te", "chunked"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -237,7 +237,7 @@ public sealed class Http3FieldValidatorSpec
             ("te", "trailers, gzip"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -250,7 +250,7 @@ public sealed class Http3FieldValidatorSpec
             ("te", ""),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]

@@ -20,15 +20,6 @@ public sealed class Http3StreamLifecycleSpec
     private Http3ClientStateMachine CreateMachine(FakeOps? ops = null)
         => new(new TurboClientOptions(), ops ?? _ops);
 
-    private static TransportBuffer SerializeFrame(Http3Frame frame)
-    {
-        var buffer = TransportBuffer.Rent(frame.SerializedSize);
-        var span = buffer.FullMemory.Span;
-        frame.WriteTo(ref span);
-        buffer.Length = frame.SerializedSize;
-        return buffer;
-    }
-
     private static void SimulateConnect(Http3ClientStateMachine sm)
         => sm.DecodeServerData(new TransportConnected(DummyConnectionInfo));
 

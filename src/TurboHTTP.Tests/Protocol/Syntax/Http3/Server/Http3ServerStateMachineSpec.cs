@@ -1,19 +1,14 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
-/// <summary>
-/// Unit tests for HTTP/3 Http3ServerStateMachine.
-/// Tests QUIC stream multiplexing, request assembly from HEADERS/DATA frames,
-/// response encoding, and critical stream handling.
-/// </summary>
 public sealed class Http3ServerStateMachineSpec
 {
     private static byte[] BuildHeadersFrameData(ReadOnlyMemory<byte> headerBlock)
@@ -194,9 +189,7 @@ public sealed class Http3ServerStateMachineSpec
         Assert.Equal("/api/data", requestFeature.Path);
 
         // Verify body was accumulated
-        var bodyFeature = context.Get<TurboRequestBodyFeature>();
-        Assert.NotNull(bodyFeature);
-        var bodyStream = bodyFeature.Body;
+        var bodyStream = requestFeature.Body;
         var content = await new StreamReader(bodyStream).ReadToEndAsync(TestContext.Current.CancellationToken);
         Assert.Equal(bodyContent, content);
     }
@@ -235,7 +228,7 @@ public sealed class Http3ServerStateMachineSpec
         ops.Outbound.Clear();
 
         // Send response without body
-        context.Get<IHttpResponseFeature>().StatusCode = 200;
+        context.Get<IHttpResponseFeature>()?.StatusCode = 200;
         sm.OnResponse(context);
 
         // Should emit HEADERS frame + CompleteWrites immediately (no body)
@@ -278,8 +271,8 @@ public sealed class Http3ServerStateMachineSpec
         ops.Outbound.Clear();
 
         // Send response with body
-        context.Get<IHttpResponseFeature>().StatusCode = 200;
-        context.Get<IHttpResponseFeature>().Headers["Content-Length"] = "100";
+        context.Get<IHttpResponseFeature>()?.StatusCode = 200;
+        context.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "100";
         sm.OnResponse(context);
 
         // Should emit HEADERS frame immediately

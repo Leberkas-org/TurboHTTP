@@ -173,10 +173,7 @@ public sealed class Http3ServerStreamResolverSpec
         var totalSize = typeLen + (extraData?.Length ?? 0);
         var buffer = TransportBuffer.Rent(totalSize);
         typeBytes.AsSpan(0, typeLen).CopyTo(buffer.FullMemory.Span);
-        if (extraData != null)
-        {
-            extraData.CopyTo(buffer.FullMemory.Span[typeLen..]);
-        }
+        extraData?.CopyTo(buffer.FullMemory.Span[typeLen..]);
 
         buffer.Length = totalSize;
         return buffer;

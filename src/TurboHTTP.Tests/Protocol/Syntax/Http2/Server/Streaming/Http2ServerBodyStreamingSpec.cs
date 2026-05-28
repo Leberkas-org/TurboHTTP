@@ -8,13 +8,8 @@ using Microsoft.AspNetCore.Http.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Streaming;
 
-/// <summary>
-/// Unit tests for HTTP/2 Http2ServerStateMachine streaming request body handling via System.IO.Pipelines.
-/// Tests PipeBodyContent emission, DATA frame writing, and max body size enforcement.
-/// </summary>
 public sealed class Http2ServerBodyStreamingSpec
 {
-
     private static byte[] BuildHeadersFrame(int streamId, ReadOnlyMemory<byte> headerBlock, bool endStream = false,
         bool endHeaders = true)
     {
@@ -109,7 +104,7 @@ public sealed class Http2ServerBodyStreamingSpec
         var context = ops.Requests[0];
 
         // Request should have a body stream
-        var bodyStream = context.Get<IHttpRequestFeature>().Body;
+        var bodyStream = context.Get<IHttpRequestFeature>()?.Body;
         Assert.NotNull(bodyStream);
         Assert.True(bodyStream.CanRead);
 
@@ -152,7 +147,7 @@ public sealed class Http2ServerBodyStreamingSpec
         var context = ops.Requests[0];
 
         // Request should have empty body stream
-        var bodyStream = context.Get<IHttpRequestFeature>().Body;
+        var bodyStream = context.Get<IHttpRequestFeature>()?.Body;
         Assert.NotNull(bodyStream);
         using var ms = new MemoryStream();
         bodyStream.CopyTo(ms);
@@ -233,7 +228,7 @@ public sealed class Http2ServerBodyStreamingSpec
 
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        var bodyStream = context.Get<IHttpRequestFeature>().Body;
+        var bodyStream = context.Get<IHttpRequestFeature>()?.Body;
         Assert.NotNull(bodyStream);
 
         // Send first DATA frame
@@ -282,7 +277,7 @@ public sealed class Http2ServerBodyStreamingSpec
 
         Assert.Single(ops.Requests);
         var context = ops.Requests[0];
-        var bodyStream = context.Get<IHttpRequestFeature>().Body;
+        var bodyStream = context.Get<IHttpRequestFeature>()?.Body;
         Assert.NotNull(bodyStream);
 
         // Send partial DATA frame
@@ -324,6 +319,3 @@ public sealed class Http2ServerBodyStreamingSpec
         sm.DecodeClientData(new TransportData(buffer2));
     }
 }
-
-
-

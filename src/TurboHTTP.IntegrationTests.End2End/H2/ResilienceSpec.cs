@@ -2,14 +2,13 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H2;
 
 [Collection("H2")]
 public sealed class ResilienceSpec : End2EndSpecBase
 {
-    private TaskCompletionSource _handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     protected override Version ProtocolVersion => HttpVersion.Version20;
 

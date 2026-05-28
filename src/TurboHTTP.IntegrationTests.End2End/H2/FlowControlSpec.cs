@@ -1,9 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H2;
 
@@ -14,7 +12,7 @@ public sealed class FlowControlSpec : End2EndSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapPost("/echo-bytes", async (HttpContext ctx) =>
+        app.MapPost("/echo-bytes", async ctx =>
         {
             using var stream = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(stream, CancellationToken);
@@ -23,12 +21,12 @@ public sealed class FlowControlSpec : End2EndSpecBase
             await ctx.Response.Body.WriteAsync(data, CancellationToken);
         });
 
-        app.MapGet("/generate-large", async (HttpContext ctx) =>
+        app.MapGet("/generate-large", async ctx =>
         {
             ctx.Response.ContentType = "application/octet-stream";
             var buffer = new byte[16 * 1024];
             Array.Fill(buffer, (byte)0xCD);
-            for (int i = 0; i < 64; i++)
+            for (var i = 0; i < 64; i++)
             {
                 await ctx.Response.Body.WriteAsync(buffer, CancellationToken);
             }

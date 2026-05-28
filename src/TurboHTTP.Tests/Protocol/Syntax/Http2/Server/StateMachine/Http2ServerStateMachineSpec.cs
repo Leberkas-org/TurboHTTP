@@ -1,32 +1,16 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 
-/// <summary>
-/// Unit tests for HTTP/2 Http2ServerStateMachine.
-/// Tests frame decoding, request assembly, response encoding, and flow control.
-/// </summary>
 public sealed class Http2ServerStateMachineSpec
 {
-    private static IFeatureCollection CreateResponseContext()
-    {
-        var features = new TurboFeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
-        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
-        var bodyFeature = new TurboHttpResponseBodyFeature();
-        features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return features;
-    }
-
-
     private static byte[] BuildHeadersFrame(int streamId, ReadOnlyMemory<byte> headerBlock, bool endStream = false,
         bool endHeaders = true)
     {
@@ -59,8 +43,7 @@ public sealed class Http2ServerStateMachineSpec
     private static byte[] BuildSettingsFrame(bool isAck = false)
     {
         const int frameHeaderSize = 9;
-        var frameSize = frameHeaderSize;
-        var frame = new byte[frameSize];
+        var frame = new byte[frameHeaderSize];
 
         frame[0] = 0;
         frame[1] = 0;
@@ -79,7 +62,7 @@ public sealed class Http2ServerStateMachineSpec
     {
         const int frameHeaderSize = 9;
         const int pingDataSize = 8;
-        var frameSize = frameHeaderSize + pingDataSize;
+        const int frameSize = frameHeaderSize + pingDataSize;
         var frame = new byte[frameSize];
 
         frame[0] = 0;
@@ -157,8 +140,8 @@ public sealed class Http2ServerStateMachineSpec
         Assert.Equal(1, streamIdFeature.StreamId);
 
         // Verify request properties
-        Assert.Equal("GET", context.Get<IHttpRequestFeature>().Method);
-        Assert.Equal("/", context.Get<IHttpRequestFeature>().Path);
+        Assert.Equal("GET", context.Get<IHttpRequestFeature>()?.Method);
+        Assert.Equal("/", context.Get<IHttpRequestFeature>()?.Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -267,7 +250,7 @@ public sealed class Http2ServerStateMachineSpec
         // Now send a response
         ops.Outbound.Clear();
         var requestContext = ops.Requests[0];
-        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>()?.StatusCode = 200;
         sm.OnResponse(requestContext);
 
         // Should emit response frames
@@ -312,6 +295,3 @@ public sealed class Http2ServerStateMachineSpec
         sm.Cleanup();
     }
 }
-
-
-

@@ -12,7 +12,6 @@ namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Stages;
 public sealed class Http2ConnectionFlowControlBatchingSpec : StreamTestBase
 {
     private const int DefaultStreamWindow = 65535;
-    private const int DefaultThreshold = 32767;
 
     private async Task<(IReadOnlyList<HttpResponseMessage> Downstream, IReadOnlyList<Http2Frame> ServerBound)> RunAsync(
         int initialWindowSize,

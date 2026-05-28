@@ -1,19 +1,14 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
-
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/2 SessionManager stream lifecycle and max concurrent streams.
-/// Tests stream creation, closure, RST_STREAM handling, and max concurrent stream limits.
-/// </summary>
 public sealed class Http2StreamLifecycleSpec
 {
     private static IFeatureCollection CreateResponseContext(long streamId = 99)

@@ -181,7 +181,7 @@ public sealed class Http3PseudoHeaderValidationRequestSpec
             (":authority", "example.com"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => Http3ClientEncoder.ValidatePseudoHeaders(headers));
+        Assert.Throws<HttpProtocolException>(() => Http3ClientEncoder.ValidatePseudoHeaders(headers));
     }
 
     [Fact(Timeout = 5000)]

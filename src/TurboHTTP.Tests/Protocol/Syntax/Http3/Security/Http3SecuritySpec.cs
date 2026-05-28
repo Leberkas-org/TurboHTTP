@@ -116,7 +116,7 @@ public sealed class Http3SecuritySpec
             (SettingsIdentifier.ReservedH2EnablePush, 1),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => SettingsIdentifier.RejectForbiddenH2Settings(parameters));
+        Assert.Throws<HttpProtocolException>(() => SettingsIdentifier.RejectForbiddenH2Settings(parameters));
     }
 
     [Fact(Timeout = 5000)]

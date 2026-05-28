@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H11;
 
@@ -14,7 +13,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapPost("/echo-bytes", async (HttpContext ctx) =>
+        app.MapPost("/echo-bytes", async ctx =>
         {
             using var stream = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(stream, CancellationToken);
@@ -37,7 +36,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
             }
         });
 
-        app.MapPost("/empty-echo", async (HttpContext ctx) =>
+        app.MapPost("/empty-echo", async ctx =>
         {
             using var stream = new MemoryStream();
             await ctx.Request.Body.CopyToAsync(stream, CancellationToken);

@@ -252,9 +252,9 @@ public sealed class Http3ResponseDecoderEdgeCasesSpec
     public void AssembleHeaders_empty_header_list()
     {
         var state = new StreamState();
-        var headers = new List<(string Name, string Value)>();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.AssembleHeaders(headers, state));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.AssembleHeaders(new List<(string Name, string Value)>(), state));
         Assert.Contains(":status", ex.Message);
     }
 

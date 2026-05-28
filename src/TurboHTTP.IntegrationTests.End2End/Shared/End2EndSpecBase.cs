@@ -2,16 +2,16 @@ using System.Net;
 using System.Net.Quic;
 using System.Net.Security;
 using System.Net.Sockets;
-using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Akka.Actor;
+using Akka.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Servus.Akka.Transport;
-using Servus.Akka.Transport.Tcp.Listener;
-using Servus.Akka.Transport.Quic.Listener;
 using TurboHTTP.Client;
 using TurboHTTP.Server;
 using QuicListenerOptionsServus = Servus.Akka.Transport.QuicListenerOptions;
@@ -22,7 +22,7 @@ public abstract class End2EndSpecBase : IAsyncLifetime
 {
     private WebApplication? _app;
     private ITurboHttpClient? _client;
-    private ServiceProvider? _clientProvider;
+    private Microsoft.Extensions.DependencyInjection.ServiceProvider? _clientProvider;
     private X509Certificate2? _cert;
 
     protected abstract Version ProtocolVersion { get; }
@@ -105,21 +105,22 @@ public abstract class End2EndSpecBase : IAsyncLifetime
 
         var services = new ServiceCollection();
 
+        var diSetup = DependencyResolverSetup.Create(services.BuildServiceProvider());
+        var bootstrap = BootstrapSetup.Create();
+        var system = ActorSystem.Create($"e2e-client-{Guid.NewGuid():N}", bootstrap.And(diSetup));
+        services.AddSingleton(system);
+
         var clientOptions = new TurboClientOptions
         {
-            BaseAddress = new Uri(BaseUri)
+            BaseAddress = new Uri(BaseUri),
+            DangerousAcceptAnyServerCertificate = needsTls
         };
-
-        if (needsTls)
-        {
-            clientOptions.DangerousAcceptAnyServerCertificate = true;
-        }
 
         ConfigureClientOptions(clientOptions);
 
-        services.AddSingleton<IOptionsFactory<TurboClientOptions>>(
-            new FixedOptionsFactory(clientOptions));
         services.AddTurboHttpClient();
+        services.Replace(ServiceDescriptor.Singleton<IOptionsFactory<TurboClientOptions>>(
+            new FixedOptionsFactory(clientOptions)));
 
         _clientProvider = services.BuildServiceProvider();
 
@@ -132,10 +133,7 @@ public abstract class End2EndSpecBase : IAsyncLifetime
 
     public virtual async ValueTask DisposeAsync()
     {
-        if (_client is not null)
-        {
-            _client.Dispose();
-        }
+        _client?.Dispose();
 
         if (_app is not null)
         {
@@ -145,6 +143,13 @@ public abstract class End2EndSpecBase : IAsyncLifetime
 
         if (_clientProvider is not null)
         {
+            var system = _clientProvider.GetService<ActorSystem>();
+            if (system is not null)
+            {
+                await system.Terminate().WaitAsync(TimeSpan.FromSeconds(10));
+                await system.WhenTerminated.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+
             await _clientProvider.DisposeAsync();
         }
 

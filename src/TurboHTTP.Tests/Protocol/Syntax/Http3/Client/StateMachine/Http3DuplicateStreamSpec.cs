@@ -6,17 +6,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 
-/// <summary>
-/// Tests for HTTP/3 stream type uniqueness validation.
-///
-/// RFC 9114 §6.2.1 requires that control, encoder, and decoder streams be unique.
-/// The new Http3ClientStateMachine API delegates stream type resolution to the internal ProtocolHandler,
-/// which is triggered when DecodeServerData receives a ServerStreamAccepted event followed by
-/// stream data containing the stream type byte.
-///
-/// These tests verify that duplicate stream type declarations are rejected by observing
-/// Outbound warnings or connection failures.
-/// </summary>
 public sealed class Http3DuplicateStreamSpec
 {
     private readonly FakeOps _ops = new();

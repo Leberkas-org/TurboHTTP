@@ -5,12 +5,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Client.StateMachine;
 
-/// <summary>
-/// Tests for QPACK decoder stream behavior.
-/// These tests verify that decoder state is managed correctly during PreStart() and reconnection cycles.
-/// Direct access to internal QPACK state (TableSync, FlushDecoderInstructions) is not available in the public API.
-/// Observable behavior (Outbound emissions of MultiplexedData with stream ID -4) is tested instead.
-/// </summary>
 public sealed class Http3DecoderStreamSpec
 {
     private readonly FakeOps _ops = new();
@@ -22,7 +16,7 @@ public sealed class Http3DecoderStreamSpec
 
     private static void SimulateConnect(Http3ClientStateMachine sm)
     {
-        sm.DecodeServerData(new TransportConnected(default!));
+        sm.DecodeServerData(new TransportConnected(null!));
     }
 
     [Fact(Timeout = 5000)]

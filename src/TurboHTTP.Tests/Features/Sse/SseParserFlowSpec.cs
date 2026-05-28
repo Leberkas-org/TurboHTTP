@@ -104,8 +104,8 @@ public sealed class SseParserFlowSpec : TestKit
     {
         var result = await Source.From(new[]
             {
-                (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes("data: hel"),
-                (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes("lo\n\n")
+                (ReadOnlyMemory<byte>)"data: hel"u8.ToArray(),
+                (ReadOnlyMemory<byte>)"lo\n\n"u8.ToArray()
             })
             .Via(SseParserFlow.Instance)
             .RunWith(Sink.Seq<ServerSentEvent>(), _materializer);
@@ -118,7 +118,7 @@ public sealed class SseParserFlowSpec : TestKit
     public async Task Flow_should_strip_bom()
     {
         var bom = new byte[] { 0xEF, 0xBB, 0xBF };
-        var data = Encoding.UTF8.GetBytes("data: hello\n\n");
+        var data = "data: hello\n\n"u8.ToArray();
         var combined = bom.Concat(data).ToArray();
 
         var result = await Source.Single((ReadOnlyMemory<byte>)combined)

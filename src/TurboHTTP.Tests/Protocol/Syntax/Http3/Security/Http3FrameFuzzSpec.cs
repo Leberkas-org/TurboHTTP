@@ -115,7 +115,7 @@ public sealed class Http3FrameFuzzSpec
         for (byte b = 0; b < 255; b++)
         {
             using var decoder = new FrameDecoder();
-            var data = new byte[] { b };
+            var data = new[] { b };
 
             AssertDecodeNeverCrashes(decoder, data);
         }
@@ -153,7 +153,7 @@ public sealed class Http3FrameFuzzSpec
             offset += QuicVarInt.Encode(42, payloadBuf.AsSpan(offset));
             var payload = payloadBuf[..offset];
 
-            var ex = Assert.Throws<HttpProtocolException>(() => Settings.Deserialize(payload));
+            Assert.Throws<HttpProtocolException>(() => Settings.Deserialize(payload));
         }
     }
 
@@ -172,7 +172,7 @@ public sealed class Http3FrameFuzzSpec
 
         var payload = payloadBuf[..offset];
 
-        var ex = Assert.Throws<HttpProtocolException>(() => Settings.Deserialize(payload));
+        Assert.Throws<HttpProtocolException>(() => Settings.Deserialize(payload));
     }
 
     [Fact(Timeout = 5000)]

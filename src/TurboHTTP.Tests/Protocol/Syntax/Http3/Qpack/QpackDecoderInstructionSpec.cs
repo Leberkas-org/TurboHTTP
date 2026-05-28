@@ -78,10 +78,10 @@ public sealed class QpackDecoderInstructionSpec
     [Trait("RFC", "RFC9204-4.4.2")]
     public void Should_ThrowForNegativeStreamId_Cancellation()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(ThrowHelper_NegativeCancel);
+        Assert.Throws<ArgumentOutOfRangeException>(ThrowHelperNegativeCancel);
         return;
 
-        static void ThrowHelper_NegativeCancel()
+        static void ThrowHelperNegativeCancel()
         {
             var output = new byte[16];
             var writer = SpanWriter.Create(output);
@@ -121,9 +121,10 @@ public sealed class QpackDecoderInstructionSpec
     [Trait("RFC", "RFC9204-4.4.3")]
     public void Should_ThrowForZeroIncrement()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(ThrowHelper_ZeroIncrement);
+        Assert.Throws<ArgumentOutOfRangeException>(ThrowHelperZeroIncrement);
+        return;
 
-        static void ThrowHelper_ZeroIncrement()
+        static void ThrowHelperZeroIncrement()
         {
             var output = new byte[16];
             var writer = SpanWriter.Create(output);

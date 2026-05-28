@@ -25,7 +25,7 @@ public sealed class Http11ServerEncoderHardeningSpec
     {
         var encoder = MakeEncoder();
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers[headerName] = "test-value";
+        ctx.Get<IHttpResponseFeature>()?.Headers[headerName] = "test-value";
 
         var buffer = new byte[4096];
         var written = encoder.Encode(buffer, ctx, isChunked: false);
@@ -67,9 +67,9 @@ public sealed class Http11ServerEncoderHardeningSpec
     public void Encode_should_not_duplicate_existing_date_header()
     {
         var encoder = MakeEncoder(withDate: true);
-        var existingDate = "Mon, 17 May 2021 12:00:00 GMT";
+        const string existingDate = "Mon, 17 May 2021 12:00:00 GMT";
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers["Date"] = existingDate;
+        ctx.Get<IHttpResponseFeature>()?.Headers["Date"] = existingDate;
         var buffer = new byte[4096];
 
         var written = encoder.Encode(buffer, ctx, isChunked: false);

@@ -1,23 +1,17 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Options;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/3 Http3ServerSessionManager body rate checking and timeout handling.
-/// Tests that DATA frames trigger body-rate-check timers, and that headers-timeout is properly
-/// cancelled upon successful decoding or stream completion.
-/// </summary>
 public sealed class Http3BodyRateTimeoutSpec
 {
-
-    private static (byte[] Data, long StreamId) BuildRequest(string method, string path, long streamId)
+    private static byte[] BuildRequest(string method, string path)
     {
         var tableSync = new QpackTableSync(0, 0, 0, 0);
         var headers = new List<(string, string)>
@@ -32,7 +26,7 @@ public sealed class Http3BodyRateTimeoutSpec
         var buf = new byte[frame.SerializedSize];
         var span = buf.AsSpan();
         frame.WriteTo(ref span);
-        return (buf, streamId);
+        return buf;
     }
 
     private static byte[] BuildDataFrameBytes(int size)
@@ -62,7 +56,7 @@ public sealed class Http3BodyRateTimeoutSpec
         const long streamId = 4;
 
         // Build HEADERS
-        var (headerBytes, _) = BuildRequest("POST", "/upload", streamId);
+        var headerBytes = BuildRequest("POST", "/upload");
 
         // Open stream
         sm.DecodeClientData(new ServerStreamAccepted(StreamTarget.FromId(streamId),
@@ -102,7 +96,7 @@ public sealed class Http3BodyRateTimeoutSpec
         const long streamId = 8;
 
         // Build HEADERS
-        var (headerBytes, _) = BuildRequest("GET", "/", streamId);
+        var headerBytes = BuildRequest("GET", "/");
 
         // Open stream
         sm.DecodeClientData(new ServerStreamAccepted(StreamTarget.FromId(streamId),
@@ -138,7 +132,7 @@ public sealed class Http3BodyRateTimeoutSpec
         const long streamId = 12;
 
         // Build HEADERS
-        var (headerBytes, _) = BuildRequest("GET", "/", streamId);
+        var headerBytes = BuildRequest("GET", "/");
 
         // Open stream
         sm.DecodeClientData(new ServerStreamAccepted(StreamTarget.FromId(streamId),

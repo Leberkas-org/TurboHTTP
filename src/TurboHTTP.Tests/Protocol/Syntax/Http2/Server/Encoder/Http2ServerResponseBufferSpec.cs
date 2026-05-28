@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
@@ -9,24 +8,8 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.Encoder;
 
-/// <summary>
-/// Unit tests for HTTP/2 Http2ServerStateMachine response body streaming and flow control.
-/// Tests response header encoding, timer-driven body draining, and WINDOW_UPDATE handling.
-/// </summary>
 public sealed class Http2ServerResponseBufferSpec
 {
-    private static IFeatureCollection CreateResponseContext()
-    {
-        var features = new TurboFeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
-        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
-        var bodyFeature = new TurboHttpResponseBodyFeature();
-        features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        return features;
-    }
-
-
     private static byte[] BuildHeadersFrame(int streamId, ReadOnlyMemory<byte> headerBlock, bool endStream = false,
         bool endHeaders = true)
     {
@@ -101,7 +84,7 @@ public sealed class Http2ServerResponseBufferSpec
         return new Memory<byte>(buffer, 0, written);
     }
 
-    private static void DecodeFramesAsStream(FakeServerOps ops, Http2ServerStateMachine sm, byte[] frameData)
+    private static void DecodeFramesAsStream(Http2ServerStateMachine sm, byte[] frameData)
     {
         var buffer = TransportBuffer.Rent(frameData.Length);
         frameData.CopyTo(buffer.FullMemory.Span);
@@ -136,7 +119,7 @@ public sealed class Http2ServerResponseBufferSpec
         // Send HEADERS frame for stream 1
         var headerBlock = EncodeHeaders("GET", "/api/status", "example.com");
         var headersFrameData = BuildHeadersFrame(streamId: 1, headerBlock, endStream: true, endHeaders: true);
-        DecodeFramesAsStream(ops, sm, headersFrameData);
+        DecodeFramesAsStream(sm, headersFrameData);
 
         Assert.Single(ops.Requests);
 
@@ -144,8 +127,8 @@ public sealed class Http2ServerResponseBufferSpec
 
         // Send response
         var requestContext = ops.Requests[0];
-        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
-        requestContext.Get<IHttpResponseFeature>().Headers["Content-Length"] = "0";
+        requestContext.Get<IHttpResponseFeature>()?.StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "0";
         sm.OnResponse(requestContext);
 
         // Extract frames after response
@@ -168,7 +151,7 @@ public sealed class Http2ServerResponseBufferSpec
         // Send HEADERS frame for stream 1
         var headerBlock = EncodeHeaders("GET", "/api/data", "example.com");
         var headersFrameData = BuildHeadersFrame(streamId: 1, headerBlock, endStream: true, endHeaders: true);
-        DecodeFramesAsStream(ops, sm, headersFrameData);
+        DecodeFramesAsStream(sm, headersFrameData);
 
         Assert.Single(ops.Requests);
 
@@ -176,8 +159,8 @@ public sealed class Http2ServerResponseBufferSpec
 
         // Send response
         var requestContext = ops.Requests[0];
-        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
-        requestContext.Get<IHttpResponseFeature>().Headers["Content-Length"] = "100";
+        requestContext.Get<IHttpResponseFeature>()?.StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "100";
         sm.OnResponse(requestContext);
 
         // Extract frames after response
@@ -198,16 +181,16 @@ public sealed class Http2ServerResponseBufferSpec
 
         var headerBlock = EncodeHeaders("GET", "/api/data", "example.com");
         var headersFrameData = BuildHeadersFrame(streamId: 1, headerBlock, endStream: true, endHeaders: true);
-        DecodeFramesAsStream(ops, sm, headersFrameData);
+        DecodeFramesAsStream(sm, headersFrameData);
 
         Assert.Single(ops.Requests);
 
         var requestContext = ops.Requests[0];
-        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>()?.StatusCode = 200;
         sm.OnResponse(requestContext);
 
         var windowUpdateData = BuildWindowUpdateFrame(streamId: 1, increment: 50000);
-        DecodeFramesAsStream(ops, sm, windowUpdateData);
+        DecodeFramesAsStream(sm, windowUpdateData);
     }
 
     [Fact(Timeout = 5000)]
@@ -266,6 +249,3 @@ public sealed class Http2ServerResponseBufferSpec
         Assert.Equal(16384, encoder.MaxFrameSize);
     }
 }
-
-
-

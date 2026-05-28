@@ -26,7 +26,7 @@ public sealed class Http3RequestPathAuthoritySpec
         var encoder = CreateEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com");
         var headers = DecodeHeaders(encoder, request);
-        Assert.Contains(headers, h => h.Name == ":path" && h.Value == "/");
+        Assert.Contains(headers, h => h is { Name: ":path", Value: "/" });
     }
 
     [Fact(Timeout = 5000)]
@@ -36,7 +36,7 @@ public sealed class Http3RequestPathAuthoritySpec
         var encoder = CreateEncoder();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/search?q=test&page=1");
         var headers = DecodeHeaders(encoder, request);
-        Assert.Contains(headers, h => h.Name == ":path" && h.Value == "/search?q=test&page=1");
+        Assert.Contains(headers, h => h is { Name: ":path", Value: "/search?q=test&page=1" });
     }
 
     [Fact(Timeout = 5000)]

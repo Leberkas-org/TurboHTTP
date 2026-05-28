@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http.Features;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Diagnostics;
+using TurboHTTP.Server.Context.Features;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Stages.Server;

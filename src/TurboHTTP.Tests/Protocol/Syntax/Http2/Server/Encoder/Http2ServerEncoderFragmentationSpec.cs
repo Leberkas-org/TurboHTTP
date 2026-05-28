@@ -23,7 +23,7 @@ public sealed class Http2ServerEncoderFragmentationSpec
         // Add multiple headers to ensure the encoded block exceeds MaxFrameSize
         for (var i = 0; i < 10; i++)
         {
-            ctx.Get<IHttpResponseFeature>().Headers[$"x-header-{i}"] = $"this-is-a-long-header-value-to-force-fragmentation-{i}";
+            ctx.Get<IHttpResponseFeature>()?.Headers[$"x-header-{i}"] = $"this-is-a-long-header-value-to-force-fragmentation-{i}";
         }
 
         // Act
@@ -48,7 +48,7 @@ public sealed class Http2ServerEncoderFragmentationSpec
         var ctx = ServerTestContext.CreateResponse();
         for (var i = 0; i < 10; i++)
         {
-            ctx.Get<IHttpResponseFeature>().Headers[$"x-header-{i}"] = $"this-is-a-long-header-value-to-force-fragmentation-{i}";
+            ctx.Get<IHttpResponseFeature>()?.Headers[$"x-header-{i}"] = $"this-is-a-long-header-value-to-force-fragmentation-{i}";
         }
 
         // Act
@@ -76,7 +76,7 @@ public sealed class Http2ServerEncoderFragmentationSpec
         var ctx = ServerTestContext.CreateResponse();
         for (var i = 0; i < 10; i++)
         {
-            ctx.Get<IHttpResponseFeature>().Headers[$"x-header-{i}"] = $"this-is-a-long-header-value-to-force-fragmentation-{i}";
+            ctx.Get<IHttpResponseFeature>()?.Headers[$"x-header-{i}"] = $"this-is-a-long-header-value-to-force-fragmentation-{i}";
         }
 
         // Act
@@ -121,11 +121,11 @@ public sealed class Http2ServerEncoderFragmentationSpec
         _encoder.ApplyClientSettings([(SettingsParameter.MaxFrameSize, 64u)]);
 
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers["x-custom-header"] = "custom-value";
-        ctx.Get<IHttpResponseFeature>().Headers["x-another-header"] = "another-value";
+        ctx.Get<IHttpResponseFeature>()?.Headers["x-custom-header"] = "custom-value";
+        ctx.Get<IHttpResponseFeature>()?.Headers["x-another-header"] = "another-value";
         for (var i = 0; i < 8; i++)
         {
-            ctx.Get<IHttpResponseFeature>().Headers[$"x-header-{i}"] = $"header-value-{i}";
+            ctx.Get<IHttpResponseFeature>()?.Headers[$"x-header-{i}"] = $"header-value-{i}";
         }
 
         // Act
@@ -167,7 +167,7 @@ public sealed class Http2ServerEncoderFragmentationSpec
     {
         // Arrange
         var ctx1 = ServerTestContext.CreateResponse();
-        ctx1.Get<IHttpResponseFeature>().Headers["x-test"] = "value1";
+        ctx1.Get<IHttpResponseFeature>()?.Headers["x-test"] = "value1";
 
         // Encode first response
         var frames1 = _encoder.EncodeHeaders(ctx1, streamId: 1, hasBody: false);
@@ -178,7 +178,7 @@ public sealed class Http2ServerEncoderFragmentationSpec
 
         // Encode second response after reset
         var ctx2 = ServerTestContext.CreateResponse(201);
-        ctx2.Get<IHttpResponseFeature>().Headers["x-test"] = "value2";
+        ctx2.Get<IHttpResponseFeature>()?.Headers["x-test"] = "value2";
         var frames2 = _encoder.EncodeHeaders(ctx2, streamId: 3, hasBody: false);
 
         // Assert: No crash occurred and frames were produced

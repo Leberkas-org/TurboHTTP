@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 
 namespace TurboHTTP.Tests.Server;
 
@@ -25,16 +25,6 @@ public sealed class FeatureCollectionFactorySpec
 
         var responseFeature = ctx.Get<IHttpResponseFeature>();
         Assert.NotNull(responseFeature);
-    }
-
-    [Fact(Timeout = 5000)]
-    public void Create_should_set_request_body_feature()
-    {
-        var requestFeature = new TurboHttpRequestFeature();
-        var ctx = FeatureCollectionFactory.Create(requestFeature, hasBody: false);
-
-        var bodyFeature = ctx.Get<TurboRequestBodyFeature>();
-        Assert.NotNull(bodyFeature);
     }
 
     [Fact(Timeout = 5000)]
@@ -131,7 +121,8 @@ public sealed class FeatureCollectionFactorySpec
     public void Create_should_set_max_request_body_size_feature()
     {
         var requestFeature = new TurboHttpRequestFeature();
-        var features = FeatureCollectionFactory.Create(requestFeature, hasBody: false, maxRequestBodySize: 10 * 1024 * 1024);
+        var features =
+            FeatureCollectionFactory.Create(requestFeature, hasBody: false, maxRequestBodySize: 10 * 1024 * 1024);
 
         var maxBodyFeature = features.Get<IHttpMaxRequestBodySizeFeature>();
         Assert.NotNull(maxBodyFeature);

@@ -124,7 +124,7 @@ public sealed class Http11ServerDecoderSpec
         Assert.Equal(DecodeOutcome.Complete, outcome);
         var feature = decoder.GetRequestFeature();
         Assert.Equal("GET", feature.Method);
-        Assert.Contains("/path", feature.Path ?? "");
+        Assert.Contains("/path", feature.Path);
     }
 
     [Fact(Timeout = 5000)]

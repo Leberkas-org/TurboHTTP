@@ -284,8 +284,7 @@ public sealed class QpackDecoderSpec
     public void Should_DecodeEmptyHeaderBlock()
     {
         var encoder = new QpackEncoder(maxTableCapacity: 0);
-        var headers = new List<(string, string)>();
-        var encoded = encoder.Encode(headers);
+        var encoded = encoder.Encode(new List<(string, string)>());
 
         var decoder = new QpackDecoder(maxTableCapacity: 0);
         var decoded = decoder.Decode(encoded.Span);

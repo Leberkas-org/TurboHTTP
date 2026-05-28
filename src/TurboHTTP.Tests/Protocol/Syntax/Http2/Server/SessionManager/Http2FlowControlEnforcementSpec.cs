@@ -1,34 +1,15 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Options;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Tests.Shared;
 
-
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/2 SessionManager flow control enforcement.
-/// Tests WINDOW_UPDATE on stream 0, DATA on closed streams, and empty DATA with END_STREAM.
-/// </summary>
 public sealed class Http2FlowControlEnforcementSpec
 {
-    private static IFeatureCollection CreateResponseContext(long streamId)
-    {
-        var features = new TurboFeatureCollection();
-        features.Set<IHttpRequestFeature>(new TurboHttpRequestFeature());
-        features.Set<IHttpResponseFeature>(new TurboHttpResponseFeature { StatusCode = 200 });
-        var bodyFeature = new TurboHttpResponseBodyFeature();
-        features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<IHttpResponseBodyFeature>(bodyFeature);
-        features.Set<IHttpStreamIdFeature>(new TurboStreamIdFeature(streamId));
-        return features;
-    }
-
-
     private static byte[] BuildHeadersFrame(int streamId, bool endStream = false)
     {
         var encoder = new HpackEncoder(useHuffman: false);
@@ -148,12 +129,10 @@ public sealed class Http2FlowControlEnforcementSpec
         // Request should be emitted
         Assert.Single(ops.Requests);
         var requestContext = ops.Requests[0];
-        var requestStreamIdFeature = requestContext.Get<IHttpStreamIdFeature>();
-        var streamId = requestStreamIdFeature?.StreamId ?? 1;
 
         // Step 2: Send response with no body to close the stream
-        requestContext.Get<IHttpResponseFeature>().StatusCode = 200;
-        requestContext.Get<IHttpResponseFeature>().Headers["Content-Length"] = "0";
+        requestContext.Get<IHttpResponseFeature>()?.StatusCode = 200;
+        requestContext.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "0";
         sm.OnResponse(requestContext);
 
         // Stream 1 should be closed after response with no body

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Context.Adapters;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
+using TurboHTTP.Server.Context;
+using TurboHTTP.Server.Context.Features;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server;
 
@@ -129,4 +129,3 @@ public sealed class Http2ServerTrailerEncodingSpec
         Assert.DoesNotContain(decodedHeaders, h => h.Name == "content-length");
     }
 }
-

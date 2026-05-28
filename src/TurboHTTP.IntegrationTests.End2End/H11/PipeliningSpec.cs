@@ -3,7 +3,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H11;
 
@@ -21,7 +20,7 @@ public sealed class PipeliningSpec : End2EndSpecBase
     public async Task Pipelining_should_return_correct_responses_for_sequential_requests()
     {
         var responses = new int[5];
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/item/{i}");
             var response = await Client.SendAsync(request, CancellationToken);
@@ -32,7 +31,7 @@ public sealed class PipeliningSpec : End2EndSpecBase
             responses[i] = value;
         }
 
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             Assert.Equal(i, responses[i]);
         }
@@ -42,7 +41,7 @@ public sealed class PipeliningSpec : End2EndSpecBase
     public async Task Pipelining_should_handle_concurrent_requests()
     {
         var tasks = new Task<int>[10];
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var id = i;
             tasks[i] = Task.Run(async () =>

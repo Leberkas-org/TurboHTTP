@@ -24,14 +24,12 @@ public sealed class Http2ServerSecuritySpec
 {
     private readonly HpackEncoder _encoder = new(useHuffman: false);
 
-    #region Header Size Limits (RFC 9113 §10.5.1)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-10.5.1")]
     public void Hpack_bomb_should_be_rejected_by_header_size_limit()
     {
         // Test: single header with size exceeding maxHeaderSize (256 bytes)
-        var maxHeaderSize = 256;
+        const int maxHeaderSize = 256;
         var decoder = new Http2ServerDecoder(maxHeaderSize: maxHeaderSize);
 
         // Create a header with a 300-byte value to exceed the limit
@@ -61,7 +59,7 @@ public sealed class Http2ServerSecuritySpec
     public void Many_small_headers_exceeding_total_size_should_be_rejected()
     {
         // Test: many small headers that individually pass but collectively exceed maxTotalHeaderSize (256 bytes)
-        var maxTotalHeaderSize = 256;
+        const int maxTotalHeaderSize = 256;
         var decoder = new Http2ServerDecoder(maxTotalHeaderSize: maxTotalHeaderSize);
 
         var headers = new List<HpackHeader>
@@ -94,10 +92,6 @@ public sealed class Http2ServerSecuritySpec
         Assert.Contains("RFC 9113", ex.Message);
     }
 
-    #endregion
-
-    #region Header Field Name Validation (RFC 9113 §8.2.1, §10.3)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2.1")]
     public void Uppercase_header_name_should_be_rejected()
@@ -127,32 +121,6 @@ public sealed class Http2ServerSecuritySpec
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-10.3")]
-    public void Empty_header_name_should_be_rejected()
-    {
-        // NOTE: This test is SKIPPED because HpackEncoder enforces empty header name validation
-        // at the encoder level (RFC 7541 §7.2 violation in HpackEncoder.Encode()).
-        // The FieldValidator in the decoder is still the second line of defense.
-        // This is an acceptable defense-in-depth design.
-
-        // The actual test would be:
-        // Test: empty header name (not a valid token per RFC 9113 §10.3)
-        var decoder = new Http2ServerDecoder();
-
-        // Headers with empty name are rejected at the encoder level:
-        //   new("", "value")  → HpackException: "RFC 7541 §7.2 violation: empty header name is not allowed."
-        //
-        // A decoder test cannot inject an empty header name directly because the encoder
-        // blocks it. This validates that we have defense-in-depth, with the encoder as
-        // the primary gate and the FieldValidator as the secondary gate for any
-        // hand-crafted wire data.
-    }
-
-    #endregion
-
-    #region Header Field Value Validation (RFC 9113 §10.3)
-
-    [Fact(Timeout = 5000)]
-    [Trait("RFC", "RFC9113-10.3")]
     public void Header_value_with_null_byte_should_be_rejected()
     {
         // Test: header value containing NUL byte (0x00) — forbidden per RFC 9113 §10.3
@@ -177,8 +145,6 @@ public sealed class Http2ServerSecuritySpec
         Assert.Contains("x-evil", ex.Message);
         Assert.Contains("RFC 9113", ex.Message);
     }
-
-    #endregion
 
     private byte[] EncodeHeaders(List<HpackHeader> headers)
     {

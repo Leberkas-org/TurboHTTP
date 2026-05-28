@@ -65,7 +65,7 @@ public sealed class Http10ServerDecoderSpec
         Assert.Equal(DecodeOutcome.Complete, decoder.Feed(raw, out _));
 
         var feature = decoder.GetRequestFeature();
-        Assert.Contains("%20", feature.RawTarget ?? "");
+        Assert.Contains("%20", feature.RawTarget);
     }
 
     [Fact(Timeout = 5000)]

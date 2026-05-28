@@ -4,7 +4,6 @@ using TurboHTTP.Protocol.Syntax.Http3.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
-[Trait("Component", "Http3ServerDecoder")]
 public sealed class Http3ServerDecoderSecuritySpec
 {
     private readonly QpackTableSync _encoderTableSync = new(encoderMaxCapacity: 0, decoderMaxCapacity: 0);
@@ -35,8 +34,6 @@ public sealed class Http3ServerDecoderSecuritySpec
         return state;
     }
 
-    #region Pseudo-Header Validation Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.3.1")]
     public void DecodeHeaders_should_reject_duplicate_method_pseudo_header()
@@ -53,7 +50,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains(":method", ex.Message);
         Assert.Contains("Duplicate", ex.Message);
     }
@@ -74,7 +72,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains(":path", ex.Message);
         Assert.Contains("Duplicate", ex.Message);
     }
@@ -95,7 +94,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("Pseudo-header", ex.Message);
         Assert.Contains("appears", ex.Message);
     }
@@ -116,13 +116,10 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains(":custom", ex.Message);
     }
-
-    #endregion
-
-    #region Forbidden Connection Headers Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.2")]
@@ -140,7 +137,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("connection", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("forbidden", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -161,7 +159,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("transfer-encoding", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("forbidden", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -182,7 +181,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("te", ex.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("trailers", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -207,10 +207,6 @@ public sealed class Http3ServerDecoderSecuritySpec
         Assert.NotNull(feature);
     }
 
-    #endregion
-
-    #region CONNECT Edge Cases Tests
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.4")]
     public void DecodeHeaders_CONNECT_with_path_should_reject()
@@ -225,7 +221,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains(":path", ex.Message);
     }
 
@@ -243,7 +240,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains(":scheme", ex.Message);
     }
 
@@ -259,13 +257,10 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            _decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains(":authority", ex.Message);
     }
-
-    #endregion
-
-    #region Field Section Size Tests
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9114-4.2.2")]
@@ -285,9 +280,8 @@ public sealed class Http3ServerDecoderSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => decoderWithLimit.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            decoderWithLimit.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("SETTINGS_MAX_FIELD_SECTION_SIZE", ex.Message);
     }
-
-    #endregion
 }

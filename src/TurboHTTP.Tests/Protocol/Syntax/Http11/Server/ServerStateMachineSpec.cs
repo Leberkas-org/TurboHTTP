@@ -2,10 +2,10 @@ using System.Text;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Primitives;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
@@ -33,8 +33,8 @@ public sealed class ServerStateMachineSpec
 
         Assert.Single(ops.Requests);
         var ctx = ops.Requests[0];
-        Assert.Equal("GET", ctx.Get<IHttpRequestFeature>().Method);
-        Assert.Equal("/", ctx.Get<IHttpRequestFeature>().Path);
+        Assert.Equal("GET", ctx.Get<IHttpRequestFeature>()?.Method);
+        Assert.Equal("/", ctx.Get<IHttpRequestFeature>()?.Path);
     }
 
     [Fact(Timeout = 5000)]
@@ -366,7 +366,7 @@ public sealed class ServerStateMachineSpec
         // which is responsible for inspecting TE and returning 501. The SM correctly decodes
         // the request structure and preserves the TE header for application inspection.
         Assert.Single(ops.Requests);
-        Assert.Equal("POST", ops.Requests[0].Get<IHttpRequestFeature>().Method);
+        Assert.Equal("POST", ops.Requests[0].Get<IHttpRequestFeature>()?.Method);
     }
 
     private static IFeatureCollection MakeResponseContext(HttpResponseMessage response)

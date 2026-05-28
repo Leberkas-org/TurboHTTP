@@ -1,6 +1,7 @@
 using TurboHTTP.Client;
 using System.Net;
 using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using Servus.Akka.Transport;
 using TurboHTTP.Internal;
 using TurboHTTP.Protocol.Semantics;
@@ -74,16 +75,10 @@ public sealed class TlsSecuritySpec
     {
         var invoked = false;
         SslPolicyErrors? observedErrors = null;
-        RemoteCertificateValidationCallback custom = (_, _, _, errors) =>
-        {
-            invoked = true;
-            observedErrors = errors;
-            return errors is SslPolicyErrors.None;
-        };
 
         var options = new TurboClientOptions
         {
-            ServerCertificateValidationCallback = custom,
+            ServerCertificateValidationCallback = Custom,
         };
 
         var effective = options.EffectiveServerCertificateValidationCallback;
@@ -93,23 +88,32 @@ public sealed class TlsSecuritySpec
 
         Assert.True(invoked);
         Assert.Equal(SslPolicyErrors.RemoteCertificateChainErrors, observedErrors);
+        return;
+
+        bool Custom(object o, X509Certificate? x509Certificate, X509Chain? x509Chain, SslPolicyErrors errors)
+        {
+            invoked = true;
+            observedErrors = errors;
+            return errors is SslPolicyErrors.None;
+        }
     }
 
     [Fact(Timeout = 5000)]
     public void TurboClientOptions_should_respect_custom_callback_decision_when_accepting()
     {
-        // Scenario: Custom callback implements pinning or custom CA trust.
-        RemoteCertificateValidationCallback alwaysAccept = (_, _, _, _) => true;
-
         var options = new TurboClientOptions
         {
-            ServerCertificateValidationCallback = alwaysAccept,
+            ServerCertificateValidationCallback = AlwaysAccept,
         };
 
         var effective = options.EffectiveServerCertificateValidationCallback!;
 
         // Should accept even chain errors via custom policy
         Assert.True(effective(null!, null, null, SslPolicyErrors.RemoteCertificateChainErrors));
+        return;
+
+        // Scenario: Custom callback implements pinning or custom CA trust.
+        bool AlwaysAccept(object o, X509Certificate? x509Certificate, X509Chain? x509Chain, SslPolicyErrors sslPolicyErrors) => true;
     }
 
     [Fact(Timeout = 5000)]
@@ -138,15 +142,10 @@ public sealed class TlsSecuritySpec
     public void TcpOptionsFactory_should_propagate_custom_callback_when_building_tls_options()
     {
         var invoked = false;
-        RemoteCertificateValidationCallback custom = (_, _, _, _) =>
-        {
-            invoked = true;
-            return true;
-        };
 
         var options = new TurboClientOptions
         {
-            ServerCertificateValidationCallback = custom,
+            ServerCertificateValidationCallback = Custom,
         };
 
         var uri = new Uri("https://example.com/");
@@ -162,6 +161,13 @@ public sealed class TlsSecuritySpec
         Assert.NotNull(tlsOptions.ServerCertificateValidationCallback);
         tlsOptions.ServerCertificateValidationCallback!(null!, null, null, SslPolicyErrors.None);
         Assert.True(invoked);
+        return;
+
+        bool Custom(object o, X509Certificate? x509Certificate, X509Chain? x509Chain, SslPolicyErrors sslPolicyErrors)
+        {
+            invoked = true;
+            return true;
+        }
     }
 
     [Fact(Timeout = 5000)]

@@ -2,10 +2,10 @@ using System.Buffers;
 using System.Text;
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Syntax.Http11.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http11.Server;
@@ -39,7 +39,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -55,7 +55,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.0\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.0\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -71,7 +71,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -93,7 +93,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var invalidRequest = "INVALID REQUEST DATA\r\n\r\n";
+        const string invalidRequest = "INVALID REQUEST DATA\r\n\r\n";
         var buffer = MakeBuffer(invalidRequest);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -108,7 +108,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -137,7 +137,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -176,7 +176,7 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
 
         sm.DecodeClientData(new TransportData(buffer));
@@ -212,13 +212,13 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
         sm.DecodeClientData(new TransportData(buffer));
 
         var context = CreateResponseContext();
-        context.Get<IHttpResponseFeature>().StatusCode = 200;
-        context.Get<IHttpResponseFeature>().Headers["Content-Type"] = "text/event-stream";
+        context.Get<IHttpResponseFeature>()?.StatusCode = 200;
+        context.Get<IHttpResponseFeature>()?.Headers["Content-Type"] = "text/event-stream";
 
         sm.OnResponse(context);
 
@@ -237,13 +237,13 @@ public sealed class Http11ServerStateMachineConnectionSpec
         var ops = new FakeServerOps();
         var sm = new Http11ServerStateMachine(new TurboServerOptions(), ops);
 
-        var requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
+        const string requestData = "GET / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n";
         var buffer = MakeBuffer(requestData);
         sm.DecodeClientData(new TransportData(buffer));
 
         var context = CreateResponseContext();
-        context.Get<IHttpResponseFeature>().StatusCode = 200;
-        context.Get<IHttpResponseFeature>().Headers["Content-Length"] = "5";
+        context.Get<IHttpResponseFeature>()?.StatusCode = 200;
+        context.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "5";
 
         sm.OnResponse(context);
 

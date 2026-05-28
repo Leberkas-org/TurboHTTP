@@ -1,18 +1,14 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http2;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Protocol.Syntax.Http2.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http2.Server.StateMachine;
 
-/// <summary>
-/// Unit tests for HTTP/2 Http2ServerStateMachine timer behavior and error recovery.
-/// Tests keep-alive timers, header timeouts, connection cleanup, and edge cases.
-/// </summary>
 public sealed class Http2ServerTimerErrorSpec
 {
     private static IFeatureCollection CreateResponseContext(long streamId = 999)
@@ -26,7 +22,6 @@ public sealed class Http2ServerTimerErrorSpec
         features.Set<IHttpResponseBodyFeature>(bodyFeature);
         return features;
     }
-
 
     private static byte[] BuildHeadersFrame(int streamId, bool endStream = true)
     {
@@ -199,7 +194,3 @@ public sealed class Http2ServerTimerErrorSpec
         sm.OnResponse(context);
     }
 }
-
-
-
-

@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H3;
 
@@ -15,9 +14,9 @@ public sealed class MultiplexingSpec : End2EndSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapGet("/id/{id}", (int id) => Results.Ok(id));
+        app.MapGet("/id/{id:int}", (int id) => Results.Ok(id));
 
-        app.MapGet("/delay/{ms}", async (int ms) =>
+        app.MapGet("/delay/{ms:int}", async (int ms) =>
         {
             await Task.Delay(ms, CancellationToken);
             return Results.Ok(ms);
@@ -33,7 +32,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         }
 
         var tasks = new Task<int>[20];
-        for (int i = 0; i < 20; i++)
+        for (var i = 0; i < 20; i++)
         {
             var id = i;
             tasks[i] = Task.Run(async () =>

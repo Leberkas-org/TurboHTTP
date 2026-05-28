@@ -1,22 +1,16 @@
 using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
-using TurboHTTP.Context.Features;
 using TurboHTTP.Protocol.Syntax.Http3;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Protocol.Syntax.Http3.Server;
 using TurboHTTP.Server;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server;
 
-/// <summary>
-/// Unit tests for HTTP/3 Http3ServerStateMachine timer behavior and error recovery.
-/// Tests keep-alive timeout, headers-timeout RST emission, cleanup idempotency,
-/// and proper request flushing on downstream finish.
-/// </summary>
 public sealed class Http3ServerStateMachineTimerSpec
 {
-
     private static void SendRequest(Http3ServerStateMachine sm, long streamId)
     {
         var ts = new QpackTableSync(0, 0, 0, 0);
@@ -198,5 +192,3 @@ public sealed class Http3ServerStateMachineTimerSpec
         Assert.Equal("/", requestFeature.Path);
     }
 }
-
-

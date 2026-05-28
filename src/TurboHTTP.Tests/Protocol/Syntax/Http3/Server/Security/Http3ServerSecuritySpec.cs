@@ -4,7 +4,6 @@ using TurboHTTP.Protocol.Syntax.Http3.Server;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.Security;
 
-[Trait("Component", "Http3ServerDecoder")]
 public sealed class Http3ServerSecuritySpec
 {
     private readonly QpackTableSync _encoderSync = new(0, 0, 0, 0);
@@ -47,7 +46,8 @@ public sealed class Http3ServerSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("SETTINGS_MAX_FIELD_SECTION_SIZE", ex.Message);
     }
 
@@ -73,7 +73,8 @@ public sealed class Http3ServerSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("SETTINGS_MAX_FIELD_SECTION_SIZE", ex.Message);
     }
 
@@ -95,7 +96,8 @@ public sealed class Http3ServerSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("uppercase", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -117,7 +119,8 @@ public sealed class Http3ServerSecuritySpec
         var frame = EncodeAndSync(headers);
         var state = MakeState();
 
-        var ex = Assert.Throws<HttpProtocolException>(() => decoder.DecodeHeadersToFeature(frame, state, endStream: true));
+        var ex = Assert.Throws<HttpProtocolException>(() =>
+            decoder.DecodeHeadersToFeature(frame, state, endStream: true));
         Assert.Contains("NUL", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -125,8 +128,6 @@ public sealed class Http3ServerSecuritySpec
     [Trait("RFC", "RFC9114-10.3")]
     public void Empty_header_name_should_be_rejected()
     {
-        var decoder = new Http3ServerDecoder(_decoderSync);
-
         var headers = new List<(string Name, string Value)>
         {
             (":method", "GET"),

@@ -26,7 +26,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("CONTENT-TYPE", "text/html"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -92,7 +92,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("x-inject", "value\r\ninjected-header: evil"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -105,7 +105,7 @@ public sealed class Http3FieldValidationFuzzSpec
         {
             var headers = new List<(string Name, string Value)> { (name, "value") };
 
-            var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+            Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
         }
     }
 
@@ -118,7 +118,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("", "value"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -143,7 +143,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("transfer-encoding", "chunked"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -155,7 +155,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("upgrade", "websocket"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -167,7 +167,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("keep-alive", "timeout=5"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -179,7 +179,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("proxy-connection", "keep-alive"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -192,7 +192,7 @@ public sealed class Http3FieldValidationFuzzSpec
         {
             var headers = new List<(string Name, string Value)> { ("te", badValue) };
 
-            var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+            Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
         }
     }
 
@@ -237,7 +237,7 @@ public sealed class Http3FieldValidationFuzzSpec
                 (pseudo, "value"),
             };
 
-            var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
+            Assert.Throws<HttpProtocolException>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
         }
     }
 
@@ -252,7 +252,7 @@ public sealed class Http3FieldValidationFuzzSpec
             (":status", "304"), // pseudo after regular — forbidden
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.ValidateResponsePseudoHeaders(headers));
     }
 
     [Fact(Timeout = 5000)]
@@ -280,7 +280,7 @@ public sealed class Http3FieldValidationFuzzSpec
             ("caf\u00E9", "value"),
         };
 
-        var ex = Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
+        Assert.Throws<HttpProtocolException>(() => FieldValidator.Validate(headers));
     }
 
     [Fact(Timeout = 5000)]

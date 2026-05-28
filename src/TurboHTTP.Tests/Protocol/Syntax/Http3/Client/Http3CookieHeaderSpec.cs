@@ -32,11 +32,10 @@ public sealed class Http3CookieHeaderSpec
     {
         var tableSync = new QpackTableSync();
         var decoder = new Http3ClientDecoder(tableSync);
-        var frame = new HeadersFrame(tableSync.Encoder.Encode(new[]
-        {
+        var frame = new HeadersFrame(tableSync.Encoder.Encode([
             (":status", "200"),
-            ("cookie", "session=abc123"),
-        }));
+            ("cookie", "session=abc123")
+        ]));
         var state = new StreamState();
         decoder.DecodeHeaders(frame, state);
         Assert.True(state.HasResponse);
@@ -48,13 +47,12 @@ public sealed class Http3CookieHeaderSpec
     {
         var tableSync = new QpackTableSync();
         var decoder = new Http3ClientDecoder(tableSync);
-        var frame = new HeadersFrame(tableSync.Encoder.Encode(new[]
-        {
+        var frame = new HeadersFrame(tableSync.Encoder.Encode([
             (":status", "200"),
             ("cookie", "a=1"),
             ("cookie", "b=2"),
-            ("cookie", "c=3"),
-        }));
+            ("cookie", "c=3")
+        ]));
         var state = new StreamState();
         decoder.DecodeHeaders(frame, state);
         Assert.True(state.HasResponse);

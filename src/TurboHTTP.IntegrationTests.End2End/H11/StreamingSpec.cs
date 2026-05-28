@@ -2,7 +2,6 @@ using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.End2End.Shared;
-using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H11;
 
@@ -13,19 +12,19 @@ public sealed class StreamingSpec : End2EndSpecBase
 
     protected override void ConfigureEndpoints(WebApplication app)
     {
-        app.MapGet("/stream-chunks", async (HttpContext ctx) =>
+        app.MapGet("/stream-chunks", async ctx =>
         {
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 await ctx.Response.WriteAsync($"chunk-{i}\n", CancellationToken);
                 await ctx.Response.Body.FlushAsync(CancellationToken);
             }
         });
 
-        app.MapGet("/sse", async (HttpContext ctx) =>
+        app.MapGet("/sse", async ctx =>
         {
             ctx.Response.ContentType = "text/event-stream";
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 await ctx.Response.WriteAsync($"data: event-{i}\n\n", CancellationToken);
                 await ctx.Response.Body.FlushAsync(CancellationToken);

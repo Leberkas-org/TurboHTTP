@@ -6,11 +6,6 @@ using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.Tests.Protocol.Syntax.Http3.Server.SessionManager;
 
-/// <summary>
-/// Unit tests for HTTP/3 Http3ServerSessionManager critical streams and SETTINGS frame.
-/// Tests that PreStart() opens control, qpack encoder, and qpack decoder streams,
-/// and emits SETTINGS frame on the control stream per RFC 9114.
-/// </summary>
 public sealed class Http3CriticalStreamsSpec
 {
 

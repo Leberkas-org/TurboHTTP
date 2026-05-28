@@ -27,7 +27,7 @@ public sealed class Http11ServerEncoderSpec
     public void Encode_should_add_content_length()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers["Content-Length"] = "9";
+        ctx.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "9";
         var buffer = new byte[4096];
 
         var written = _encoder.Encode(buffer, ctx, isChunked: false);
@@ -66,7 +66,7 @@ public sealed class Http11ServerEncoderSpec
     public void Encode_should_not_produce_bare_cr_in_headers()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers["X-Test"] = "value\rwith\rcr";
+        ctx.Get<IHttpResponseFeature>()?.Headers["X-Test"] = "value\rwith\rcr";
         var buffer = new byte[4096];
 
         var written = _encoder.Encode(buffer, ctx, isChunked: false);
@@ -86,7 +86,7 @@ public sealed class Http11ServerEncoderSpec
     public void Encode_should_not_produce_obs_fold_in_headers()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers["X-Long"] = new string('a', 200);
+        ctx.Get<IHttpResponseFeature>()?.Headers["X-Long"] = new string('a', 200);
         var buffer = new byte[4096];
 
         var written = _encoder.Encode(buffer, ctx, isChunked: false);
@@ -115,7 +115,7 @@ public sealed class Http11ServerEncoderSpec
     public void Encode_should_include_content_length_for_known_size_body()
     {
         var ctx = ServerTestContext.CreateResponse();
-        ctx.Get<IHttpResponseFeature>().Headers["Content-Length"] = "15";
+        ctx.Get<IHttpResponseFeature>()?.Headers["Content-Length"] = "15";
         var buffer = new byte[4096];
 
         var written = _encoder.Encode(buffer, ctx, isChunked: false);

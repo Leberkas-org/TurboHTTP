@@ -20,8 +20,8 @@ public sealed class ConnectTunnelSpec
 
         Assert.DoesNotContain(headers, h => h.Name == ":scheme");
         Assert.DoesNotContain(headers, h => h.Name == ":path");
-        Assert.Contains(headers, h => h.Name == ":method" && h.Value == "CONNECT");
-        Assert.Contains(headers, h => h.Name == ":authority" && h.Value == "proxy.example.com:443");
+        Assert.Contains(headers, h => h is { Name: ":method", Value: "CONNECT" });
+        Assert.Contains(headers, h => h is { Name: ":authority", Value: "proxy.example.com:443" });
     }
 
     [Fact(Timeout = 5000)]

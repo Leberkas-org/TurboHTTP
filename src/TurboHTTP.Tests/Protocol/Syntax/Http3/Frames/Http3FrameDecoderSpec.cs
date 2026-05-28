@@ -176,14 +176,7 @@ public sealed class Http3FrameDecoderSpec
         {
             var status = decoder.TryDecode(new ReadOnlySpan<byte>(wire, i, 1), out frame, out _);
 
-            if (i < wire.Length - 1)
-            {
-                Assert.Equal(DecodeStatus.NeedMoreData, status);
-            }
-            else
-            {
-                Assert.Equal(DecodeStatus.Success, status);
-            }
+            Assert.Equal(i < wire.Length - 1 ? DecodeStatus.NeedMoreData : DecodeStatus.Success, status);
         }
 
         var goaway = Assert.IsType<GoAwayFrame>(frame);

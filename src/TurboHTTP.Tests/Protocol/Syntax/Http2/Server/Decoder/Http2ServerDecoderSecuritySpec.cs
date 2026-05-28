@@ -9,8 +9,6 @@ public sealed class Http2ServerDecoderSecuritySpec
     private readonly HpackEncoder _encoder = new(useHuffman: false);
     private readonly Http2ServerDecoder _decoder = new();
 
-    #region Pseudo-Header Validation (RFC 9113 §8.3)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.3")]
     public void DecodeHeaders_should_reject_duplicate_method_pseudo_header()
@@ -101,10 +99,6 @@ public sealed class Http2ServerDecoderSecuritySpec
         Assert.Contains("Unknown", ex.Message);
         Assert.Contains(":custom", ex.Message);
     }
-
-    #endregion
-
-    #region Forbidden Connection Headers (RFC 9113 §8.2.2)
 
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.2.2")]
@@ -197,10 +191,6 @@ public sealed class Http2ServerDecoderSecuritySpec
         Assert.Equal("GET", feature.Method);
     }
 
-    #endregion
-
-    #region CONNECT Edge Cases (RFC 9113 §8.5)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-8.5")]
     public void DecodeHeaders_CONNECT_with_path_should_reject()
@@ -262,10 +252,6 @@ public sealed class Http2ServerDecoderSecuritySpec
         Assert.Contains(":authority", ex.Message);
     }
 
-    #endregion
-
-    #region Header Size Limits (RFC 9113 §10.5.1)
-
     [Fact(Timeout = 5000)]
     [Trait("RFC", "RFC9113-10.5.1")]
     public void DecodeHeaders_should_reject_single_header_exceeding_max_size()
@@ -321,8 +307,6 @@ public sealed class Http2ServerDecoderSecuritySpec
         Assert.Contains("exceeds MaxTotalHeaderSize", ex.Message);
         Assert.Contains("128", ex.Message);
     }
-
-    #endregion
 
     private byte[] EncodeHeaders(List<HpackHeader> headers)
     {

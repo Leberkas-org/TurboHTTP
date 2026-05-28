@@ -13,7 +13,7 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthBufferedDecoder(10, MemoryPool<byte>.Shared);
 
-        var data = Encoding.ASCII.GetBytes("0123456789");
+        var data = "0123456789"u8.ToArray();
         decoder.Feed(data, out _);
 
         Assert.True(decoder.IsComplete);
@@ -24,7 +24,7 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthBufferedDecoder(10, MemoryPool<byte>.Shared);
 
-        var data = Encoding.ASCII.GetBytes("01234");
+        var data = "01234"u8.ToArray();
         decoder.Feed(data, out _);
 
         Assert.False(decoder.IsComplete);
@@ -35,11 +35,11 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthBufferedDecoder(10, MemoryPool<byte>.Shared);
 
-        var data = Encoding.ASCII.GetBytes("012");
+        var data = "012"u8.ToArray();
         decoder.Feed(data, out _);
         Assert.False(decoder.IsComplete);
 
-        var remaining = Encoding.ASCII.GetBytes("3456789");
+        var remaining = "3456789"u8.ToArray();
         var drained = decoder.Drain(remaining);
 
         Assert.Equal(7, drained);
@@ -51,11 +51,11 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthBufferedDecoder(5, MemoryPool<byte>.Shared);
 
-        var data = Encoding.ASCII.GetBytes("01234");
+        var data = "01234"u8.ToArray();
         decoder.Feed(data, out _);
         Assert.True(decoder.IsComplete);
 
-        var drained = decoder.Drain(Encoding.ASCII.GetBytes("extra"));
+        var drained = decoder.Drain("extra"u8);
 
         Assert.Equal(0, drained);
     }
@@ -65,10 +65,10 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthBufferedDecoder(10, MemoryPool<byte>.Shared);
 
-        var data = Encoding.ASCII.GetBytes("01234");
+        var data = "01234"u8.ToArray();
         decoder.Feed(data, out _);
 
-        var remaining = Encoding.ASCII.GetBytes("567890extra");
+        var remaining = "567890extra"u8.ToArray();
         var drained = decoder.Drain(remaining);
 
         Assert.Equal(5, drained);
@@ -80,7 +80,7 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthStreamedDecoder(10);
 
-        var data = Encoding.ASCII.GetBytes("0123456789");
+        var data = "0123456789"u8.ToArray();
         decoder.Feed(data, out _);
 
         Assert.True(decoder.IsComplete);
@@ -91,7 +91,7 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthStreamedDecoder(10);
 
-        var data = Encoding.ASCII.GetBytes("01234");
+        var data = "01234"u8.ToArray();
         decoder.Feed(data, out _);
 
         Assert.False(decoder.IsComplete);
@@ -102,11 +102,11 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthStreamedDecoder(10);
 
-        var data = Encoding.ASCII.GetBytes("012");
+        var data = "012"u8.ToArray();
         decoder.Feed(data, out _);
         Assert.False(decoder.IsComplete);
 
-        var remaining = Encoding.ASCII.GetBytes("3456789");
+        var remaining = "3456789"u8.ToArray();
         var drained = decoder.Drain(remaining);
 
         Assert.Equal(7, drained);
@@ -118,11 +118,11 @@ public sealed class Http11ServerBodyDrainingSpec
     {
         var decoder = new ContentLengthStreamedDecoder(5);
 
-        var data = Encoding.ASCII.GetBytes("01234");
+        var data = "01234"u8.ToArray();
         decoder.Feed(data, out _);
         Assert.True(decoder.IsComplete);
 
-        var drained = decoder.Drain(Encoding.ASCII.GetBytes("extra"));
+        var drained = decoder.Drain("extra"u8);
 
         Assert.Equal(0, drained);
     }
