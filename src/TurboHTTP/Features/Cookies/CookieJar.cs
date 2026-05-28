@@ -1,3 +1,4 @@
+using System.Net;
 using TurboHTTP.Protocol;
 
 namespace TurboHTTP.Features.Cookies;
@@ -107,7 +108,7 @@ internal sealed class CookieJar
         }
 
         request.Headers.TryAddWithoutValidation(WellKnownHeaders.Cookie,
-            string.Join(WellKnownHeaders.CommaSpace, parts));
+            string.Join(WellKnownHeaders.SemiColonSpace, parts));
     }
 
     public int Count => _store.Count;
@@ -171,7 +172,7 @@ internal sealed class CookieJar
 
     private static bool IsIpAddress(string host)
     {
-        return System.Net.IPAddress.TryParse(host, out _);
+        return IPAddress.TryParse(host, out _);
     }
 
     private static CookieStoreEntry ToStoreEntry(CookieEntry entry) => new(

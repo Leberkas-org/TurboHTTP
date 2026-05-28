@@ -33,7 +33,7 @@ public sealed class TurboServerOptions
         Endpoints.Add(new ListenerBinding { Options = options, Factory = new QuicListenerFactory() });
     }
 
-    public void BindTcp(string host, ushort port) => Bind(new TcpListenerOptions() { Host = host, Port = port });
+    public void BindTcp(string host, ushort port) => Bind(new TcpListenerOptions { Host = host, Port = port });
 
     internal IList<TurboListenOptions> ListenOptions { get; } = new List<TurboListenOptions>();
     internal Action<TurboHttpsOptions>? HttpsDefaultsCallback { get; private set; }
