@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.2...v1.3.3) (2026-05-28)
+
+
+### Dependencies
+
+* Bump Verify.DiffPlex from 3.1.2 to 3.2.0 ([efe5e30](https://github.com/Leberkas-org/TurboHTTP/commit/efe5e3046f475f411dd719addaf9e63357512fc3))
+
 ## [1.3.2](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.1...v1.3.2) (2026-05-28)
 
 
