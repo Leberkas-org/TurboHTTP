@@ -8,14 +8,9 @@ permissions:
 on:
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "docs/**"
-      - "notes/**"
-      - "*.md"
-      - ".github/workflows/docs.yml"
-      - ".github/workflows/commitlint.yml"
-      - ".github/workflows/codeql.yml"
-      - ".github/workflows/release.yml"
+    paths:
+      - "src/**"
+      - ".github/workflows/ci.yml"
 
 jobs:
   build:
