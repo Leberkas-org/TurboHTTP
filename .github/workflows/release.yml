@@ -16,6 +16,7 @@ jobs:
     uses: Leberkas-org/template.pipeline.github/.github/workflows/release.yml@v0
     with:
       nuget-publish: true
+      nuget-trusted-publishing: true
       docs-deploy: true
       solution-path: TurboHTTP.slnx
       docs-build-command: "npx likec4 export png --output public/diagrams ./likec4 || true && npm run build"
