@@ -6,7 +6,7 @@ namespace TurboHTTP.Tests.Shared;
 
 public abstract class ClientAcceptanceTestBase : AcceptanceTestBase
 {
-    protected async Task<HttpResponseMessage> SendClientAsync(
+    protected static async Task<HttpResponseMessage> SendClientAsync(
         Version version,
         HttpRequestMessage request,
         Func<int, byte[], byte[]?> responseFactory,

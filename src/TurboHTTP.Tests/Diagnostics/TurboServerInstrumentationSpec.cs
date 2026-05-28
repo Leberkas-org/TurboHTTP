@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using TurboHTTP.Diagnostics;
 using static Servus.Core.Servus;
 
@@ -99,7 +98,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void StartRequestActivity_should_set_http_tags()
     {
-        var connActivity = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
+        _ = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
         var reqActivity = Tracing.StartRequestActivity("POST", "/api/submit", "https")!;
 
         Assert.Equal("POST", reqActivity.GetTagItem("http.request.method"));
@@ -112,7 +111,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void SetServerResponse_should_set_status_code_tag()
     {
-        var connActivity = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
+        _ = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
         var reqActivity = Tracing.StartRequestActivity("GET", "/", "http")!;
 
         Tracing.SetServerResponse(reqActivity, 200);
@@ -126,7 +125,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void SetServerResponse_should_set_error_for_5xx()
     {
-        var connActivity = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
+        _ = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
         var reqActivity = Tracing.StartRequestActivity("GET", "/", "http")!;
 
         Tracing.SetServerResponse(reqActivity, 500);
@@ -141,7 +140,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void SetServerResponse_should_set_error_for_4xx()
     {
-        var connActivity = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
+        _ = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
         var reqActivity = Tracing.StartRequestActivity("GET", "/", "http")!;
 
         Tracing.SetServerResponse(reqActivity, 404);
@@ -154,7 +153,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void SetServerError_should_set_exception_details()
     {
-        var connActivity = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
+        _ = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
         var reqActivity = Tracing.StartRequestActivity("GET", "/", "http")!;
 
         Tracing.SetServerError(reqActivity, new InvalidOperationException("Pipeline broken"));
@@ -182,7 +181,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void InjectConnectionTags_should_set_server_address_and_port()
     {
-        var tags = new System.Diagnostics.TagList();
+        var tags = new TagList();
         TurboServerInstrumentationExtensions.InjectConnectionTags(ref tags, "10.0.0.1", 443);
 
         Assert.Equal("10.0.0.1", tags.Single(t => t.Key == "server.address").Value);
@@ -229,7 +228,7 @@ public sealed class TurboServerInstrumentationSpec : IDisposable
     [Fact(Timeout = 5000)]
     public void StartRequestActivity_should_normalize_nonstandard_method()
     {
-        var connActivity = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
+        _ = Tracing.StartConnectionActivity("127.0.0.1", 8080, "tcp")!;
         var reqActivity = Tracing.StartRequestActivity("PURGE", "/cache", "http")!;
 
         Assert.Equal("_OTHER", reqActivity.GetTagItem("http.request.method"));

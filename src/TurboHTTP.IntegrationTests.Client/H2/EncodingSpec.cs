@@ -13,7 +13,7 @@ public sealed class EncodingSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H2, Tls: true);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H2, tls: true);
 
     [Fact(Timeout = 15000)]
     public async Task Encoding_should_decompress_gzip_response()

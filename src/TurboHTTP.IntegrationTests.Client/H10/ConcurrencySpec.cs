@@ -12,7 +12,7 @@ public sealed class ConcurrencySpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, Tls: false);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H10, tls: false);
 
     [Fact(Timeout = 30000)]
     public async Task Concurrency_should_succeed_with_parallel_gets()

@@ -14,7 +14,7 @@ public sealed class TransferSpec : IntegrationSpecBase
     {
     }
 
-    protected override ProtocolVariant Variant => new(TestHttpVersion.H3, Tls: true);
+    protected override ProtocolVariant Variant => new(TestHttpVersion.H3, tls: true);
 
     [Theory(Timeout = 15000)]
     [InlineData(128)]
