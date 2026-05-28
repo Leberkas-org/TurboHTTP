@@ -32,6 +32,7 @@ internal sealed class Http2ServerSessionManager
     private int _nextContinuationStreamId;
     private bool _continuationEndStream;
     private readonly Dictionary<int, BodyRateState> _bodyRateStates = new();
+    private bool _prefaceConsumed;
 
     public int ActiveStreamCount => _streams.Count;
     public int MaxConcurrentStreams => _decoderOptions.MaxConcurrentStreams;
@@ -77,10 +78,31 @@ internal sealed class Http2ServerSessionManager
 
     public void DecodeClientData(TransportBuffer buffer)
     {
+        if (!_prefaceConsumed)
+        {
+            SkipConnectionPreface(buffer);
+        }
+
         var frames = _frameDecoder.Decode(buffer);
         for (var i = 0; i < frames.Count; i++)
         {
             ProcessFrame(frames[i]);
+        }
+    }
+
+    private static ReadOnlySpan<byte> ConnectionPrefaceMagic => "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8;
+
+    private void SkipConnectionPreface(TransportBuffer buffer)
+    {
+        _prefaceConsumed = true;
+
+        var span = buffer.Memory.Span;
+        if (span.Length >= ConnectionPrefaceMagic.Length
+            && span[..ConnectionPrefaceMagic.Length].SequenceEqual(ConnectionPrefaceMagic))
+        {
+            var remaining = span.Length - ConnectionPrefaceMagic.Length;
+            span[ConnectionPrefaceMagic.Length..].CopyTo(span);
+            buffer.Length = remaining;
         }
     }
 
