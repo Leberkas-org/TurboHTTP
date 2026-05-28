@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <!-- slopwatch-ignore: SW005 QUIC APIs are platform-guarded at runtime; CA1416 false-positives on conditional usage -->
+        <NoWarn>CA1416</NoWarn>
+    </PropertyGroup>
+    
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>

@@ -30,11 +30,11 @@
       },
       "Microsoft.AspNetCore.Http.Abstractions": {
         "type": "Direct",
-        "requested": "[2.3.0, )",
-        "resolved": "2.3.0",
-        "contentHash": "39r9PPrjA6s0blyFv5qarckjNkaHRA5B+3b53ybuGGNTXEj1/DStQJ4NWjFL6QTRQpL9zt7nDyKxZdJOlcnq+Q==",
+        "requested": "[2.3.10, )",
+        "resolved": "2.3.10",
+        "contentHash": "FD6mE5v3qB/sEcnLNni1oHsATuLHIFzsKHCulUZS7iaJez8+TkD432L89DQtU9PfjCkaPO0JOQjB4tS4L8oZXQ==",
         "dependencies": {
-          "Microsoft.AspNetCore.Http.Features": "2.3.0"
+          "Microsoft.AspNetCore.Http.Features": "2.3.9"
         }
       },
       "Microsoft.IO.RecyclableMemoryStream": {
@@ -75,8 +75,8 @@
       },
       "Microsoft.AspNetCore.Http.Features": {
         "type": "Transitive",
-        "resolved": "2.3.0",
-        "contentHash": "f10WUgcsKqrkmnz6gt8HeZ7kyKjYN30PO7cSic1lPtH7paPtnQqXPOveul/SIPI43PhRD4trttg4ywnrEmmJpA==",
+        "resolved": "2.3.9",
+        "contentHash": "nDWDF0YBgElg6f0omqJ8DupmITQg5p4lklBxFpVR83tQQhOG2tw9Fa5ul8b+KywsYBsyfn9DschUmfzOV6RvGw==",
         "dependencies": {
           "Microsoft.Extensions.Primitives": "8.0.0"
         }
@@ -286,7 +286,7 @@
         "type": "Project",
         "dependencies": {
           "Akka.Hosting": "[1.5.68, )",
-          "Servus.Core": "[0.33.10, )"
+          "Servus.Core": "[0.33.11, )"
         }
       },
       "OpenTelemetry": {
@@ -318,9 +318,9 @@
       },
       "Servus.Core": {
         "type": "CentralTransitive",
-        "requested": "[0.33.10, )",
-        "resolved": "0.33.10",
-        "contentHash": "31KtCHbrqw6IXPaMqdVPUqQmZwDHtDL9SPWgqYUnmk6hoSi8FgoUOjv6GiMoUGDlJHiCtaNbW+UADjpCl8tv0A==",
+        "requested": "[0.33.11, )",
+        "resolved": "0.33.11",
+        "contentHash": "j3MSNKNN9T53Uzkhktgwqi0cnITq/eX6CU/cwy5wN/UVCUwf2Q7al0u6ofGrQoDoqtCObRgvanU02PjYwQWCGw==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.15",
           "Microsoft.Extensions.Hosting.Abstractions": "9.0.15"
