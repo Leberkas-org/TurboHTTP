@@ -7,6 +7,7 @@ using Xunit;
 
 namespace TurboHTTP.IntegrationTests.End2End.H10;
 
+[Collection("H10")]
 public sealed class RoundtripSpec : End2EndSpecBase
 {
     protected override Version ProtocolVersion => HttpVersion.Version10;
