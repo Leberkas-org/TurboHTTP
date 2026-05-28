@@ -108,7 +108,7 @@ internal static class AltSvcParser
             }
             else if (param.StartsWith("persist=", StringComparison.OrdinalIgnoreCase))
             {
-                persist = param.AsSpan(8).Trim().SequenceEqual("1");
+                persist = param.AsSpan(8).Trim() is "1";
             }
         }
 

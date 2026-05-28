@@ -1,3 +1,5 @@
+using TurboHTTP.Protocol;
+
 namespace TurboHTTP.Features.Caching;
 
 /// <summary>
@@ -131,8 +133,8 @@ internal static class CacheFreshnessEvaluator
         }
 
         // Remove existing Age header and set the correct value
-        response.Headers.Remove("Age");
-        response.Headers.TryAddWithoutValidation("Age", ageSeconds.ToString());
+        response.Headers.Remove(WellKnownHeaders.Age);
+        response.Headers.TryAddWithoutValidation(WellKnownHeaders.Age, ageSeconds.ToString());
     }
 
     /// <summary>
@@ -149,8 +151,8 @@ internal static class CacheFreshnessEvaluator
         }
 
         // Parse request Cache-Control
-        var reqCc = request.Headers.TryGetValues("Cache-Control", out var ccValues)
-            ? CacheControlParser.Parse(string.Join(", ", ccValues))
+        var reqCc = request.Headers.TryGetValues(WellKnownHeaders.CacheControl, out var ccValues)
+            ? CacheControlParser.Parse(string.Join(WellKnownHeaders.CommaSpace, ccValues))
             : null;
 
         // RFC 9111 §5.2.1.4 — no-cache forces revalidation

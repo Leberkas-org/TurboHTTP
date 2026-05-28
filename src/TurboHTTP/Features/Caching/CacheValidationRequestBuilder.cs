@@ -1,4 +1,5 @@
 using System.Net;
+using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Features.Caching;
@@ -148,7 +149,7 @@ internal static class CacheValidationRequestBuilder
         foreach (var header in headResponse.Headers)
         {
             // Skip ETag — already validated
-            if (string.Equals(header.Key, "ETag", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(header.Key, WellKnownHeaders.ETag, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }

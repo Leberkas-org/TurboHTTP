@@ -58,6 +58,7 @@ internal sealed class Http2ClientSessionManager
             1000);
         _statePool = new StackStreamStatePool<StreamState>(poolCapacity, () => new StreamState());
         _responseDecoder = new Http2ClientDecoder();
+        _responseDecoder.SetMaxAllowedTableSize(encoderOptions.HeaderTableSize);
     }
 
     public TransportData? TryBuildPreface()

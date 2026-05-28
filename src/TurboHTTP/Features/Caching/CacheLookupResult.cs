@@ -1,6 +1,12 @@
 namespace TurboHTTP.Features.Caching;
 
-internal enum CacheLookupStatus { Miss, Fresh, Stale, MustRevalidate }
+internal enum CacheLookupStatus
+{
+    Miss,
+    Fresh,
+    Stale,
+    MustRevalidate
+}
 
 internal sealed record CacheLookupResult
 {

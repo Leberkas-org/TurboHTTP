@@ -88,11 +88,13 @@ internal sealed class Http2ServerEncoder
         {
             foreach (var h in responseHeaders)
             {
-                if (!ContentHeaderClassifier.IsForbiddenConnectionHeader(h.Key))
+                if (ContentHeaderClassifier.IsForbiddenConnectionHeader(h.Key))
                 {
-                    var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value);
-                    headers.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(h.Key), value));
+                    continue;
                 }
+
+                var value = h.Value.Count == 1 ? h.Value[0]! : string.Join(", ", h.Value);
+                headers.Add(new HpackHeader(ContentHeaderClassifier.ToLowerAscii(h.Key), value));
             }
         }
     }

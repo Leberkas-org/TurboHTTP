@@ -1,13 +1,13 @@
 using System.Buffers;
 using System.Net;
+using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Features.Caching;
 
-internal sealed class Cache
+internal sealed class Cache(ICacheStore store, CachePolicy? policy = null)
 {
-    private readonly ICacheStore _store;
-    private readonly CachePolicy _policy;
+    private readonly CachePolicy _policy = policy ?? CachePolicy.Default;
 
     private readonly LinkedList<string> _lruOrder = [];
     private readonly Dictionary<string, LinkedListNode<string>> _lruIndex = new();
@@ -16,15 +16,8 @@ internal sealed class Cache
     private readonly Dictionary<string, List<(string compoundKey, Dictionary<string, string?> varyValues)>>
         _variantIndex = new();
 
-    public Cache(CachePolicy? policy = null)
-        : this(new MemoryCacheStore(), policy)
+    public Cache(CachePolicy? policy = null) : this(new MemoryCacheStore(), policy)
     {
-    }
-
-    public Cache(ICacheStore store, CachePolicy? policy = null)
-    {
-        _store = store;
-        _policy = policy ?? CachePolicy.Default;
     }
 
     public int Count => _lruOrder.Count;
@@ -45,7 +38,7 @@ internal sealed class Cache
                 continue;
             }
 
-            if (!_store.TryGet(compoundKey, out var storeEntry))
+            if (!store.TryGet(compoundKey, out var storeEntry))
             {
                 continue;
             }
@@ -115,12 +108,12 @@ internal sealed class Cache
             var lastKey = lastNode.Value;
             _lruOrder.RemoveLast();
             _lruIndex.Remove(lastKey);
-            _store.Remove(lastKey);
+            store.Remove(lastKey);
 
             RemoveFromVariantIndex(lastKey);
         }
 
-        _store.Set(compoundKey, storeEntry);
+        store.Set(compoundKey, storeEntry);
         var lruNode = _lruOrder.AddFirst(compoundKey);
         _lruIndex[compoundKey] = lruNode;
 
@@ -145,7 +138,7 @@ internal sealed class Cache
 
         foreach (var (compoundKey, _) in variants.ToList())
         {
-            _store.Remove(compoundKey);
+            store.Remove(compoundKey);
 
             if (_lruIndex.TryGetValue(compoundKey, out var node))
             {
@@ -182,18 +175,18 @@ internal sealed class Cache
             return false;
         }
 
-        if (request.Headers.TryGetValues("Cache-Control", out var reqCcValues))
+        if (request.Headers.TryGetValues(WellKnownHeaders.CacheControl, out var reqCcValues))
         {
-            var reqCc = CacheControlParser.Parse(string.Join(", ", reqCcValues));
+            var reqCc = CacheControlParser.Parse(string.Join(WellKnownHeaders.CommaSpace, reqCcValues));
             if (reqCc?.NoStore == true)
             {
                 return false;
             }
         }
 
-        if (response.Headers.TryGetValues("Cache-Control", out var resCcValues))
+        if (response.Headers.TryGetValues(WellKnownHeaders.CacheControl, out var resCcValues))
         {
-            var resCc = CacheControlParser.Parse(string.Join(", ", resCcValues));
+            var resCc = CacheControlParser.Parse(string.Join(WellKnownHeaders.CommaSpace, resCcValues));
             if (resCc?.NoStore == true)
             {
                 return false;
@@ -213,7 +206,7 @@ internal sealed class Cache
 
     public void Clear()
     {
-        _store.Clear();
+        store.Clear();
         _lruOrder.Clear();
         _lruIndex.Clear();
         _variantIndex.Clear();
@@ -271,9 +264,9 @@ internal sealed class Cache
         HttpRequestMessage request)
     {
         CacheControl? cc = null;
-        if (response.Headers.TryGetValues("Cache-Control", out var ccValues))
+        if (response.Headers.TryGetValues(WellKnownHeaders.CacheControl, out var ccValues))
         {
-            cc = CacheControlParser.Parse(string.Join(", ", ccValues));
+            cc = CacheControlParser.Parse(string.Join(WellKnownHeaders.CommaSpace, ccValues));
         }
 
         string? etag = null;
@@ -321,7 +314,7 @@ internal sealed class Cache
             string? reqValue = null;
             if (request.Headers.TryGetValues(name, out var reqHeaderValues))
             {
-                reqValue = string.Join(", ", reqHeaderValues);
+                reqValue = string.Join(WellKnownHeaders.CommaSpace, reqHeaderValues);
             }
 
             varyRequestValues[name] = reqValue;
@@ -358,7 +351,7 @@ internal sealed class Cache
             string? currentValue = null;
             if (request.Headers.TryGetValues(name, out var vals))
             {
-                currentValue = string.Join(", ", vals);
+                currentValue = string.Join(WellKnownHeaders.CommaSpace, vals);
             }
 
             if (!string.Equals(cachedValue, currentValue, StringComparison.Ordinal))
@@ -385,29 +378,32 @@ internal sealed class Cache
             foreach (var kvp in varyValues)
             {
                 var existingVal = existingVary.GetValueOrDefault(kvp.Key);
-                if (!string.Equals(existingVal, kvp.Value, StringComparison.Ordinal))
+                if (string.Equals(existingVal, kvp.Value, StringComparison.Ordinal))
                 {
-                    same = false;
-                    break;
+                    continue;
                 }
+                same = false;
+                break;
             }
 
-            if (same)
+            if (!same)
             {
-                if (_store.TryGet(compoundKey, out var entry))
-                {
-                    _store.Remove(compoundKey);
-                    entry.Dispose();
-                }
-
-                if (_lruIndex.TryGetValue(compoundKey, out var node))
-                {
-                    _lruOrder.Remove(node);
-                    _lruIndex.Remove(compoundKey);
-                }
-
-                variants.RemoveAt(i);
+                continue;
             }
+            
+            if (store.TryGet(compoundKey, out var entry))
+            {
+                store.Remove(compoundKey);
+                entry.Dispose();
+            }
+
+            if (_lruIndex.TryGetValue(compoundKey, out var node))
+            {
+                _lruOrder.Remove(node);
+                _lruIndex.Remove(compoundKey);
+            }
+
+            variants.RemoveAt(i);
         }
 
         if (variants.Count == 0)
@@ -422,18 +418,21 @@ internal sealed class Cache
         {
             for (var i = variants.Count - 1; i >= 0; i--)
             {
-                if (variants[i].compoundKey == compoundKey)
+                if (variants[i].compoundKey != compoundKey)
                 {
-                    variants.RemoveAt(i);
-                    break;
+                    continue;
                 }
-            }
 
-            if (variants.Count == 0)
-            {
-                _variantIndex.Remove(primaryKey);
+                variants.RemoveAt(i);
                 break;
             }
+
+            if (variants.Count != 0)
+            {
+                continue;
+            }
+            _variantIndex.Remove(primaryKey);
+            break;
         }
     }
 
@@ -445,12 +444,12 @@ internal sealed class Cache
 
     private static void StripPrivateFields(HttpResponseMessage response)
     {
-        if (!response.Headers.TryGetValues("Cache-Control", out var ccValues))
+        if (!response.Headers.TryGetValues(WellKnownHeaders.CacheControl, out var ccValues))
         {
             return;
         }
 
-        var cc = CacheControlParser.Parse(string.Join(", ", ccValues));
+        var cc = CacheControlParser.Parse(string.Join(WellKnownHeaders.CommaSpace, ccValues));
         if (cc?.PrivateFields is not { Count: > 0 } fields)
         {
             return;
@@ -465,30 +464,32 @@ internal sealed class Cache
 
     private static void StripConnectionHeaders(HttpResponseMessage response)
     {
-        if (response.Headers.TryGetValues("Connection", out var connectionValues))
+        if (response.Headers.TryGetValues(WellKnownHeaders.Connection, out var connectionValues))
         {
             foreach (var value in connectionValues)
             {
                 foreach (var field in value.Split(','))
                 {
                     var trimmed = field.Trim();
-                    if (trimmed.Length > 0)
+                    if (trimmed.Length <= 0)
                     {
-                        response.Headers.Remove(trimmed);
-                        response.Content?.Headers.Remove(trimmed);
+                        continue;
                     }
+
+                    response.Headers.Remove(trimmed);
+                    response.Content?.Headers.Remove(trimmed);
                 }
             }
         }
 
-        response.Headers.Remove("Connection");
-        response.Headers.Remove("Keep-Alive");
-        response.Headers.Remove("Proxy-Authenticate");
-        response.Headers.Remove("Proxy-Authorization");
-        response.Headers.Remove("TE");
-        response.Headers.Remove("Trailer");
-        response.Headers.Remove("Transfer-Encoding");
-        response.Headers.Remove("Upgrade");
+        response.Headers.Remove(WellKnownHeaders.Connection);
+        response.Headers.Remove(WellKnownHeaders.KeepAliveHeader);
+        response.Headers.Remove(WellKnownHeaders.ProxyAuthenticate);
+        response.Headers.Remove(WellKnownHeaders.ProxyAuthorization);
+        response.Headers.Remove(WellKnownHeaders.Te);
+        response.Headers.Remove(WellKnownHeaders.Trailer);
+        response.Headers.Remove(WellKnownHeaders.TransferEncoding);
+        response.Headers.Remove(WellKnownHeaders.Upgrade);
     }
 
     private static string GetVaryKey(IReadOnlyDictionary<string, string?> varyRequestValues)
@@ -505,27 +506,20 @@ internal sealed class Cache
         return string.Join("&", parts);
     }
 
-    private sealed class CacheStoreEntryAdapter : ICacheEntry
+    private sealed class CacheStoreEntryAdapter(CacheStoreEntry entry) : ICacheEntry
     {
-        private readonly CacheStoreEntry _entry;
-
-        public CacheStoreEntryAdapter(CacheStoreEntry entry)
-        {
-            _entry = entry;
-        }
-
-        public HttpResponseMessage Response => _entry.Response;
-        public ReadOnlyMemory<byte> Body => _entry.Body.Memory;
-        public DateTimeOffset RequestTime => _entry.RequestTime;
-        public DateTimeOffset ResponseTime => _entry.ResponseTime;
-        public string? ETag => _entry.ETag;
-        public DateTimeOffset? LastModified => _entry.LastModified;
-        public DateTimeOffset? Expires => _entry.Expires;
-        public DateTimeOffset? Date => _entry.Date;
-        public int? AgeSeconds => _entry.AgeSeconds;
-        public CacheControl? CacheControl => _entry.CacheControl?.ToCacheControl();
-        public IReadOnlyList<string> VaryHeaderNames => _entry.VaryHeaderNames;
-        public IReadOnlyDictionary<string, string?> VaryRequestValues => _entry.VaryRequestValues;
+        public HttpResponseMessage Response => entry.Response;
+        public ReadOnlyMemory<byte> Body => entry.Body.Memory;
+        public DateTimeOffset RequestTime => entry.RequestTime;
+        public DateTimeOffset ResponseTime => entry.ResponseTime;
+        public string? ETag => entry.ETag;
+        public DateTimeOffset? LastModified => entry.LastModified;
+        public DateTimeOffset? Expires => entry.Expires;
+        public DateTimeOffset? Date => entry.Date;
+        public int? AgeSeconds => entry.AgeSeconds;
+        public CacheControl? CacheControl => entry.CacheControl?.ToCacheControl();
+        public IReadOnlyList<string> VaryHeaderNames => entry.VaryHeaderNames;
+        public IReadOnlyDictionary<string, string?> VaryRequestValues => entry.VaryRequestValues;
 
         public void Dispose()
         {

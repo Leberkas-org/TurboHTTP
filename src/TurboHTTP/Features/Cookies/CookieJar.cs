@@ -1,3 +1,5 @@
+using TurboHTTP.Protocol;
+
 namespace TurboHTTP.Features.Cookies;
 
 internal sealed class CookieJar
@@ -23,7 +25,7 @@ internal sealed class CookieJar
 
         var now = DateTimeOffset.UtcNow;
 
-        if (!response.Headers.TryGetValues("Set-Cookie", out var setCookieValues))
+        if (!response.Headers.TryGetValues(WellKnownHeaders.SetCookie, out var setCookieValues))
         {
             return;
         }
@@ -104,7 +106,8 @@ internal sealed class CookieJar
             parts[i] = $"{_applicable[i].Name}={_applicable[i].Value}";
         }
 
-        request.Headers.TryAddWithoutValidation("Cookie", string.Join("; ", parts));
+        request.Headers.TryAddWithoutValidation(WellKnownHeaders.Cookie,
+            string.Join(WellKnownHeaders.CommaSpace, parts));
     }
 
     public int Count => _store.Count;

@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Net;
+using TurboHTTP.Protocol;
 using TurboHTTP.Protocol.Semantics;
 
 namespace TurboHTTP.Internal;
@@ -13,8 +14,8 @@ internal sealed class CompressingContent : HttpContent
     {
         foreach (var header in inner.Headers)
         {
-            if (header.Key.Equals("Content-Encoding", StringComparison.OrdinalIgnoreCase) ||
-                header.Key.Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+            if (header.Key.Equals(WellKnownHeaders.ContentEncoding, StringComparison.OrdinalIgnoreCase) ||
+                header.Key.Equals(WellKnownHeaders.ContentLength, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -22,7 +23,7 @@ internal sealed class CompressingContent : HttpContent
             Headers.TryAddWithoutValidation(header.Key, header.Value);
         }
 
-        Headers.TryAddWithoutValidation("Content-Encoding", encoding);
+        Headers.TryAddWithoutValidation(WellKnownHeaders.ContentEncoding, encoding);
 
         using var output = RecyclableStreams.Manager.GetStream();
         using (var compressor = ContentEncoding.CreateCompressor(output, encoding))

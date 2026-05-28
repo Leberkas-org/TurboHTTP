@@ -18,6 +18,11 @@ internal sealed class Http2ClientDecoder(
 
     private HpackDecoder _hpack = new();
 
+    public void SetMaxAllowedTableSize(int size)
+    {
+        _hpack.SetMaxAllowedTableSize(size);
+    }
+
     public void ResetHpack()
     {
         _hpack = new HpackDecoder();

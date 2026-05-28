@@ -11,7 +11,6 @@ internal static class PoolKeys
     internal const string Http2 = "http2";
 }
 
-
 internal static class OptionsFactory
 {
     internal static TransportOptions Build(RequestEndpoint endpoint, TurboClientOptions clientOptions)
@@ -91,4 +90,3 @@ internal static class OptionsFactory
         };
     }
 }
-
