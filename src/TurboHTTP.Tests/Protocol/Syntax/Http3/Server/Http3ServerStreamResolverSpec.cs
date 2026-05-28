@@ -12,9 +12,9 @@ public sealed class Http3ServerStreamResolverSpec
     {
         var resolver = new ServerStreamResolver();
         var buffer = BuildStreamTypeBuffer(StreamType.Control);
-        resolver.OnServerStreamOpened(1);
+        resolver.OnServerStreamOpened(3);
 
-        var result = resolver.Resolve(1, buffer);
+        var result = resolver.Resolve(3, buffer);
 
         Assert.Equal(CriticalStreamId.ControlId, result.LogicalStreamId);
         Assert.Null(result.Buffer);
@@ -26,9 +26,9 @@ public sealed class Http3ServerStreamResolverSpec
     {
         var resolver = new ServerStreamResolver();
         var buffer = BuildStreamTypeBuffer(StreamType.QpackEncoder);
-        resolver.OnServerStreamOpened(3);
+        resolver.OnServerStreamOpened(7);
 
-        var result = resolver.Resolve(3, buffer);
+        var result = resolver.Resolve(7, buffer);
 
         Assert.Equal(CriticalStreamId.QpackEncoderId, result.LogicalStreamId);
         Assert.Null(result.Buffer);
@@ -40,9 +40,9 @@ public sealed class Http3ServerStreamResolverSpec
     {
         var resolver = new ServerStreamResolver();
         var buffer = BuildStreamTypeBuffer(StreamType.QpackDecoder);
-        resolver.OnServerStreamOpened(5);
+        resolver.OnServerStreamOpened(11);
 
-        var result = resolver.Resolve(5, buffer);
+        var result = resolver.Resolve(11, buffer);
 
         Assert.Equal(CriticalStreamId.QpackDecoderId, result.LogicalStreamId);
         Assert.Null(result.Buffer);
@@ -55,12 +55,12 @@ public sealed class Http3ServerStreamResolverSpec
         var resolver = new ServerStreamResolver();
         var buffer1 = BuildStreamTypeBuffer(StreamType.Control);
         var buffer2 = BuildStreamTypeBuffer(StreamType.Control);
-        resolver.OnServerStreamOpened(1);
         resolver.OnServerStreamOpened(3);
+        resolver.OnServerStreamOpened(7);
 
-        resolver.Resolve(1, buffer1);
+        resolver.Resolve(3, buffer1);
 
-        var ex = Assert.Throws<HttpProtocolException>(() => resolver.Resolve(3, buffer2));
+        var ex = Assert.Throws<HttpProtocolException>(() => resolver.Resolve(7, buffer2));
         Assert.Contains("Duplicate stream type", ex.Message);
         Assert.Contains("Control", ex.Message);
     }
@@ -72,12 +72,12 @@ public sealed class Http3ServerStreamResolverSpec
         var resolver = new ServerStreamResolver();
         var buffer1 = BuildStreamTypeBuffer(StreamType.QpackEncoder);
         var buffer2 = BuildStreamTypeBuffer(StreamType.QpackEncoder);
-        resolver.OnServerStreamOpened(1);
         resolver.OnServerStreamOpened(3);
+        resolver.OnServerStreamOpened(7);
 
-        resolver.Resolve(1, buffer1);
+        resolver.Resolve(3, buffer1);
 
-        var ex = Assert.Throws<HttpProtocolException>(() => resolver.Resolve(3, buffer2));
+        var ex = Assert.Throws<HttpProtocolException>(() => resolver.Resolve(7, buffer2));
         Assert.Contains("Duplicate stream type", ex.Message);
         Assert.Contains("QpackEncoder", ex.Message);
     }
@@ -89,12 +89,12 @@ public sealed class Http3ServerStreamResolverSpec
         var resolver = new ServerStreamResolver();
         var buffer1 = BuildStreamTypeBuffer(StreamType.QpackDecoder);
         var buffer2 = BuildStreamTypeBuffer(StreamType.QpackDecoder);
-        resolver.OnServerStreamOpened(1);
         resolver.OnServerStreamOpened(3);
+        resolver.OnServerStreamOpened(7);
 
-        resolver.Resolve(1, buffer1);
+        resolver.Resolve(3, buffer1);
 
-        var ex = Assert.Throws<HttpProtocolException>(() => resolver.Resolve(3, buffer2));
+        var ex = Assert.Throws<HttpProtocolException>(() => resolver.Resolve(7, buffer2));
         Assert.Contains("Duplicate stream type", ex.Message);
         Assert.Contains("QpackDecoder", ex.Message);
     }
@@ -106,9 +106,9 @@ public sealed class Http3ServerStreamResolverSpec
         var resolver = new ServerStreamResolver();
         var extraData = new byte[] { 0xAA, 0xBB, 0xCC };
         var buffer = BuildStreamTypeBuffer(StreamType.Control, extraData);
-        resolver.OnServerStreamOpened(1);
+        resolver.OnServerStreamOpened(3);
 
-        var result = resolver.Resolve(1, buffer);
+        var result = resolver.Resolve(3, buffer);
 
         Assert.Equal(CriticalStreamId.ControlId, result.LogicalStreamId);
         Assert.NotNull(result.Buffer);
@@ -123,9 +123,9 @@ public sealed class Http3ServerStreamResolverSpec
     {
         var resolver = new ServerStreamResolver();
         var buffer = BuildStreamTypeBuffer(StreamType.Control);
-        resolver.OnServerStreamOpened(1);
+        resolver.OnServerStreamOpened(3);
 
-        var result = resolver.Resolve(1, buffer);
+        var result = resolver.Resolve(3, buffer);
 
         Assert.Equal(CriticalStreamId.ControlId, result.LogicalStreamId);
         Assert.Null(result.Buffer);
@@ -154,16 +154,31 @@ public sealed class Http3ServerStreamResolverSpec
         var resolver = new ServerStreamResolver();
         var buffer1 = BuildStreamTypeBuffer(StreamType.Control);
         var buffer2 = BuildStreamTypeBuffer(StreamType.Control);
-        resolver.OnServerStreamOpened(1);
-
-        resolver.Resolve(1, buffer1);
-        resolver.Reset();
         resolver.OnServerStreamOpened(3);
 
-        var result = resolver.Resolve(3, buffer2);
+        resolver.Resolve(3, buffer1);
+        resolver.Reset();
+        resolver.OnServerStreamOpened(7);
+
+        var result = resolver.Resolve(7, buffer2);
 
         Assert.Equal(CriticalStreamId.ControlId, result.LogicalStreamId);
         Assert.Null(result.Buffer);
+    }
+
+    [Fact(Timeout = 5000)]
+    [Trait("RFC", "RFC9000-2.1")]
+    public void OnServerStreamOpened_should_ignore_bidirectional_streams()
+    {
+        var resolver = new ServerStreamResolver();
+        var buffer = BuildStreamTypeBuffer(StreamType.Control);
+        resolver.OnServerStreamOpened(0);
+        resolver.OnServerStreamOpened(1);
+        resolver.OnServerStreamOpened(4);
+        resolver.OnServerStreamOpened(5);
+
+        var result = resolver.Resolve(0, buffer);
+        Assert.Equal(0L, result.LogicalStreamId);
     }
 
     private static TransportBuffer BuildStreamTypeBuffer(StreamType streamType, byte[]? extraData = null)

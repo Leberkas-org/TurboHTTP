@@ -16,7 +16,7 @@ internal sealed class ServerStreamResolver
 
     public void OnServerStreamOpened(long quicStreamId)
     {
-        if (quicStreamId < 0 || (quicStreamId & 1) == 0)
+        if (quicStreamId < 0 || (quicStreamId & 0x02) == 0)
         {
             return;
         }

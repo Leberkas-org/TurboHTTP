@@ -37,7 +37,7 @@ public sealed class PipeliningSpec : End2EndSpecBase
         }
     }
 
-    [Fact(Timeout = 60000, Skip = "Client connection pool opens only one H1.1 connection — concurrent requests queue behind it")]
+    [Fact(Timeout = 60000)]
     public async Task Pipelining_should_handle_concurrent_requests()
     {
         var tasks = new Task<int>[5];

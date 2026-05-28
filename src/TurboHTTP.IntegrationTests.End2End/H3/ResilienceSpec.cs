@@ -35,7 +35,7 @@ public sealed class ResilienceSpec : End2EndSpecBase
         await base.DisposeAsync();
     }
 
-    [Fact(Timeout = 15000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 15000)]
     public async Task Resilience_should_complete_fast_request()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/fast");
@@ -46,13 +46,18 @@ public sealed class ResilienceSpec : End2EndSpecBase
         Assert.Equal("ok", body);
     }
 
-    [Fact(Timeout = 15000, Skip = "Client.Timeout not yet implemented")]
+    [Fact(Timeout = 15000)]
     public async Task Resilience_should_timeout_slow_request()
     {
-        await Task.CompletedTask;
+        Client.Timeout = TimeSpan.FromSeconds(2);
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/slow");
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await Client.SendAsync(request, CancellationToken));
     }
 
-    [Fact(Timeout = 15000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 15000)]
     public async Task Resilience_should_cancel_via_cancellation_token()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));

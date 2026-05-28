@@ -23,7 +23,7 @@ public sealed class RoundtripSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 15000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 15000)]
     public async Task Roundtrip_should_return_200_for_get()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/hello");
@@ -35,7 +35,7 @@ public sealed class RoundtripSpec : End2EndSpecBase
         Assert.Equal("Hello World", value);
     }
 
-    [Fact(Timeout = 15000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 15000)]
     public async Task Roundtrip_should_echo_post_body()
     {
         var payload = "test payload";
@@ -52,7 +52,7 @@ public sealed class RoundtripSpec : End2EndSpecBase
         Assert.Equal(payload, value);
     }
 
-    [Fact(Timeout = 15000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 15000)]
     public async Task Roundtrip_should_return_404_for_unknown_route()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseUri}/nonexistent");

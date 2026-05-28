@@ -130,7 +130,7 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
                     return;
                 }
 
-            case StreamOpened:
+            case StreamOpened { Id: var openedId }:
                 {
                     return;
                 }
@@ -141,7 +141,7 @@ internal sealed class Http3ClientStateMachine : IClientStateMachine
                     return;
                 }
 
-            case StreamReadCompleted:
+            case StreamReadCompleted { Id: var srcId }:
                 {
                     return;
                 }

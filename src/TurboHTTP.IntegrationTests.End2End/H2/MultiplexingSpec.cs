@@ -47,7 +47,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         Assert.Equal(20, distinctResults.Length);
     }
 
-    [Fact(Timeout = 30000, Skip = "Server pipeline serializes responses — needs per-connection ordered/unordered bridge selection")]
+    [Fact(Timeout = 30000)]
     public async Task Multiplexing_should_not_starve_fast_streams()
     {
         var slowTask = Task.Run(async () =>

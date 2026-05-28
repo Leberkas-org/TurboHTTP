@@ -22,7 +22,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 30000)]
     public async Task Multiplexing_should_handle_parallel_streams()
     {
         var tasks = new Task<int>[20];
@@ -47,7 +47,7 @@ public sealed class MultiplexingSpec : End2EndSpecBase
         Assert.Equal(20, distinctResults.Length);
     }
 
-    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 30000)]
     public async Task Multiplexing_should_not_starve_fast_streams()
     {
         var slowTask = Task.Run(async () =>

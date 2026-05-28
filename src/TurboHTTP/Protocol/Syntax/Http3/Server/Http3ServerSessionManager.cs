@@ -132,16 +132,17 @@ internal sealed class Http3ServerSessionManager
         EmitDataFrame(headersFrame, streamId);
 
         var responseFeature = features.Get<IHttpResponseFeature>();
+        var responseBody = features.Get<IHttpResponseBodyFeature>();
         var contentLength = ExtractContentLength(responseFeature);
-        var hasBody = contentLength is not null and not 0;
+        var hasStarted = responseBody is TurboHttpResponseBodyFeature { HasStarted: true };
+        var hasBody = contentLength is not null and not 0
+                      || (contentLength is null && hasStarted);
 
         if (!hasBody)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));
             return;
         }
-
-        var responseBody = features.Get<IHttpResponseBodyFeature>();
         if (responseBody is not TurboHttpResponseBodyFeature turboBody)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));

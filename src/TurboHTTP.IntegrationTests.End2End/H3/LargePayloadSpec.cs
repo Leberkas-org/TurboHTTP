@@ -46,7 +46,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         });
     }
 
-    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 30000)]
     public async Task LargePayload_should_roundtrip_body_over_64kb()
     {
         var payload = new byte[128 * 1024];
@@ -64,7 +64,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         Assert.Equal(payload, responseBytes);
     }
 
-    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 30000)]
     public async Task LargePayload_should_receive_large_server_response()
     {
         var size = 256 * 1024;
@@ -78,7 +78,7 @@ public sealed class LargePayloadSpec : End2EndSpecBase
         Assert.True(responseBytes.All(b => b == 0xAB));
     }
 
-    [Fact(Timeout = 30000, Skip = "QUIC not available on this platform")]
+    [Fact(Timeout = 30000)]
     public async Task LargePayload_should_handle_empty_body()
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"{BaseUri}/empty-echo")

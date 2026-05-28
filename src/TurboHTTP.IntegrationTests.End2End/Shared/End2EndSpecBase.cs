@@ -82,7 +82,7 @@ public abstract class End2EndSpecBase : IAsyncLifetime
     {
         if (ProtocolVersion.Major == 3 && !QuicConnection.IsSupported)
         {
-            return;
+            Assert.Skip("QUIC not available on this platform");
         }
 
         var port = GetFreePort();
