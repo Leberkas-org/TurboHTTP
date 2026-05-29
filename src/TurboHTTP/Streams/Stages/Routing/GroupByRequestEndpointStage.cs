@@ -88,6 +88,9 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
     private sealed class SubflowGroup
     {
         private readonly Dictionary<int, SubflowState> _slotsById = new();
+        // Parallel list kept in sync with _slotsById for O(1) round-robin indexing
+        // (Dictionary.Values.ElementAt is O(n) and allocates an enumerator per call).
+        private readonly List<SubflowState> _slotList = [];
         private int _roundRobinIndex;
 
         public int Count => _slotsById.Count;
@@ -96,13 +99,25 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
 
         public void AddSlot(SubflowState state)
         {
-            _slotsById[state.SlotId] = state;
+            if (_slotsById.TryAdd(state.SlotId, state))
+            {
+                _slotList.Add(state);
+            }
+            else
+            {
+                _slotsById[state.SlotId] = state;
+            }
+
             LastAdded = state;
         }
 
         public void RemoveSlot(SubflowState state)
         {
-            _slotsById.Remove(state.SlotId);
+            if (_slotsById.Remove(state.SlotId))
+            {
+                _slotList.Remove(state);
+            }
+
             if (ReferenceEquals(LastAdded, state))
             {
                 LastAdded = null;
@@ -172,13 +187,13 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
 
             var startIndex = _roundRobinIndex;
 
-            for (var i = 0; i < _slotsById.Count; i++)
+            for (var i = 0; i < _slotList.Count; i++)
             {
-                var idx = (startIndex + i) % _slotsById.Count;
-                var slot = _slotsById.Values.ElementAt(idx);
+                var idx = (startIndex + i) % _slotList.Count;
+                var slot = _slotList[idx];
                 if (!slot.IsDead)
                 {
-                    _roundRobinIndex = (idx + 1) % _slotsById.Count;
+                    _roundRobinIndex = (idx + 1) % _slotList.Count;
                     return slot;
                 }
             }
@@ -219,6 +234,8 @@ internal sealed class GroupByRequestEndpointStage<T> : GraphStage<FlowShape<T, S
             {
                 _slotsById.Remove(id);
             }
+
+            _slotList.RemoveAll(static s => s.IsDead);
 
             return dead.Count;
         }
