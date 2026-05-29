@@ -4,6 +4,7 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http.Features;
+using TurboHTTP.Streams.Stages.Server;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
@@ -12,14 +13,14 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     internal sealed record Initialize;
     internal sealed record PipelineReady(
         Sink<IFeatureCollection, NotUsed> RequestIngress,
-        Source<IFeatureCollection, NotUsed> ResponseBroadcast);
+        IResponseDispatcher<IFeatureCollection> Dispatcher);
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
     private readonly Flow<IFeatureCollection, IFeatureCollection, NotUsed> _bridgeFlow;
 
     private ActorMaterializer? _materializer;
     private Sink<IFeatureCollection, NotUsed>? _requestIngress;
-    private Source<IFeatureCollection, NotUsed>? _responseBroadcast;
+    private IResponseDispatcher<IFeatureCollection>? _dispatcher;
     private SharedKillSwitch? _killSwitch;
 
     public IStash Stash { get; set; } = null!;
@@ -39,7 +40,7 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     {
         Receive<Initialize>(_ =>
         {
-            Sender.Tell(new PipelineReady(_requestIngress!, _responseBroadcast!));
+            Sender.Tell(new PipelineReady(_requestIngress!, _dispatcher!));
         });
     }
 
@@ -63,20 +64,20 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
             _killSwitch = KillSwitches.Shared($"server-{Self.Path.Name}");
 
             var requestIngressHub = MergeHub.Source<IFeatureCollection>(perProducerBufferSize: 64);
-            var responseBroadcastHub = BroadcastHub.Sink<IFeatureCollection>(bufferSize: 256);
+            var dispatcherHub = new ResponseDispatcherHub();
 
-            var (requestIngress, broadcastSource) = requestIngressHub
+            var (requestIngress, dispatcher) = requestIngressHub
                 .Via(_killSwitch.Flow<IFeatureCollection>())
                 .Via(_bridgeFlow)
-                .ToMaterialized(responseBroadcastHub, Keep.Both)
+                .ToMaterialized(Sink.FromGraph(dispatcherHub), Keep.Both)
                 .Run(_materializer);
 
             _requestIngress = requestIngress;
-            _responseBroadcast = broadcastSource;
+            _dispatcher = dispatcher;
 
             _log.Debug("Server pipeline materialized successfully");
             BecomeReady();
-            Sender.Tell(new PipelineReady(_requestIngress!, _responseBroadcast!));
+            Sender.Tell(new PipelineReady(_requestIngress!, _dispatcher!));
         }
         catch (Exception ex)
         {
@@ -123,7 +124,7 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
         }
 
         _killSwitch = null;
-        _responseBroadcast = null;
+        _dispatcher = null;
         _requestIngress = null;
     }
 

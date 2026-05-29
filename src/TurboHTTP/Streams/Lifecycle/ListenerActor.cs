@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
 using TurboHTTP.Server;
+using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
@@ -20,7 +21,7 @@ internal sealed class ListenerActor : ReceiveActor
     private readonly ListenerOptions _listenerOptions;
     private readonly TurboServerOptions _serverOptions;
     private readonly Sink<IFeatureCollection, NotUsed> _requestIngress;
-    private readonly Source<IFeatureCollection, NotUsed> _responseBroadcast;
+    private readonly IResponseDispatcher<IFeatureCollection> _dispatcher;
     private readonly IServiceProvider _services;
     private readonly IMaterializer _materializer;
     private readonly string? _connectionLoggingCategory;
@@ -54,7 +55,7 @@ internal sealed class ListenerActor : ReceiveActor
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
         Sink<IFeatureCollection, NotUsed> requestIngress,
-        Source<IFeatureCollection, NotUsed> responseBroadcast,
+        IResponseDispatcher<IFeatureCollection> dispatcher,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
@@ -63,7 +64,7 @@ internal sealed class ListenerActor : ReceiveActor
         _listenerOptions = listenerOptions;
         _serverOptions = serverOptions;
         _requestIngress = requestIngress;
-        _responseBroadcast = responseBroadcast;
+        _dispatcher = dispatcher;
         _services = services;
         _materializer = materializer;
         _connectionLoggingCategory = connectionLoggingCategory;
@@ -149,7 +150,7 @@ internal sealed class ListenerActor : ReceiveActor
             engine,
             connectionId,
             _requestIngress,
-            _responseBroadcast,
+            _dispatcher,
             _services,
             _materializer,
             _connectionLoggingCategory,
@@ -296,13 +297,13 @@ internal sealed class ListenerActor : ReceiveActor
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
         Sink<IFeatureCollection, NotUsed> requestIngress,
-        Source<IFeatureCollection, NotUsed> responseBroadcast,
+        IResponseDispatcher<IFeatureCollection> dispatcher,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
         => Props.Create(() => new ListenerActor(
             factory, listenerOptions, serverOptions,
-            requestIngress, responseBroadcast,
+            requestIngress, dispatcher,
             services, materializer,
             connectionLoggingCategory));
 }
