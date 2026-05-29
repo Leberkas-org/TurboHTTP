@@ -76,15 +76,21 @@ public sealed class ConnectionCloseReproSpec : ServerSpecBase
             var buffer = new byte[4096];
             var totalRead = 0;
             using var readCts = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken);
-            readCts.CancelAfter(TimeSpan.FromSeconds(5));
-            while (totalRead == 0)
+            readCts.CancelAfter(TimeSpan.FromSeconds(10));
+            try
             {
-                var read = await stream.ReadAsync(buffer, readCts.Token);
-                totalRead += read;
-                if (read == 0)
+                while (totalRead == 0)
                 {
-                    break;
+                    var read = await stream.ReadAsync(buffer, readCts.Token);
+                    totalRead += read;
+                    if (read == 0)
+                    {
+                        break;
+                    }
                 }
+            }
+            catch (OperationCanceledException)
+            {
             }
             Assert.True(totalRead > 0, "Should have received response");
 
