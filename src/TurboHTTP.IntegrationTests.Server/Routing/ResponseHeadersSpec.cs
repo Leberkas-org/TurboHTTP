@@ -1,50 +1,21 @@
 using System.Net;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Routing;
 
-public sealed class ResponseHeadersSpec : ServerSpecBase
+public sealed class ResponseHeadersSpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
-        });
-    }
+    private readonly HttpClient _client = server.CreateClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapGet("/custom-header", (HttpContext ctx) =>
-        {
-            ctx.Response.Headers["X-Request-Id"] = "abc-123";
-            return Results.Ok("ok");
-        });
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
-        app.MapGet("/multi-header", (HttpContext ctx) =>
-        {
-            ctx.Response.Headers.Append("X-Tag", "alpha");
-            ctx.Response.Headers.Append("X-Tag", "beta");
-            return Results.Ok("ok");
-        });
-
-        app.MapGet("/cache-headers", (HttpContext ctx) =>
-        {
-            ctx.Response.Headers.CacheControl = "no-cache, no-store";
-            ctx.Response.Headers.ETag = "\"v1\"";
-            return Results.Ok("cached");
-        });
-    }
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Custom_response_header_should_arrive_at_client()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/custom-header"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/custom-header"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -55,8 +26,8 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Multiple_values_for_same_header_should_arrive()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/multi-header"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/multi-header"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -69,8 +40,8 @@ public sealed class ResponseHeadersSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Standard_cache_headers_should_arrive()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/cache-headers"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/cache-headers"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

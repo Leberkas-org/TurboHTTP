@@ -1,55 +1,23 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Routing;
 
-public sealed class RequestBodySpec : ServerSpecBase
+public sealed class RequestBodySpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
-        });
-    }
+    private readonly HttpClient _client = server.CreateClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapPost("/echo-body", async (HttpContext ctx) =>
-        {
-            using var reader = new StreamReader(ctx.Request.Body);
-            var body = await reader.ReadToEndAsync();
-            return Results.Ok(new { body });
-        });
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
-        app.MapPost("/echo-json", async (HttpContext ctx) =>
-        {
-            using var reader = new StreamReader(ctx.Request.Body);
-            var raw = await reader.ReadToEndAsync();
-            var parsed = JsonDocument.Parse(raw);
-            return Results.Ok(parsed.RootElement);
-        });
-
-        app.MapPost("/form", async (HttpContext ctx) =>
-        {
-            var form = await ctx.Request.ReadFormAsync();
-            var name = form["name"].ToString();
-            var age = form["age"].ToString();
-            return Results.Ok(new { name, age });
-        });
-    }
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Post_should_receive_text_body()
     {
-        var response = await Client.PostAsync(
-            new Uri($"http://127.0.0.1:{Port}/echo-body"),
+        var response = await _client.PostAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/echo-body"),
             new StringContent("hello server", Encoding.UTF8, "text/plain"),
             CancellationToken);
 
@@ -67,8 +35,8 @@ public sealed class RequestBodySpec : ServerSpecBase
             Encoding.UTF8,
             "application/json");
 
-        var response = await Client.PostAsync(
-            new Uri($"http://127.0.0.1:{Port}/echo-json"),
+        var response = await _client.PostAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/echo-json"),
             jsonContent,
             CancellationToken);
 
@@ -89,8 +57,8 @@ public sealed class RequestBodySpec : ServerSpecBase
         };
         var content = new FormUrlEncodedContent(formData);
 
-        var response = await Client.PostAsync(
-            new Uri($"http://127.0.0.1:{Port}/form"),
+        var response = await _client.PostAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/form"),
             content,
             CancellationToken);
 

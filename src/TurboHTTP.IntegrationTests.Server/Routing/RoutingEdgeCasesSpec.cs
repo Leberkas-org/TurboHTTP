@@ -2,58 +2,23 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Routing;
 
-public sealed class RoutingEdgeCasesSpec : ServerSpecBase
+public sealed class RoutingEdgeCasesSpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
-        });
-    }
+    private readonly HttpClient _client = server.CreateClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapGet("/multi", () =>
-            Results.Ok(new { method = "GET" }));
-        app.MapPost("/multi", () =>
-            Results.Ok(new { method = "POST" }));
-        app.MapPut("/multi", () =>
-            Results.Ok(new { method = "PUT" }));
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
-        app.MapPost("/upload", async (HttpContext ctx) =>
-        {
-            var form = await ctx.Request.ReadFormAsync();
-            var file = form.Files.GetFile("document");
-            if (file is null)
-            {
-                return Results.BadRequest("No file");
-            }
-
-            using var reader = new StreamReader(file.OpenReadStream());
-            var content = await reader.ReadToEndAsync();
-            return Results.Ok(new
-            {
-                fileName = file.FileName,
-                size = file.Length,
-                content
-            });
-        });
-    }
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Multi_method_route_should_handle_GET()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/multi"), CancellationToken);
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/multi"), CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var json = JsonDocument.Parse(
@@ -65,12 +30,12 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
     public async Task Multi_method_route_should_handle_POST()
     {
         var request = new HttpRequestMessage(HttpMethod.Post,
-            new Uri($"http://127.0.0.1:{Port}/multi"))
+            new Uri($"http://127.0.0.1:{server.Port}/multi"))
         {
             Content = new StringContent("")
         };
 
-        var response = await Client.SendAsync(request, CancellationToken);
+        var response = await _client.SendAsync(request, CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var json = JsonDocument.Parse(
@@ -82,12 +47,12 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
     public async Task Multi_method_route_should_handle_PUT()
     {
         var request = new HttpRequestMessage(HttpMethod.Put,
-            new Uri($"http://127.0.0.1:{Port}/multi"))
+            new Uri($"http://127.0.0.1:{server.Port}/multi"))
         {
             Content = new StringContent("")
         };
 
-        var response = await Client.SendAsync(request, CancellationToken);
+        var response = await _client.SendAsync(request, CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var json = JsonDocument.Parse(
@@ -99,9 +64,9 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
     public async Task Multi_method_route_should_return_404_for_unregistered_method()
     {
         var request = new HttpRequestMessage(HttpMethod.Delete,
-            new Uri($"http://127.0.0.1:{Port}/multi"));
+            new Uri($"http://127.0.0.1:{server.Port}/multi"));
 
-        var response = await Client.SendAsync(request, CancellationToken);
+        var response = await _client.SendAsync(request, CancellationToken);
 
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
     }
@@ -118,12 +83,12 @@ public sealed class RoutingEdgeCasesSpec : ServerSpecBase
         multipart.Add(fileStream, "document", "test.txt");
 
         var request = new HttpRequestMessage(HttpMethod.Post,
-            new Uri($"http://127.0.0.1:{Port}/upload"))
+            new Uri($"http://127.0.0.1:{server.Port}/upload"))
         {
             Content = multipart
         };
 
-        var response = await Client.SendAsync(request, CancellationToken);
+        var response = await _client.SendAsync(request, CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(CancellationToken));

@@ -1,44 +1,21 @@
 using System.Net;
-using System.Text;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server;
 
-public sealed class SseServerSpec : ServerSpecBase
+public sealed class SseServerSpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
-        });
-    }
+    private readonly HttpClient _client = server.CreateClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapGet("/echo", () => Results.Ok("ok"));
-        app.MapGet("/text", () => Results.Ok("hello world"));
-        app.MapGet("/events", async (HttpContext ctx) =>
-        {
-            ctx.Response.ContentType = "text/event-stream";
-            var events = new[] { "event1", "event2" };
-            foreach (var evt in events)
-            {
-                var data = Encoding.UTF8.GetBytes($"data: {evt}\n\n");
-                await ctx.Response.Body.WriteAsync(data);
-            }
-        });
-    }
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Server_should_respond_to_basic_request()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/echo"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/echo"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -47,8 +24,8 @@ public sealed class SseServerSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Server_should_respond_to_text_request()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/text"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/text"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -59,8 +36,8 @@ public sealed class SseServerSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Server_should_return_correct_content_type()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/text"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/text"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -71,8 +48,8 @@ public sealed class SseServerSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Server_should_return_404_for_unregistered_route()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/nonexistent"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/nonexistent"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -81,8 +58,8 @@ public sealed class SseServerSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Server_should_stream_sse_events()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/events"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/events"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
