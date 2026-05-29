@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http3.Qpack;
 using TurboHTTP.Server.Context.Features;
@@ -43,8 +42,7 @@ internal sealed class Http3ServerDecoder
 
         var feature = new TurboHttpRequestFeature
         {
-            Protocol = "HTTP/3",
-            Headers = new HeaderDictionary()
+            Protocol = "HTTP/3"
         };
 
         var isConnect = false;

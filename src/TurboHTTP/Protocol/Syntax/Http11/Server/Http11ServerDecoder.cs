@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using TurboHTTP.Protocol.LineBased;
 using TurboHTTP.Protocol.LineBased.Body;
 using TurboHTTP.Protocol.Semantics;
@@ -111,11 +110,9 @@ internal sealed class Http11ServerDecoder
 
     public TurboHttpRequestFeature GetRequestFeature()
     {
-        var headers = new HeaderDictionary();
-        HeaderRouter.ApplyToHeaderDictionary(headers, _headerReader.GetHeaders());
         var body = _bodyDecoder?.GetBodyStream() ?? Stream.Null;
 
-        return new TurboHttpRequestFeature
+        var feature = new TurboHttpRequestFeature
         {
             Protocol = _version switch
             {
@@ -127,9 +124,13 @@ internal sealed class Http11ServerDecoder
             Path = ParsePath(_target),
             QueryString = ParseQueryString(_target),
             RawTarget = _target,
-            Headers = headers,
             Body = body,
         };
+
+        // Populate directly into the feature's header dictionary, avoiding a throwaway
+        // HeaderDictionary allocation plus the copy loop in the Headers setter.
+        HeaderRouter.ApplyToHeaderDictionary(feature.Headers, _headerReader.GetHeaders());
+        return feature;
     }
 
     private static string ParsePath(string target)

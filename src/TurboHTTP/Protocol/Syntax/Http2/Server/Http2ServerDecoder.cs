@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using TurboHTTP.Protocol.Semantics;
 using TurboHTTP.Protocol.Syntax.Http2.Hpack;
 using TurboHTTP.Server.Context.Features;
@@ -35,7 +34,9 @@ internal sealed class Http2ServerDecoder
         ValidateRequestHeaders(headers);
 
         var feature = new TurboHttpRequestFeature { Protocol = "HTTP/2" };
-        var headerDict = new HeaderDictionary();
+        // Write directly into the feature's header dictionary, avoiding a throwaway
+        // HeaderDictionary allocation plus the copy loop in the Headers setter.
+        var headerDict = feature.Headers;
 
         string? path = null;
         string? scheme = null;
@@ -95,7 +96,6 @@ internal sealed class Http2ServerDecoder
             feature.QueryString = queryIdx >= 0 ? path[queryIdx..] : string.Empty;
         }
 
-        feature.Headers = headerDict;
         state.InitRequestFeature(feature);
 
         if (!endStream)
