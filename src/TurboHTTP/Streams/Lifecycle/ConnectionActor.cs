@@ -39,7 +39,7 @@ internal sealed class ConnectionActor : ReceiveActor
         IServerProtocolEngine Engine,
         int ConnectionId,
         Sink<IFeatureCollection, NotUsed> RequestIngress,
-        Source<IFeatureCollection, NotUsed> ResponseBroadcast,
+        IResponseDispatcher<IFeatureCollection> Dispatcher,
         IServiceProvider Services,
         IMaterializer Materializer,
         string? ConnectionLoggingCategory = null,
@@ -75,6 +75,8 @@ internal sealed class ConnectionActor : ReceiveActor
         var protocolBidi = msg.Engine.CreateFlow(msg.Services);
         var connectionId = msg.ConnectionId;
 
+        var responseSource = msg.Dispatcher.Subscribe(msg.ConnectionId);
+
         var bridge = Flow.FromGraph(GraphDsl.Create(b =>
         {
             var tagAndSink = b.Add(
@@ -86,13 +88,11 @@ internal sealed class ConnectionActor : ReceiveActor
                     })
                     .To(msg.RequestIngress));
 
-            var responseSource = b.Add(
-                msg.ResponseBroadcast
-                    .Where(f => f.Get<ConnectionRoutingFeature>()?.ConnectionId == connectionId));
+            var response = b.Add(responseSource);
 
             return new FlowShape<IFeatureCollection, IFeatureCollection>(
                 tagAndSink.Inlet,
-                responseSource.Outlet);
+                response.Outlet);
         }));
 
         var composed = protocolBidi.Join(bridge);
