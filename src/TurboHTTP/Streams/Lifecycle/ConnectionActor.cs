@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
+using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
 
 namespace TurboHTTP.Streams.Lifecycle;
@@ -35,7 +36,9 @@ internal sealed class ConnectionActor : ReceiveActor
     public sealed record Materialize(
         Flow<ITransportOutbound, ITransportInbound, NotUsed> ConnectionFlow,
         IServerProtocolEngine Engine,
-        Flow<IFeatureCollection, IFeatureCollection, NotUsed> BridgeFlow,
+        int ConnectionId,
+        Sink<IFeatureCollection, NotUsed> RequestIngress,
+        Source<IFeatureCollection, NotUsed> ResponseFanoutSource,
         IServiceProvider Services,
         IMaterializer Materializer,
         string? ConnectionLoggingCategory = null,
@@ -69,7 +72,11 @@ internal sealed class ConnectionActor : ReceiveActor
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
 
         var protocolBidi = msg.Engine.CreateFlow(msg.Services);
-        var composed = protocolBidi.Join(msg.BridgeFlow);
+        var bridge = Flow.FromGraph(new ConnectionBridgeStage(
+            msg.ConnectionId,
+            msg.RequestIngress,
+            msg.ResponseFanoutSource));
+        var composed = protocolBidi.Join(bridge);
 
         if (Metrics.ProtocolNegotiationDuration().Enabled)
         {

@@ -19,13 +19,13 @@ internal sealed class ListenerActor : ReceiveActor
     private readonly IListenerFactory _factory;
     private readonly ListenerOptions _listenerOptions;
     private readonly TurboServerOptions _serverOptions;
-    private readonly Flow<IFeatureCollection, IFeatureCollection, NotUsed> _bridgeFlow;
+    private readonly IActorRef _pipelineOwner;
     private readonly IServiceProvider _services;
     private readonly IMaterializer _materializer;
     private readonly string? _connectionLoggingCategory;
 
     private UniqueKillSwitch? _listenerKillSwitch;
-    private int _connectionCounter;
+    private int _connectionIdCounter;
     private readonly HashSet<IActorRef> _activeConnections = [];
     private readonly Dictionary<IActorRef, (long Timestamp, Activity? Activity)> _connectionMetrics = new();
     private bool _draining;
@@ -48,11 +48,20 @@ internal sealed class ListenerActor : ReceiveActor
 
     internal sealed record ListenerFailed(Exception? Error);
 
+    private sealed record ConnectionReady(
+        IActorRef ConnectionChild,
+        IncomingConnection IncomingMsg,
+        IServerProtocolEngine Engine,
+        int ConnectionId,
+        ServerPipelineOwner.ConnectionRegistered Registered,
+        long Timestamp,
+        Activity? ConnectionActivity);
+
     public ListenerActor(
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
-        Flow<IFeatureCollection, IFeatureCollection, NotUsed> bridgeFlow,
+        IActorRef pipelineOwner,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
@@ -60,7 +69,7 @@ internal sealed class ListenerActor : ReceiveActor
         _factory = factory;
         _listenerOptions = listenerOptions;
         _serverOptions = serverOptions;
-        _bridgeFlow = bridgeFlow;
+        _pipelineOwner = pipelineOwner;
         _services = services;
         _materializer = materializer;
         _connectionLoggingCategory = connectionLoggingCategory;
@@ -68,6 +77,7 @@ internal sealed class ListenerActor : ReceiveActor
         Receive<StartListening>(_ => OnStartListening());
         Receive<BindCompleted>(OnBindCompleted);
         Receive<IncomingConnection>(OnIncomingConnection);
+        Receive<ConnectionReady>(OnConnectionReady);
         Receive<StopAccepting>(_ => OnStopAccepting());
         Receive<GracefulStop>(OnGracefulStop);
         Receive<ConnectionActor.ConnectionCompleted>(OnConnectionCompleted);
@@ -124,7 +134,8 @@ internal sealed class ListenerActor : ReceiveActor
             return;
         }
 
-        var connectionId = string.Concat("conn-", ++_connectionCounter);
+        var connectionId = ++_connectionIdCounter;
+        var stringConnectionId = string.Concat("conn-", connectionId);
         var engine = ResolveEngineForListener();
 
         long timestamp = 0;
@@ -135,22 +146,47 @@ internal sealed class ListenerActor : ReceiveActor
             OnIncomingConnectionInstrumented(out timestamp, out connectionActivity);
         }
 
-        var child = Context.ActorOf(ConnectionActor.Create(connectionId), connectionId);
+        var child = Context.ActorOf(ConnectionActor.Create(stringConnectionId), stringConnectionId);
         Context.Watch(child);
         _activeConnections.Add(child);
         _connectionMetrics[child] = (timestamp, connectionActivity);
 
-        child.Tell(new ConnectionActor.Materialize(
-            msg.ConnectionFlow,
-            engine,
-            _bridgeFlow,
+        _pipelineOwner.Ask<ServerPipelineOwner.ConnectionRegistered>(
+            new ServerPipelineOwner.RegisterConnection(connectionId),
+            TimeSpan.FromSeconds(5))
+            .PipeTo(
+                Self,
+                success: registered => new ConnectionReady(
+                    child, msg, engine, connectionId, registered, timestamp, connectionActivity),
+                failure: ex => new ConnectionReady(
+                    child, msg, engine, connectionId,
+                    new ServerPipelineOwner.ConnectionRegistered(null!, null!), timestamp, connectionActivity));
+
+        Context.Parent.Tell(new ConnectionStarted(stringConnectionId, child));
+    }
+
+    private void OnConnectionReady(ConnectionReady msg)
+    {
+        if (msg.Registered.RequestIngress is null || msg.Registered.ResponseFanoutSource is null)
+        {
+            _log.Error("Failed to register connection {0} with pipeline owner", msg.ConnectionId);
+            _activeConnections.Remove(msg.ConnectionChild);
+            _connectionMetrics.Remove(msg.ConnectionChild);
+            msg.ConnectionChild.Tell(PoisonPill.Instance);
+            return;
+        }
+
+        msg.ConnectionChild.Tell(new ConnectionActor.Materialize(
+            msg.IncomingMsg.ConnectionFlow,
+            msg.Engine,
+            msg.ConnectionId,
+            msg.Registered.RequestIngress,
+            msg.Registered.ResponseFanoutSource,
             _services,
             _materializer,
             _connectionLoggingCategory,
-            timestamp,
-            connectionActivity));
-
-        Context.Parent.Tell(new ConnectionStarted(connectionId, child));
+            msg.Timestamp,
+            msg.ConnectionActivity));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -289,12 +325,12 @@ internal sealed class ListenerActor : ReceiveActor
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
-        Flow<IFeatureCollection, IFeatureCollection, NotUsed> bridgeFlow,
+        IActorRef pipelineOwner,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
         => Props.Create(() => new ListenerActor(
             factory, listenerOptions, serverOptions,
-            bridgeFlow, services, materializer,
+            pipelineOwner, services, materializer,
             connectionLoggingCategory));
 }
