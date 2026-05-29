@@ -116,32 +116,48 @@ public sealed class TurboServer : IServer
             addressesFeature.Addresses.Add(string.Concat(scheme, "://", host, ":", port.ToString()));
         }
 
-        var cs = CoordinatedShutdown.Get(_system);
-
-        cs.AddTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "turbo-stop-accepting", () =>
+        if (_ownsSystem)
         {
-            _supervisor.Tell(new ServerSupervisorActor.StopAccepting());
-            return Task.FromResult(Done.Instance);
-        });
+            var cs = CoordinatedShutdown.Get(_system);
 
-        cs.AddTask(CoordinatedShutdown.PhaseServiceUnbind, "turbo-goaway", () =>
-        {
-            _supervisor.Tell(new ServerSupervisorActor.BeginDrain(_options.GracefulShutdownTimeout));
-            return Task.FromResult(Done.Instance);
-        });
+            cs.AddTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "turbo-stop-accepting", () =>
+            {
+                _supervisor.Tell(new ServerSupervisorActor.StopAccepting());
+                return Task.FromResult(Done.Instance);
+            });
 
-        cs.AddTask(CoordinatedShutdown.PhaseServiceRequestsDone, "turbo-drain", async () =>
-        {
-            await Task.Delay(_options.GracefulShutdownTimeout, CancellationToken.None);
-            return Done.Instance;
-        });
+            cs.AddTask(CoordinatedShutdown.PhaseServiceUnbind, "turbo-goaway", () =>
+            {
+                _supervisor.Tell(new ServerSupervisorActor.BeginDrain(_options.GracefulShutdownTimeout));
+                return Task.FromResult(Done.Instance);
+            });
+
+            cs.AddTask(CoordinatedShutdown.PhaseServiceRequestsDone, "turbo-drain", async () =>
+            {
+                await Task.Delay(_options.GracefulShutdownTimeout, CancellationToken.None);
+                return Done.Instance;
+            });
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_system is not null)
+        if (_system is null)
+        {
+            return;
+        }
+
+        if (_ownsSystem)
         {
             await CoordinatedShutdown.Get(_system).Run(CoordinatedShutdown.ClrExitReason.Instance);
+        }
+        else
+        {
+            _supervisor.Tell(new ServerSupervisorActor.StopAccepting());
+            _supervisor.Tell(new ServerSupervisorActor.BeginDrain(_options.GracefulShutdownTimeout));
+            await Task.Delay(_options.GracefulShutdownTimeout, cancellationToken);
+            await _pipelineOwner.GracefulStop(_options.GracefulShutdownTimeout);
+            await _supervisor.GracefulStop(_options.GracefulShutdownTimeout);
         }
     }
 
