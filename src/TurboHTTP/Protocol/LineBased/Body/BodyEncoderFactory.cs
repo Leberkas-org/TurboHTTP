@@ -4,7 +4,7 @@ namespace TurboHTTP.Protocol.LineBased.Body;
 
 internal static class BodyEncoderFactory
 {
-    public static IBodyEncoder? Create(Stream? bodyStream, long? contentLength, Version httpVersion)
+    public static IBodyEncoder? Create(Stream? bodyStream, long? contentLength, Version httpVersion, int chunkSize = 16 * 1024)
     {
         if (bodyStream is null)
         {
@@ -18,9 +18,9 @@ internal static class BodyEncoderFactory
 
         if (contentLength is not null)
         {
-            return new ContentLengthStreamedBodyEncoder();
+            return new ContentLengthStreamedBodyEncoder(chunkSize);
         }
 
-        return new ChunkedBodyEncoder();
+        return new ChunkedBodyEncoder(chunkSize);
     }
 }

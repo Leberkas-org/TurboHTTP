@@ -2,7 +2,7 @@ namespace TurboHTTP.Protocol.Multiplexed.Body;
 
 internal static class BodyEncoderFactory
 {
-    public static IBodyEncoder? Create(Stream? bodyStream, long? contentLength)
+    public static IBodyEncoder? Create(Stream? bodyStream, long? contentLength, int chunkSize = 16 * 1024)
     {
         if (bodyStream is null)
         {
@@ -14,6 +14,6 @@ internal static class BodyEncoderFactory
             return new BufferedBodyEncoder();
         }
 
-        return new StreamingBodyEncoder();
+        return new StreamingBodyEncoder(chunkSize);
     }
 }

@@ -12,6 +12,7 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
     private const string HeadersTimeoutPrefix = "headers-timeout:";
     private const string KeepAliveTimeout = "keep-alive-timeout";
     private const string BodyRateCheck = "body-rate-check:";
+    private const string BodyConsumptionPrefix = "body-consumption:";
 
     private readonly IServerStageOperations _ops;
     private readonly Http2ServerSessionManager _sessionManager;
@@ -133,6 +134,15 @@ internal sealed class Http2ServerStateMachine : IServerStateMachine
         if (name == BodyRateCheck)
         {
             _sessionManager.CheckBodyRates(_minBodyDataRate, _bodyRateGracePeriod);
+            return;
+        }
+
+        if (name.StartsWith(BodyConsumptionPrefix))
+        {
+            if (int.TryParse(name.AsSpan(BodyConsumptionPrefix.Length), out var consumptionStreamId))
+            {
+                _sessionManager.EmitRstStream(consumptionStreamId, Http2ErrorCode.Cancel);
+            }
         }
     }
 
