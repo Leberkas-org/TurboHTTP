@@ -2,12 +2,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Akka.Actor;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Shared;
 
-public abstract class ServerSpecBase : IAsyncLifetime
+public abstract class ServerSpecBase(ActorSystemFixture systemFixture) : IAsyncLifetime
 {
     private WebApplication? _app;
     private HttpClient? _client;
@@ -31,6 +34,7 @@ public abstract class ServerSpecBase : IAsyncLifetime
         Port = GetFreePort();
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
+        builder.Services.AddSingleton(systemFixture.System);
         ConfigureServer(builder, Port);
         _app = builder.Build();
         ConfigureEndpoints(_app);
