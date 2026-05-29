@@ -68,19 +68,6 @@ public sealed class TurboServer : IServer
         var resolver = new EndpointResolver();
         var resolvedEndpoints = resolver.Resolve(_options);
 
-        var addressesFeature = _features.Get<IServerAddressesFeature>()!;
-        foreach (var endpoint in resolvedEndpoints)
-        {
-            var opts = endpoint.Options;
-            var scheme = (opts is TcpListenerOptions tcp && tcp.ServerCertificate is not null) ? "https" : "http";
-            var host = opts.Host ?? "localhost";
-            if (host == "0.0.0.0" || host == "::")
-            {
-                host = "localhost";
-            }
-            addressesFeature.Addresses.Add(string.Concat(scheme, "://", host, ":", opts.Port.ToString()));
-        }
-
         var listenerProps = new List<Props>(resolvedEndpoints.Count);
         foreach (var endpoint in resolvedEndpoints)
         {
@@ -98,10 +85,25 @@ public sealed class TurboServer : IServer
             Props.Create(() => new ServerSupervisorActor()),
             "turbo-server");
 
-        await _supervisor.Ask<ServerSupervisorActor.ListenersReady>(
+        var ready = await _supervisor.Ask<ServerSupervisorActor.ListenersReady>(
             new ServerSupervisorActor.StartListeners(listenerProps),
             TimeSpan.FromSeconds(30),
             cancellationToken);
+
+        var addressesFeature = _features.Get<IServerAddressesFeature>()!;
+        for (var i = 0; i < resolvedEndpoints.Count; i++)
+        {
+            var opts = resolvedEndpoints[i].Options;
+            var scheme = opts is TcpListenerOptions { ServerCertificate: not null } ? "https" : "http";
+            var host = opts.Host;
+            if (host is "0.0.0.0" or "::")
+            {
+                host = "localhost";
+            }
+
+            var port = i < ready.BoundPorts.Count ? ready.BoundPorts[i] : opts.Port;
+            addressesFeature.Addresses.Add(string.Concat(scheme, "://", host, ":", port.ToString()));
+        }
 
         var cs = CoordinatedShutdown.Get(_system);
 

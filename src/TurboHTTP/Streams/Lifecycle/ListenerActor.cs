@@ -40,9 +40,9 @@ internal sealed class ListenerActor : ReceiveActor
 
     internal sealed record IncomingConnection(Flow<ITransportOutbound, ITransportInbound, NotUsed> ConnectionFlow);
 
-    internal sealed record ListeningStarted;
+    internal sealed record ListeningStarted(int BoundPort);
 
-    private sealed record BindCompleted(IActorRef ReplyTo);
+    private sealed record BindCompleted(IActorRef ReplyTo, int BoundPort);
 
     internal sealed record ListenerStopped;
 
@@ -96,7 +96,7 @@ internal sealed class ListenerActor : ReceiveActor
         _listenerKillSwitch = killSwitch;
 
         boundTask.PipeTo(Self,
-            success: () => new BindCompleted(sender),
+            success: port => new BindCompleted(sender, port),
             failure: ex => new ListenerFailed(ex));
 
         completionTask.PipeTo(Self,
@@ -106,7 +106,7 @@ internal sealed class ListenerActor : ReceiveActor
 
     private void OnBindCompleted(BindCompleted msg)
     {
-        msg.ReplyTo.Tell(new ListeningStarted());
+        msg.ReplyTo.Tell(new ListeningStarted(msg.BoundPort));
     }
 
     private void OnIncomingConnection(IncomingConnection msg)

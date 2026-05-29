@@ -8,11 +8,12 @@ internal sealed class ServerSupervisorActor : ReceiveActor
     private readonly ILoggingAdapter _log = Context.GetLogger();
     private readonly Dictionary<string, IActorRef> _activeConnections = new();
     private readonly List<IActorRef> _listeners = [];
+    private readonly List<int> _boundPorts = [];
     private IActorRef _startRequester = ActorRefs.Nobody;
     private int _pendingListenerCount;
 
     public sealed record StartListeners(IReadOnlyList<Props> ListenerProps);
-    public sealed record ListenersReady;
+    public sealed record ListenersReady(IReadOnlyList<int> BoundPorts);
     public sealed record StopAccepting;
     public sealed record BeginDrain(TimeSpan Timeout);
     public sealed record DrainComplete;
@@ -21,7 +22,7 @@ internal sealed class ServerSupervisorActor : ReceiveActor
     public ServerSupervisorActor()
     {
         Receive<StartListeners>(OnStartListeners);
-        Receive<ListenerActor.ListeningStarted>(_ => OnListenerReady());
+        Receive<ListenerActor.ListeningStarted>(msg => OnListenerReady(msg.BoundPort));
         Receive<StopAccepting>(_ => OnStopAccepting());
         Receive<BeginDrain>(OnBeginDrain);
         Receive<ListenerActor.ConnectionStarted>(OnConnectionStarted);
@@ -36,7 +37,7 @@ internal sealed class ServerSupervisorActor : ReceiveActor
 
         if (_pendingListenerCount == 0)
         {
-            _startRequester.Tell(new ListenersReady());
+            _startRequester.Tell(new ListenersReady([]));
             return;
         }
 
@@ -49,13 +50,14 @@ internal sealed class ServerSupervisorActor : ReceiveActor
         }
     }
 
-    private void OnListenerReady()
+    private void OnListenerReady(int boundPort)
     {
+        _boundPorts.Add(boundPort);
         _pendingListenerCount--;
         if (_pendingListenerCount <= 0)
         {
             _log.Info("All {0} listener(s) ready", _listeners.Count);
-            _startRequester.Tell(new ListenersReady());
+            _startRequester.Tell(new ListenersReady(_boundPorts));
             _startRequester = ActorRefs.Nobody;
         }
     }
