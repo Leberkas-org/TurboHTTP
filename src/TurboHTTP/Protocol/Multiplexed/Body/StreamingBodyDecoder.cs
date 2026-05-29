@@ -19,11 +19,9 @@ internal sealed class StreamingBodyDecoder : IBodyDecoder
             _handle.Feed(data);
         }
 
-        if (endStream)
-        {
-            IsComplete = true;
-            _handle.Complete();
-        }
+        if (!endStream) return;
+        IsComplete = true;
+        _handle.Complete();
     }
 
     public Stream GetBodyStream()

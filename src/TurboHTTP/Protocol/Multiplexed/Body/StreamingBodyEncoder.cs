@@ -2,15 +2,9 @@ using System.Buffers;
 
 namespace TurboHTTP.Protocol.Multiplexed.Body;
 
-internal sealed class StreamingBodyEncoder : IBodyEncoder
+internal sealed class StreamingBodyEncoder(int chunkSize = 16 * 1024) : IBodyEncoder
 {
-    private readonly int _chunkSize;
     private readonly CancellationTokenSource _cts = new();
-
-    public StreamingBodyEncoder(int chunkSize = 16 * 1024)
-    {
-        _chunkSize = chunkSize;
-    }
 
     public void Start(Stream bodyStream, Action<object> onMessage) => _ = DrainAsync(new StreamContent(bodyStream), onMessage, _cts.Token);
 
@@ -21,8 +15,8 @@ internal sealed class StreamingBodyEncoder : IBodyEncoder
             var stream = await content.ReadAsStreamAsync(ct).ConfigureAwait(false);
             while (true)
             {
-                var owner = MemoryPool<byte>.Shared.Rent(_chunkSize);
-                var bytesRead = await stream.ReadAsync(owner.Memory[.._chunkSize], ct).ConfigureAwait(false);
+                var owner = MemoryPool<byte>.Shared.Rent(chunkSize);
+                var bytesRead = await stream.ReadAsync(owner.Memory[..chunkSize], ct).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
                     owner.Dispose();
