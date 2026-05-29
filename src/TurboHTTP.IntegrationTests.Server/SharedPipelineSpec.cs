@@ -72,13 +72,14 @@ public sealed class SharedPipelineResilienceSpec(TurboServerFixture server) : ID
 
         using (var socket = new System.Net.Sockets.TcpClient())
         {
-            await socket.ConnectAsync("127.0.0.1", server.Port);
+            await socket.ConnectAsync("127.0.0.1", server.Port, TestContext.Current.CancellationToken);
             socket.LingerState = new System.Net.Sockets.LingerOption(true, 0);
         }
 
         await Task.Delay(2000, CancellationToken);
 
-        using var freshClient = new HttpClient(new SocketsHttpHandler()) { Timeout = TimeSpan.FromSeconds(10) };
+        using var freshClient = new HttpClient(new SocketsHttpHandler());
+        freshClient.Timeout = TimeSpan.FromSeconds(10);
         var response = await freshClient.GetAsync(uri, CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
