@@ -251,11 +251,8 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         switch (msg)
         {
             case OutboundBodyChunk chunk:
-                var buf = TransportBuffer.Rent(chunk.Length);
-                chunk.Owner.Memory.Span[..chunk.Length].CopyTo(buf.FullMemory.Span);
-                buf.Length = chunk.Length;
-                chunk.Owner.Dispose();
-                _ops.OnOutbound(new TransportData(buf));
+                // Hand the chunk's pooled buffer straight to the transport — no rent + copy.
+                _ops.OnOutbound(new TransportData(TransportBuffer.Wrap(chunk.Owner, chunk.Length)));
                 break;
 
             case OutboundBodyComplete:
