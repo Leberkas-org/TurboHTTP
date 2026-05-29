@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Routing;
 
-public sealed class RequestBodySpec : ServerSpecBase
+public sealed class RequestBodySpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {

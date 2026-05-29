@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
 [Collection("Infrastructure")]
-public sealed class ClientCertificateModeAllowSpec : ServerSpecBase
+public sealed class ClientCertificateModeAllowSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
 {
     private X509Certificate2? _serverCert;
     private X509Certificate2? _clientCert;
