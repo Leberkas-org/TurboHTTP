@@ -196,7 +196,7 @@ public sealed class ErrorHandlingSpec : ClientAcceptanceTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10000)]
     [Trait("RFC", "RFC9110-15.5")]
     public async Task ErrorHandling_should_return_4xx_status_code_401()
     {

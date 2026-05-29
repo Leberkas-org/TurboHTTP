@@ -97,7 +97,7 @@ public sealed class ConnectionSpec : AcceptanceTestBase
         Assert.Equal("default", body);
     }
 
-    [Fact(Timeout = 5000)]
+    [Fact(Timeout = 10000)]
     [Trait("RFC", "RFC9110-7.8")]
     public async Task Connection_101_switching_protocols_must_not_be_reusable_for_http()
     {

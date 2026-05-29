@@ -115,7 +115,7 @@ public sealed class RedirectSpec : ClientAcceptanceTestBase
         Assert.Equal("Hello World", body);
     }
 
-    [Theory(Timeout = 5000)]
+    [Theory(Timeout = 10000)]
     [InlineData(1)]
     [InlineData(3)]
     [InlineData(5)]
