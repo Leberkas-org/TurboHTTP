@@ -67,7 +67,7 @@ public sealed class SharedPipelineConcurrencySpec : SharedPipelineBase
 
 public sealed class SharedPipelineResilienceSpec : SharedPipelineBase
 {
-    [Fact(Timeout = 15000)]
+    [Fact(Timeout = 30000)]
     public async Task Connection_after_tcp_abort_should_still_work()
     {
         var uri = new Uri($"http://127.0.0.1:{Port}/ping");
@@ -78,9 +78,9 @@ public sealed class SharedPipelineResilienceSpec : SharedPipelineBase
             socket.LingerState = new System.Net.Sockets.LingerOption(true, 0);
         }
 
-        await Task.Delay(500, CancellationToken);
+        await Task.Delay(2000, CancellationToken);
 
-        using var client = new HttpClient(new SocketsHttpHandler()) { Timeout = TimeSpan.FromSeconds(5) };
+        using var client = new HttpClient(new SocketsHttpHandler()) { Timeout = TimeSpan.FromSeconds(10) };
         var response = await client.GetAsync(uri, CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }

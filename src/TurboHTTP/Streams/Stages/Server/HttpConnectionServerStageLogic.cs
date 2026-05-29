@@ -151,7 +151,26 @@ internal sealed class HttpConnectionServerStageLogic<TSM> : TimerGraphStageLogic
                 }
             });
 
-        SetHandler(_outNetwork, onPull: OnNetworkPull);
+        SetHandler(_outNetwork,
+            onPull: OnNetworkPull,
+            onDownstreamFinish: _ =>
+            {
+                _sm.OnDownstreamFinished();
+                if (!IsClosed(_outRequest))
+                {
+                    Complete(_outRequest);
+                }
+
+                if (!IsClosed(_inResponse))
+                {
+                    Cancel(_inResponse);
+                }
+
+                if (!IsClosed(_inNetwork))
+                {
+                    Cancel(_inNetwork);
+                }
+            });
     }
 
     public override void PreStart()
