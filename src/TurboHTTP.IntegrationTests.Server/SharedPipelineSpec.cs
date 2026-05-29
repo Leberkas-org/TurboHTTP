@@ -90,25 +90,20 @@ public sealed class SharedPipelineSpec : ServerSpecBase
     }
 
     [Fact(Timeout = 15000)]
-    public async Task Request_after_disconnect_should_still_succeed()
+    public async Task Connection_after_tcp_abort_should_still_work()
     {
         var uri = new Uri($"http://127.0.0.1:{Port}/ping");
 
-        using var shortLivedClient = new HttpClient(new SocketsHttpHandler
+        using (var socket = new System.Net.Sockets.TcpClient())
         {
-            PooledConnectionLifetime = TimeSpan.Zero
-        })
-        {
-            Timeout = TimeSpan.FromSeconds(5)
-        };
-
-        var first = await shortLivedClient.GetAsync(uri, CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        first.Dispose();
+            await socket.ConnectAsync("127.0.0.1", Port);
+            socket.LingerState = new System.Net.Sockets.LingerOption(true, 0);
+        }
 
         await Task.Delay(500, CancellationToken);
 
-        var second = await Client.GetAsync(uri, CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        using var client = new HttpClient(new SocketsHttpHandler()) { Timeout = TimeSpan.FromSeconds(5) };
+        var response = await client.GetAsync(uri, CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }

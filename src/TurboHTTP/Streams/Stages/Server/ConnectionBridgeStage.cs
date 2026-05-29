@@ -22,8 +22,6 @@ internal static class ConnectionBridge
                         features.Set(new ConnectionRoutingFeature { ConnectionId = connectionId });
                         return features;
                     })
-                    .Recover(_ => null!)
-                    .Where(f => f is not null)
                     .To(requestIngress));
 
             var responseSource = b.Add(responseFanoutSource);

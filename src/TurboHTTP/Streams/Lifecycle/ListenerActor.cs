@@ -20,6 +20,8 @@ internal sealed class ListenerActor : ReceiveActor
     private readonly ListenerOptions _listenerOptions;
     private readonly TurboServerOptions _serverOptions;
     private readonly IActorRef _pipelineOwner;
+    private readonly Sink<IFeatureCollection, NotUsed> _requestIngress;
+    private readonly Source<IFeatureCollection, NotUsed> _responseFanoutSource;
     private readonly IServiceProvider _services;
     private readonly IMaterializer _materializer;
     private readonly string? _connectionLoggingCategory;
@@ -28,6 +30,7 @@ internal sealed class ListenerActor : ReceiveActor
     private int _connectionIdCounter;
     private readonly HashSet<IActorRef> _activeConnections = [];
     private readonly Dictionary<IActorRef, (long Timestamp, Activity? Activity)> _connectionMetrics = new();
+    private readonly Dictionary<IActorRef, int> _connectionIds = new();
     private bool _draining;
 
     public sealed record StartListening;
@@ -48,20 +51,13 @@ internal sealed class ListenerActor : ReceiveActor
 
     internal sealed record ListenerFailed(Exception? Error);
 
-    private sealed record ConnectionReady(
-        IActorRef ConnectionChild,
-        IncomingConnection IncomingMsg,
-        IServerProtocolEngine Engine,
-        int ConnectionId,
-        ServerPipelineOwner.ConnectionRegistered Registered,
-        long Timestamp,
-        Activity? ConnectionActivity);
-
     public ListenerActor(
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
         IActorRef pipelineOwner,
+        Sink<IFeatureCollection, NotUsed> requestIngress,
+        Source<IFeatureCollection, NotUsed> responseFanoutSource,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
@@ -70,6 +66,8 @@ internal sealed class ListenerActor : ReceiveActor
         _listenerOptions = listenerOptions;
         _serverOptions = serverOptions;
         _pipelineOwner = pipelineOwner;
+        _requestIngress = requestIngress;
+        _responseFanoutSource = responseFanoutSource;
         _services = services;
         _materializer = materializer;
         _connectionLoggingCategory = connectionLoggingCategory;
@@ -77,7 +75,6 @@ internal sealed class ListenerActor : ReceiveActor
         Receive<StartListening>(_ => OnStartListening());
         Receive<BindCompleted>(OnBindCompleted);
         Receive<IncomingConnection>(OnIncomingConnection);
-        Receive<ConnectionReady>(OnConnectionReady);
         Receive<StopAccepting>(_ => OnStopAccepting());
         Receive<GracefulStop>(OnGracefulStop);
         Receive<ConnectionActor.ConnectionCompleted>(OnConnectionCompleted);
@@ -150,43 +147,23 @@ internal sealed class ListenerActor : ReceiveActor
         Context.Watch(child);
         _activeConnections.Add(child);
         _connectionMetrics[child] = (timestamp, connectionActivity);
+        _connectionIds[child] = connectionId;
 
-        _pipelineOwner.Ask<ServerPipelineOwner.ConnectionRegistered>(
-            new ServerPipelineOwner.RegisterConnection(connectionId),
-            TimeSpan.FromSeconds(5))
-            .PipeTo(
-                Self,
-                success: registered => new ConnectionReady(
-                    child, msg, engine, connectionId, registered, timestamp, connectionActivity),
-                failure: ex => new ConnectionReady(
-                    child, msg, engine, connectionId,
-                    new ServerPipelineOwner.ConnectionRegistered(null!, null!), timestamp, connectionActivity));
+        _pipelineOwner.Tell(new ServerPipelineOwner.RegisterConnection(connectionId));
 
-        Context.Parent.Tell(new ConnectionStarted(stringConnectionId, child));
-    }
-
-    private void OnConnectionReady(ConnectionReady msg)
-    {
-        if (msg.Registered.RequestIngress is null || msg.Registered.ResponseFanoutSource is null)
-        {
-            _log.Error("Failed to register connection {0} with pipeline owner", msg.ConnectionId);
-            _activeConnections.Remove(msg.ConnectionChild);
-            _connectionMetrics.Remove(msg.ConnectionChild);
-            msg.ConnectionChild.Tell(PoisonPill.Instance);
-            return;
-        }
-
-        msg.ConnectionChild.Tell(new ConnectionActor.Materialize(
-            msg.IncomingMsg.ConnectionFlow,
-            msg.Engine,
-            msg.ConnectionId,
-            msg.Registered.RequestIngress,
-            msg.Registered.ResponseFanoutSource,
+        child.Tell(new ConnectionActor.Materialize(
+            msg.ConnectionFlow,
+            engine,
+            connectionId,
+            _requestIngress,
+            _responseFanoutSource,
             _services,
             _materializer,
             _connectionLoggingCategory,
-            msg.Timestamp,
-            msg.ConnectionActivity));
+            timestamp,
+            connectionActivity));
+
+        Context.Parent.Tell(new ConnectionStarted(stringConnectionId, child));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -252,6 +229,11 @@ internal sealed class ListenerActor : ReceiveActor
     private void OnChildTerminated(Terminated msg)
     {
         _activeConnections.Remove(msg.ActorRef);
+
+        if (_connectionIds.Remove(msg.ActorRef, out var connectionId))
+        {
+            _pipelineOwner.Tell(new ServerPipelineOwner.UnregisterConnection(connectionId));
+        }
 
         if (_connectionMetrics.Remove(msg.ActorRef, out var metrics))
         {
@@ -326,11 +308,14 @@ internal sealed class ListenerActor : ReceiveActor
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
         IActorRef pipelineOwner,
+        Sink<IFeatureCollection, NotUsed> requestIngress,
+        Source<IFeatureCollection, NotUsed> responseFanoutSource,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
         => Props.Create(() => new ListenerActor(
             factory, listenerOptions, serverOptions,
-            pipelineOwner, services, materializer,
+            pipelineOwner, requestIngress, responseFanoutSource,
+            services, materializer,
             connectionLoggingCategory));
 }
