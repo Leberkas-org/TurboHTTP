@@ -35,10 +35,13 @@ internal sealed class ResponseDispatcherHub
         return new LogicAndMaterializedValue<IResponseDispatcher<IFeatureCollection>>(logic, dispatcher);
     }
 
-    internal sealed record Register(int ConnectionId, IActorRef SourceActor);
-    internal sealed record Unregister(int ConnectionId);
-    internal sealed record Deliver(IFeatureCollection Element);
-    internal sealed record HubCompleted(Exception? Failure);
+    private sealed record Register(int ConnectionId, IActorRef SourceActor);
+
+    private sealed record Unregister(int ConnectionId);
+
+    private sealed record Deliver(IFeatureCollection Element);
+
+    private sealed record HubCompleted(Exception? Failure);
 
     private sealed class DispatcherLogic : GraphStageLogic
     {
@@ -62,6 +65,7 @@ internal sealed class ResponseDispatcherHub
                     {
                         consumer.Tell(new HubCompleted(null));
                     }
+
                     CompleteStage();
                 },
                 onUpstreamFailure: ex =>
@@ -70,6 +74,7 @@ internal sealed class ResponseDispatcherHub
                     {
                         consumer.Tell(new HubCompleted(ex));
                     }
+
                     FailStage(ex);
                 });
         }
@@ -108,18 +113,11 @@ internal sealed class ResponseDispatcherHub
         }
     }
 
-    private sealed class ResponseDispatcherImpl : IResponseDispatcher<IFeatureCollection>
+    private sealed class ResponseDispatcherImpl(Task<IActorRef> sinkActorTask) : IResponseDispatcher<IFeatureCollection>
     {
-        private readonly Task<IActorRef> _sinkActorTask;
-
-        public ResponseDispatcherImpl(Task<IActorRef> sinkActorTask)
-        {
-            _sinkActorTask = sinkActorTask;
-        }
-
         public Source<IFeatureCollection, NotUsed> Subscribe(int connectionId)
         {
-            return Source.FromGraph(new DispatcherSourceStage(_sinkActorTask, connectionId));
+            return Source.FromGraph(new DispatcherSourceStage(sinkActorTask, connectionId));
         }
     }
 
@@ -195,6 +193,7 @@ internal sealed class ResponseDispatcherHub
                         {
                             _buffered = element;
                         }
+
                         break;
 
                     case HubCompleted(var failure):
@@ -206,6 +205,7 @@ internal sealed class ResponseDispatcherHub
                         {
                             CompleteStage();
                         }
+
                         break;
                 }
             }
