@@ -32,7 +32,7 @@ public sealed class ResponseBodySpec : ServerSpecBase
             }, "text/plain");
         });
 
-        app.MapGet("/with-cl", (HttpContext ctx) =>
+        app.MapGet("/with-cl", ctx =>
         {
             var body = Encoding.UTF8.GetBytes("exact-length-body");
             ctx.Response.StatusCode = 200;

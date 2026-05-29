@@ -22,7 +22,7 @@ public sealed class SseServerSpec : ServerSpecBase
     {
         app.MapGet("/echo", () => Results.Ok("ok"));
         app.MapGet("/text", () => Results.Ok("hello world"));
-        app.MapGet("/events", async (HttpContext ctx) =>
+        app.MapGet("/events", async ctx =>
         {
             ctx.Response.ContentType = "text/event-stream";
             var events = new[] { "event1", "event2" };
