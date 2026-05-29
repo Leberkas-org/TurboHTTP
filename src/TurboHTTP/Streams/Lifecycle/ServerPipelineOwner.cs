@@ -4,7 +4,6 @@ using Akka.Event;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using Microsoft.AspNetCore.Http.Features;
-using TurboHTTP.Server.Context.Features;
 
 namespace TurboHTTP.Streams.Lifecycle;
 
@@ -13,20 +12,15 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     internal sealed record Initialize;
     internal sealed record PipelineReady(
         Sink<IFeatureCollection, NotUsed> RequestIngress,
-        Source<IFeatureCollection, NotUsed> ResponseFanoutSource);
-    internal sealed record RegisterConnection(int ConnectionId);
-    internal sealed record UnregisterConnection(int ConnectionId);
+        Source<IFeatureCollection, NotUsed> ResponseBroadcast);
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
     private readonly Flow<IFeatureCollection, IFeatureCollection, NotUsed> _bridgeFlow;
 
     private ActorMaterializer? _materializer;
     private Sink<IFeatureCollection, NotUsed>? _requestIngress;
-    private Source<IFeatureCollection, NotUsed>? _responseFanoutSource;
+    private Source<IFeatureCollection, NotUsed>? _responseBroadcast;
     private SharedKillSwitch? _killSwitch;
-    private readonly Dictionary<int, int> _connectionPartitions = [];
-    private readonly Queue<int> _freePartitions = [];
-    private int _nextPartitionIndex;
 
     public IStash Stash { get; set; } = null!;
 
@@ -39,18 +33,14 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     private void Initializing()
     {
         Receive<Initialize>(_ => MaterializePipeline());
-        Receive<RegisterConnection>(_ => Stash.Stash());
-        Receive<UnregisterConnection>(_ => Stash.Stash());
     }
 
     private void Ready()
     {
         Receive<Initialize>(_ =>
         {
-            Sender.Tell(new PipelineReady(_requestIngress!, _responseFanoutSource!));
+            Sender.Tell(new PipelineReady(_requestIngress!, _responseBroadcast!));
         });
-        Receive<RegisterConnection>(HandleRegisterConnection);
-        Receive<UnregisterConnection>(HandleUnregisterConnection);
     }
 
     protected override void PreStart()
@@ -73,23 +63,20 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
             _killSwitch = KillSwitches.Shared($"server-{Self.Path.Name}");
 
             var requestIngressHub = MergeHub.Source<IFeatureCollection>(perProducerBufferSize: 64);
-            var responseFanoutHub = PartitionHub.Sink<IFeatureCollection>(
-                partitioner: ResolveResponsePartition,
-                startAfterNrOfConsumers: 1,
-                bufferSize: 256);
+            var responseBroadcastHub = BroadcastHub.Sink<IFeatureCollection>(bufferSize: 256);
 
-            var (requestIngress, fanoutSource) = requestIngressHub
+            var (requestIngress, broadcastSource) = requestIngressHub
                 .Via(_killSwitch.Flow<IFeatureCollection>())
                 .Via(_bridgeFlow)
-                .ToMaterialized(responseFanoutHub, Keep.Both)
+                .ToMaterialized(responseBroadcastHub, Keep.Both)
                 .Run(_materializer);
 
             _requestIngress = requestIngress;
-            _responseFanoutSource = fanoutSource;
+            _responseBroadcast = broadcastSource;
 
             _log.Debug("Server pipeline materialized successfully");
             BecomeReady();
-            Sender.Tell(new PipelineReady(_requestIngress!, _responseFanoutSource!));
+            Sender.Tell(new PipelineReady(_requestIngress!, _responseBroadcast!));
         }
         catch (Exception ex)
         {
@@ -103,36 +90,6 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     {
         Become(Ready);
         Stash.UnstashAll();
-    }
-
-    private void HandleRegisterConnection(RegisterConnection message)
-    {
-        var partition = _freePartitions.Count > 0
-            ? _freePartitions.Dequeue()
-            : _nextPartitionIndex++;
-        _connectionPartitions[message.ConnectionId] = partition;
-    }
-
-    private void HandleUnregisterConnection(UnregisterConnection message)
-    {
-        if (_connectionPartitions.Remove(message.ConnectionId, out var partition))
-        {
-            _freePartitions.Enqueue(partition);
-        }
-    }
-
-    private int ResolveResponsePartition(int consumerCount, IFeatureCollection features)
-    {
-        var routing = features.Get<ConnectionRoutingFeature>();
-        if (routing is not null
-            && _connectionPartitions.TryGetValue(routing.ConnectionId, out var partition)
-            && partition >= 0
-            && partition < consumerCount)
-        {
-            return partition;
-        }
-
-        return 0;
     }
 
     private void CleanupResources()
@@ -166,10 +123,8 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
         }
 
         _killSwitch = null;
-        _responseFanoutSource = null;
+        _responseBroadcast = null;
         _requestIngress = null;
-        _connectionPartitions.Clear();
-        _nextPartitionIndex = 0;
     }
 
     protected override void PostStop()

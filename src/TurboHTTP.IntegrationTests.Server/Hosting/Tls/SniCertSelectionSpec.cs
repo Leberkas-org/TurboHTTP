@@ -7,6 +7,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
+[Collection("Infrastructure")]
 public sealed class SniCertSelectionSpec : ServerSpecBase
 {
     private X509Certificate2? _certA;

@@ -9,6 +9,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Infrastructure;
 
+[Collection("Infrastructure")]
 public sealed class TimeoutSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)

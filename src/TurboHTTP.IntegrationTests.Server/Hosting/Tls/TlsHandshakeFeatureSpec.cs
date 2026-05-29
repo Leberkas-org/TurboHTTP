@@ -8,6 +8,7 @@ using TurboHTTP.Server.Context.Features;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
+[Collection("Infrastructure")]
 public sealed class TlsHandshakeFeatureSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)

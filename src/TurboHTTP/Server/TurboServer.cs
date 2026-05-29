@@ -85,9 +85,8 @@ public sealed class TurboServer : IServer
                 endpoint.Factory,
                 endpoint.Options,
                 _options,
-                _pipelineOwner,
                 ready.RequestIngress,
-                ready.ResponseFanoutSource,
+                ready.ResponseBroadcast,
                 _services,
                 materializer,
                 endpoint.ConnectionLoggingCategory));

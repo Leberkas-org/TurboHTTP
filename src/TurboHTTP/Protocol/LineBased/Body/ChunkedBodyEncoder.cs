@@ -16,14 +16,13 @@ internal sealed class ChunkedBodyEncoder : IBodyEncoder
 
     public void Start(Stream bodyStream, IActorRef stageActor)
     {
-        _ = DrainAsync(new StreamContent(bodyStream), stageActor, _cts.Token);
+        _ = DrainAsync(bodyStream, stageActor, _cts.Token);
     }
 
-    private async Task DrainAsync(HttpContent content, IActorRef stageActor, CancellationToken ct)
+    private async Task DrainAsync(Stream stream, IActorRef stageActor, CancellationToken ct)
     {
         try
         {
-            var stream = await content.ReadAsStreamAsync(ct).ConfigureAwait(false);
             var dataBuffer = new byte[_chunkSize];
 
             while (true)

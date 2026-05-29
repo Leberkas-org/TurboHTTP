@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Servus.Akka.Transport;
 using TurboHTTP.Diagnostics;
+using TurboHTTP.Server.Context.Features;
 using TurboHTTP.Streams.Stages.Server;
 using static Servus.Core.Servus;
 
@@ -38,7 +39,7 @@ internal sealed class ConnectionActor : ReceiveActor
         IServerProtocolEngine Engine,
         int ConnectionId,
         Sink<IFeatureCollection, NotUsed> RequestIngress,
-        Source<IFeatureCollection, NotUsed> ResponseFanoutSource,
+        Source<IFeatureCollection, NotUsed> ResponseBroadcast,
         IServiceProvider Services,
         IMaterializer Materializer,
         string? ConnectionLoggingCategory = null,
@@ -72,10 +73,28 @@ internal sealed class ConnectionActor : ReceiveActor
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
 
         var protocolBidi = msg.Engine.CreateFlow(msg.Services);
-        var bridge = Flow.FromGraph(ConnectionBridge.Create(
-            msg.ConnectionId,
-            msg.RequestIngress,
-            msg.ResponseFanoutSource));
+        var connectionId = msg.ConnectionId;
+
+        var bridge = Flow.FromGraph(GraphDsl.Create(b =>
+        {
+            var tagAndSink = b.Add(
+                Flow.Create<IFeatureCollection>()
+                    .Select(features =>
+                    {
+                        features.Set(new ConnectionRoutingFeature { ConnectionId = connectionId });
+                        return features;
+                    })
+                    .To(msg.RequestIngress));
+
+            var responseSource = b.Add(
+                msg.ResponseBroadcast
+                    .Where(f => f.Get<ConnectionRoutingFeature>()?.ConnectionId == connectionId));
+
+            return new FlowShape<IFeatureCollection, IFeatureCollection>(
+                tagAndSink.Inlet,
+                responseSource.Outlet);
+        }));
+
         var composed = protocolBidi.Join(bridge);
 
         if (Metrics.ProtocolNegotiationDuration().Enabled)

@@ -25,6 +25,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
     private bool _outboundBodyPending;
     private bool _requestHeadersTimerActive;
     private bool _draining;
+    private bool _bodyStreaming;
     private readonly TurboServerOptions _serverOptions;
 
     public bool CanAcceptResponse => !_outboundBodyPending && _pendingResponseCount > 0;
@@ -85,31 +86,42 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
             var span = buffer.Memory.Span;
             var pos = 0;
 
-            if (_draining && _decoder.CurrentBodyDecoder is { } bodyDecoder)
+            if (_draining && _decoder.CurrentBodyDecoder is { } drainingDecoder)
             {
-                var drained = bodyDecoder.Drain(span[pos..]);
+                var drained = drainingDecoder.Drain(span[pos..]);
                 pos += drained;
 
-                if (bodyDecoder.IsComplete)
+                if (drainingDecoder.IsComplete)
                 {
                     _draining = false;
                     _decoder.Reset();
                 }
             }
+            else if (_bodyStreaming && _decoder.CurrentBodyDecoder is { } streamingDecoder)
+            {
+                var done = streamingDecoder.Feed(span[pos..], out var bConsumed);
+                pos += bConsumed;
+
+                if (done)
+                {
+                    _bodyStreaming = false;
+                    _decoder.Reset();
+                }
+            }
 
             // Schedule request headers timeout if not already active
-            if (!_requestHeadersTimerActive && _pendingResponseCount == 0 && _requestHeadersTimeout > TimeSpan.Zero)
+            if (!_requestHeadersTimerActive && _pendingResponseCount == 0 && !_bodyStreaming && _requestHeadersTimeout > TimeSpan.Zero)
             {
                 _ops.OnScheduleTimer("request-headers", _requestHeadersTimeout);
                 _requestHeadersTimerActive = true;
             }
 
-            while (pos < span.Length)
+            while (pos < span.Length && !_bodyStreaming)
             {
                 var outcome = _decoder.Feed(span[pos..], out var consumed);
                 pos += consumed;
 
-                if (outcome != DecodeOutcome.Complete)
+                if (outcome == DecodeOutcome.NeedMore)
                 {
                     break;
                 }
@@ -134,7 +146,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                 }
 
                 var feature = _decoder.GetRequestFeature();
-                var hasBody = feature.Body != Stream.Null;
+                var hasBody = outcome == DecodeOutcome.HeadersReady || feature.Body != Stream.Null;
                 var features = FeatureCollectionFactory.Create(feature, hasBody, _ops.Services, _ops.ConnectionFeature,
                     _ops.TlsHandshakeFeature, _serverOptions.Limits.MaxRequestBodySize);
 
@@ -151,6 +163,26 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
 
                 _pendingResponseCount++;
                 _ops.OnRequest(features);
+
+                if (outcome == DecodeOutcome.HeadersReady)
+                {
+                    _bodyStreaming = true;
+
+                    if (pos < span.Length)
+                    {
+                        var bodyDone = _decoder.CurrentBodyDecoder!.Feed(span[pos..], out var bConsumed);
+                        pos += bConsumed;
+                        if (bodyDone)
+                        {
+                            _bodyStreaming = false;
+                            _decoder.Reset();
+                            continue;
+                        }
+                    }
+
+                    break;
+                }
+
                 _decoder.Reset();
             }
         }
@@ -201,8 +233,13 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
             return;
         }
 
-        if (!_draining && _decoder.CurrentBodyDecoder is { IsComplete: false })
+        if (_decoder.CurrentBodyDecoder is { IsComplete: false })
         {
+            if (_bodyStreaming)
+            {
+                _bodyStreaming = false;
+            }
+
             _draining = true;
         }
 

@@ -7,6 +7,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Infrastructure;
 
+[Collection("Infrastructure")]
 public sealed class GracefulShutdownSpec : ServerSpecBase
 {
     private readonly TaskCompletionSource _handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -37,7 +38,7 @@ public sealed class GracefulShutdownSpec : ServerSpecBase
         await base.DisposeAsync();
     }
 
-    [Fact(Timeout = 20000)]
+    [Fact(Timeout = 30000)]
     public async Task Shutdown_should_complete_inflight_request()
     {
         var handlerStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

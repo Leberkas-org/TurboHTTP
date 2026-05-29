@@ -73,7 +73,21 @@ internal sealed class Http11ServerDecoder
                 _options.Shared.BufferPool,
                 _options.Shared.MaxBufferedBodySize,
                 _options.Shared.MaxStreamedBodySize);
+
+            if (_bodyDecoder.IsComplete)
+            {
+                _phase = Phase.Done;
+                consumed = pos;
+                return DecodeOutcome.Complete;
+            }
+
             _phase = Phase.Body;
+
+            if (!_bodyDecoder.IsBuffered)
+            {
+                consumed = pos;
+                return DecodeOutcome.HeadersReady;
+            }
         }
 
         if (_phase == Phase.Body)
