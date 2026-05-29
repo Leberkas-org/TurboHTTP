@@ -72,7 +72,7 @@ internal sealed class ConnectionActor : ReceiveActor
         _killSwitch = KillSwitches.Shared("connection-" + _connectionId);
 
         var protocolBidi = msg.Engine.CreateFlow(msg.Services);
-        var bridge = Flow.FromGraph(new ConnectionBridgeStage(
+        var bridge = Flow.FromGraph(ConnectionBridge.Create(
             msg.ConnectionId,
             msg.RequestIngress,
             msg.ResponseFanoutSource));
