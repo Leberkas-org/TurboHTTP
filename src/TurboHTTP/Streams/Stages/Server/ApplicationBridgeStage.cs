@@ -49,9 +49,7 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
 
     private sealed record HandlerFaulted(int Sequence, IFeatureCollection Features, Exception Error);
 
-    private sealed record HandlerTimedOut(int Sequence, IFeatureCollection Features);
-
-    private sealed class Logic : GraphStageLogic
+    private sealed class Logic : TimerGraphStageLogic
     {
         private readonly ApplicationBridgeStage<TContext> _stage;
         private IActorRef? _stageActor;
@@ -64,6 +62,8 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
         private bool _protocolDetected;
         private readonly SortedDictionary<int, IFeatureCollection> _pending = [];
         private readonly Dictionary<int, CancellationTokenSource> _activeTimeouts = [];
+        private readonly Dictionary<int, IFeatureCollection> _activeFeatures = [];
+        private readonly HashSet<int> _gracePhase = [];
         private readonly Dictionary<int, TContext> _appContexts = [];
         private readonly bool _metricsEnabled;
         private readonly int _backpressureThreshold;
@@ -73,9 +73,9 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
         {
             _stage = stage;
             _metricsEnabled = Metrics.PipelineInFlight().Enabled
-                || Metrics.PipelinePending().Enabled
-                || Metrics.HandlerTimeouts().Enabled
-                || Tracing.IsServerTracingActive();
+                              || Metrics.PipelinePending().Enabled
+                              || Metrics.HandlerTimeouts().Enabled
+                              || Tracing.IsServerTracingActive();
             _backpressureThreshold = (int)(stage._parallelism * 0.8);
 
             SetHandler(stage._in,
@@ -102,6 +102,76 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
         {
             _stageActor = GetStageActor(OnMessage).Ref;
             Pull(_stage._in);
+        }
+
+        protected override void OnTimer(object timerKey)
+        {
+            if (timerKey is not string key)
+            {
+                return;
+            }
+
+            if (key.StartsWith("soft:") && int.TryParse(key.AsSpan(5), out var softSeq))
+            {
+                OnSoftTimeout(softSeq);
+            }
+            else if (key.StartsWith("hard:") && int.TryParse(key.AsSpan(5), out var hardSeq))
+            {
+                OnHardTimeout(hardSeq);
+            }
+        }
+
+        private void OnSoftTimeout(int seq)
+        {
+            if (!_activeTimeouts.TryGetValue(seq, out var cts))
+            {
+                return;
+            }
+
+            cts.Cancel();
+            _gracePhase.Add(seq);
+            ScheduleOnce($"hard:{seq}", _stage._handlerGracePeriod);
+        }
+
+        private void OnHardTimeout(int seq)
+        {
+            if (!_activeTimeouts.ContainsKey(seq) || !_gracePhase.Contains(seq))
+            {
+                return;
+            }
+
+            if (!_activeFeatures.TryGetValue(seq, out var features))
+            {
+                return;
+            }
+
+            CleanupTimeout(seq);
+            _inFlight--;
+            if (_metricsEnabled)
+            {
+                Metrics.HandlerTimeouts().Add(1);
+                Metrics.PipelineInFlight().Add(-1);
+                ResetBackpressure();
+            }
+
+            DisposeAppContext(seq, null);
+
+            if (features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature
+                {
+                    HasStarted: true
+                })
+            {
+                var responseFeature = features.Get<IHttpResponseFeature>();
+                responseFeature?.StatusCode = 503;
+            }
+
+            CompleteResponseBody(features);
+            Emit(seq, features);
+
+            if (_upstreamFinished && _inFlight == 0)
+            {
+                CompleteStage();
+            }
         }
 
         private void OnPush()
@@ -135,11 +205,9 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                 {
                     Metrics.PipelineInFlight().Add(-1);
                 }
+
                 var responseFeature = features.Get<IHttpResponseFeature>();
-                if (responseFeature is not null)
-                {
-                    responseFeature.StatusCode = 500;
-                }
+                responseFeature?.StatusCode = 500;
                 CompleteResponseBody(features);
                 Emit(seq, features);
             }
@@ -159,10 +227,7 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
             {
                 _inFlight--;
                 var responseFeature = features.Get<IHttpResponseFeature>();
-                if (responseFeature is not null)
-                {
-                    responseFeature.StatusCode = 500;
-                }
+                responseFeature?.StatusCode = 500;
                 CompleteResponseBody(features);
                 Emit(seq, features);
                 return;
@@ -182,10 +247,7 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
             {
                 _inFlight--;
                 var responseFeature = features.Get<IHttpResponseFeature>();
-                if (responseFeature is not null)
-                {
-                    responseFeature.StatusCode = 500;
-                }
+                responseFeature?.StatusCode = 500;
                 _stage._application.DisposeContext(appContext, task.Exception);
                 _appContexts.Remove(seq);
                 CompleteResponseBody(features);
@@ -197,15 +259,12 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                 var cts = lifetime is not null
                     ? CancellationTokenSource.CreateLinkedTokenSource(lifetime.RequestAborted)
                     : new CancellationTokenSource();
-                cts.CancelAfter(_stage._handlerTimeout);
                 _activeTimeouts[seq] = cts;
+                _activeFeatures[seq] = features;
+                ScheduleOnce($"soft:{seq}", _stage._handlerTimeout);
 
                 var bodyFeature = features.Get<IHttpResponseBodyFeature>() as TurboHttpResponseBodyFeature;
                 var headersReady = bodyFeature?.WhenHeadersReady;
-
-                Task.Delay(_stage._handlerTimeout + _stage._handlerGracePeriod, cts.Token)
-                    .PipeTo(_stageActor!,
-                        success: () => new HandlerTimedOut(seq, features));
 
                 if (headersReady is not null)
                 {
@@ -227,19 +286,14 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
             switch (args.msg)
             {
                 case ResponseReady(var seq, var features, var handlerTask):
-                    if (handlerTask.IsFaulted)
-                    {
-                        if (features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature
-                            {
-                                HasStarted: true
-                            })
+                    if (handlerTask.IsFaulted &&
+                        features.Get<IHttpResponseBodyFeature>() is not TurboHttpResponseBodyFeature
                         {
-                            var responseFeature = features.Get<IHttpResponseFeature>();
-                            if (responseFeature is not null)
-                            {
-                                responseFeature.StatusCode = 500;
-                            }
-                        }
+                            HasStarted: true
+                        })
+                    {
+                        var responseFeature = features.Get<IHttpResponseFeature>();
+                        responseFeature?.StatusCode = 500;
                     }
 
                     if (handlerTask.IsCompleted)
@@ -251,7 +305,8 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                             Metrics.PipelineInFlight().Add(-1);
                             ResetBackpressure();
                         }
-                        DisposeCts(seq);
+
+                        CleanupTimeout(seq);
                         DisposeAppContext(seq, handlerTask.Exception);
                         Emit(seq, features);
                     }
@@ -266,6 +321,11 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                     break;
 
                 case HandlerFinished(var seq, var finishedFeatures):
+                    if (!_activeTimeouts.ContainsKey(seq))
+                    {
+                        break;
+                    }
+
                     CompleteResponseBody(finishedFeatures);
                     _inFlight--;
                     if (_metricsEnabled)
@@ -273,7 +333,8 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                         Metrics.PipelineInFlight().Add(-1);
                         ResetBackpressure();
                     }
-                    DisposeCts(seq);
+
+                    CleanupTimeout(seq);
                     DisposeAppContext(seq, null);
                     if (_upstreamFinished && _inFlight == 0)
                     {
@@ -283,6 +344,11 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                     break;
 
                 case HandlerFaulted(var seq, var faultedFeatures, var error):
+                    if (!_activeTimeouts.ContainsKey(seq))
+                    {
+                        break;
+                    }
+
                     CompleteResponseBody(faultedFeatures);
                     _inFlight--;
                     if (_metricsEnabled)
@@ -290,7 +356,8 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                         Metrics.PipelineInFlight().Add(-1);
                         ResetBackpressure();
                     }
-                    DisposeCts(seq);
+
+                    CleanupTimeout(seq);
                     DisposeAppContext(seq, error);
                     if (_upstreamFinished && _inFlight == 0)
                     {
@@ -300,57 +367,43 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
                     break;
 
                 case DispatchCompleted(var seq, var features):
+                    if (!_activeTimeouts.ContainsKey(seq))
+                    {
+                        break;
+                    }
+
                     _inFlight--;
                     if (_metricsEnabled)
                     {
                         Metrics.PipelineInFlight().Add(-1);
                         ResetBackpressure();
                     }
-                    DisposeCts(seq);
+
+                    CleanupTimeout(seq);
                     DisposeAppContext(seq, null);
                     CompleteResponseBody(features);
                     Emit(seq, features);
                     break;
 
                 case DispatchFailed(var seq, var features, var error):
+                    if (!_activeTimeouts.ContainsKey(seq))
+                    {
+                        break;
+                    }
+
                     _inFlight--;
                     if (_metricsEnabled)
                     {
                         Metrics.PipelineInFlight().Add(-1);
                         ResetBackpressure();
                     }
-                    DisposeCts(seq);
+
+                    CleanupTimeout(seq);
                     DisposeAppContext(seq, error);
                     var respFeature = features.Get<IHttpResponseFeature>();
-                    if (respFeature is not null)
-                    {
-                        respFeature.StatusCode = 500;
-                    }
+                    respFeature?.StatusCode = 500;
                     CompleteResponseBody(features);
                     Emit(seq, features);
-                    break;
-
-                case HandlerTimedOut(var seq, var features):
-                    if (_activeTimeouts.TryGetValue(seq, out var cts))
-                    {
-                        cts.Dispose();
-                        _activeTimeouts.Remove(seq);
-                        var respFeatureTimeout = features.Get<IHttpResponseFeature>();
-                        if (respFeatureTimeout is not null && respFeatureTimeout.StatusCode == 200)
-                        {
-                            respFeatureTimeout.StatusCode = 503;
-                            CompleteResponseBody(features);
-                            _inFlight--;
-                            if (_metricsEnabled)
-                            {
-                                Metrics.HandlerTimeouts().Add(1);
-                                Metrics.PipelineInFlight().Add(-1);
-                            }
-                            DisposeAppContext(seq, null);
-                            Emit(seq, features);
-                        }
-                    }
-
                     break;
             }
 
@@ -369,12 +422,15 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
             }
         }
 
-        private void DisposeCts(int seq)
+        private void CleanupTimeout(int seq)
         {
-            if (_activeTimeouts.TryGetValue(seq, out var cts))
+            CancelTimer($"soft:{seq}");
+            CancelTimer($"hard:{seq}");
+            _gracePhase.Remove(seq);
+            _activeFeatures.Remove(seq);
+            if (_activeTimeouts.Remove(seq, out var cts))
             {
                 cts.Dispose();
-                _activeTimeouts.Remove(seq);
             }
         }
 
@@ -393,6 +449,7 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
             {
                 Metrics.PipelinePending().Add(1);
             }
+
             TryEmitPending();
         }
 
@@ -402,18 +459,30 @@ internal sealed class ApplicationBridgeStage<TContext> : GraphStage<FlowShape<IF
             {
                 if (_downstreamReady && _pending.Count > 0)
                 {
-                    var seq = _pending.Keys.First();
-                    EmitOne(seq);
+                    EmitOne(FirstPendingKey());
                 }
             }
             else
             {
-                while (_downstreamReady && _pending.Count > 0 && _pending.Keys.First() == _nextToEmit)
+                // All pending keys are >= _nextToEmit (responses are never emitted out of
+                // order before _nextToEmit), so ContainsKey is equivalent to checking the
+                // smallest key — without the boxed enumerator that Keys.First() allocates.
+                while (_downstreamReady && _pending.ContainsKey(_nextToEmit))
                 {
                     EmitOne(_nextToEmit);
                     _nextToEmit++;
                 }
             }
+        }
+
+        private int FirstPendingKey()
+        {
+            foreach (var key in _pending.Keys)
+            {
+                return key;
+            }
+
+            return -1;
         }
 
         private void EmitOne(int seq)
