@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server;
 
-public abstract class SharedPipelineBase : ServerSpecBase
+public abstract class SharedPipelineBase(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
@@ -23,7 +24,7 @@ public abstract class SharedPipelineBase : ServerSpecBase
     }
 }
 
-public sealed class SharedPipelineBasicSpec : SharedPipelineBase
+public sealed class SharedPipelineBasicSpec(ActorSystemFixture systemFixture) : SharedPipelineBase(systemFixture)
 {
     [Fact(Timeout = 10000)]
     public async Task Single_request_should_succeed()
@@ -48,7 +49,7 @@ public sealed class SharedPipelineBasicSpec : SharedPipelineBase
     }
 }
 
-public sealed class SharedPipelineConcurrencySpec : SharedPipelineBase
+public sealed class SharedPipelineConcurrencySpec(ActorSystemFixture systemFixture) : SharedPipelineBase(systemFixture)
 {
     [Fact(Timeout = 30000)]
     public async Task Should_handle_50_concurrent_get_requests()
@@ -65,7 +66,7 @@ public sealed class SharedPipelineConcurrencySpec : SharedPipelineBase
     }
 }
 
-public sealed class SharedPipelineResilienceSpec : SharedPipelineBase
+public sealed class SharedPipelineResilienceSpec(ActorSystemFixture systemFixture) : SharedPipelineBase(systemFixture)
 {
     [Fact(Timeout = 30000)]
     public async Task Connection_after_tcp_abort_should_still_work()

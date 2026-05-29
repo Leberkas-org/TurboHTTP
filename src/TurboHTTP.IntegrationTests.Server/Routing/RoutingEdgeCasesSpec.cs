@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Routing;
 
-public sealed class RoutingEdgeCasesSpec : ServerSpecBase
+public sealed class RoutingEdgeCasesSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {

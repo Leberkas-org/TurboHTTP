@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
+using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server;
 
 [Collection("ServerStress")]
-public sealed class BodyFloodReproSpec : ServerSpecBase
+public sealed class BodyFloodReproSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
 {
     private static readonly byte[] Payload = new byte[1 * 1024 * 1024];
 
