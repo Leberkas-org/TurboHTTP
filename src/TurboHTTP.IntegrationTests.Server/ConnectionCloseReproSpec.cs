@@ -66,14 +66,27 @@ public sealed class ConnectionCloseReproSpec : ServerSpecBase
         using (var socket = new TcpClient())
         {
             await socket.ConnectAsync("127.0.0.1", Port, CancellationToken);
+            socket.ReceiveTimeout = 5000;
             var stream = socket.GetStream();
 
             var request = Encoding.ASCII.GetBytes("GET /ping HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
             await stream.WriteAsync(request, CancellationToken);
+            await stream.FlushAsync(CancellationToken);
 
             var buffer = new byte[4096];
-            var read = await stream.ReadAsync(buffer, CancellationToken);
-            Assert.True(read > 0, "Should have received response");
+            var totalRead = 0;
+            using var readCts = CancellationTokenSource.CreateLinkedTokenSource(CancellationToken);
+            readCts.CancelAfter(TimeSpan.FromSeconds(5));
+            while (totalRead == 0)
+            {
+                var read = await stream.ReadAsync(buffer, readCts.Token);
+                totalRead += read;
+                if (read == 0)
+                {
+                    break;
+                }
+            }
+            Assert.True(totalRead > 0, "Should have received response");
 
             socket.LingerState = new LingerOption(true, 0);
         }
