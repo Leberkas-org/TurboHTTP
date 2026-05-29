@@ -48,6 +48,7 @@ internal sealed class ResponseDispatcherHub
         private readonly ResponseDispatcherHub _hub;
         private readonly TaskCompletionSource<IActorRef> _sinkActorTcs;
         private readonly Dictionary<int, IActorRef> _consumers = [];
+        private readonly Dictionary<int, List<IFeatureCollection>> _pending = [];
         private IActorRef? _sinkActor;
 
         public DispatcherLogic(
@@ -91,9 +92,23 @@ internal sealed class ResponseDispatcherHub
             var element = Grab(_hub._in);
             var routingFeature = element.Get<ConnectionRoutingFeature>();
 
-            if (routingFeature is not null && _consumers.TryGetValue(routingFeature.ConnectionId, out var sourceActor))
+            if (routingFeature is not null)
             {
-                sourceActor.Tell(new Deliver(element));
+                var id = routingFeature.ConnectionId;
+                if (_consumers.TryGetValue(id, out var sourceActor))
+                {
+                    sourceActor.Tell(new Deliver(element));
+                }
+                else
+                {
+                    if (!_pending.TryGetValue(id, out var list))
+                    {
+                        list = [];
+                        _pending[id] = list;
+                    }
+
+                    list.Add(element);
+                }
             }
 
             Pull(_hub._in);
@@ -105,9 +120,18 @@ internal sealed class ResponseDispatcherHub
             {
                 case Register(var id, var sourceActor):
                     _consumers[id] = sourceActor;
+                    if (_pending.Remove(id, out var buffered))
+                    {
+                        foreach (var element in buffered)
+                        {
+                            sourceActor.Tell(new Deliver(element));
+                        }
+                    }
+
                     break;
                 case Unregister(var id):
                     _consumers.Remove(id);
+                    _pending.Remove(id);
                     break;
             }
         }
