@@ -6,8 +6,8 @@ namespace TurboHTTP.Server.Context.Features;
 internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
 {
     private readonly TurboResponseHeaderDictionary _headers = new();
-    private readonly List<(Func<object?, Task> callback, object? state)> _onStartingCallbacks = [];
-    private readonly List<(Func<object?, Task> callback, object? state)> _onCompletedCallbacks = [];
+    private List<(Func<object?, Task> callback, object? state)>? _onStartingCallbacks;
+    private List<(Func<object?, Task> callback, object? state)>? _onCompletedCallbacks;
 
     public int StatusCode { get; set; } = 200;
 
@@ -26,13 +26,13 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
     public void OnStarting(Func<object?, Task> callback, object? state)
     {
         ArgumentNullException.ThrowIfNull(callback);
-        _onStartingCallbacks.Add((callback, state));
+        (_onStartingCallbacks ??= []).Add((callback, state));
     }
 
     public void OnCompleted(Func<object?, Task> callback, object? state)
     {
         ArgumentNullException.ThrowIfNull(callback);
-        _onCompletedCallbacks.Add((callback, state));
+        (_onCompletedCallbacks ??= []).Add((callback, state));
     }
 
     void IHttpResponseFeature.OnStarting(Func<object, Task> callback, object state)
@@ -50,6 +50,11 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
     internal async Task FireOnStartingAsync()
     {
         HasStarted = true;
+        if (_onStartingCallbacks is null)
+        {
+            return;
+        }
+
         foreach (var (callback, state) in _onStartingCallbacks)
         {
             await callback(state);
@@ -58,6 +63,11 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
 
     internal async Task FireOnCompletedAsync()
     {
+        if (_onCompletedCallbacks is null)
+        {
+            return;
+        }
+
         foreach (var (callback, state) in _onCompletedCallbacks)
         {
             await callback(state);
@@ -70,8 +80,8 @@ internal sealed class TurboHttpResponseFeature : IHttpResponseFeature
         ReasonPhrase = null;
         HasStarted = false;
         Body = Stream.Null;
-        _onStartingCallbacks.Clear();
-        _onCompletedCallbacks.Clear();
+        _onStartingCallbacks?.Clear();
+        _onCompletedCallbacks?.Clear();
         _headers.Reset();
     }
 }
