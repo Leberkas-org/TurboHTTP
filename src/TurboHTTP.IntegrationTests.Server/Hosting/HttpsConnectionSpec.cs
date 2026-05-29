@@ -1,40 +1,23 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting;
 
-[Collection("Infrastructure")]
-public sealed class HttpsConnectionSpec : ServerSpecBase
+[Collection("Tls")]
+public sealed class HttpsConnectionSpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        var certificate = CreateSelfSignedCertificate("localhost");
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.ListenLocalhost(port, listen =>
-            {
-                listen.UseHttps(certificate);
-                listen.Protocols = HttpProtocols.Http1;
-            });
-        });
-    }
+    private readonly HttpClient _client = server.CreateTlsClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapGet("/secure-hello", () => Results.Ok("Hello from HTTPS"));
-    }
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
-    protected override HttpClient CreateHttpClient() => CreateTlsClient();
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Server_should_respond_over_https()
     {
-        var response = await Client.GetAsync(
-            new Uri($"https://127.0.0.1:{Port}/secure-hello"),
+        var response = await _client.GetAsync(
+            new Uri($"https://127.0.0.1:{server.HttpsPort}/secure-hello"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -46,8 +29,8 @@ public sealed class HttpsConnectionSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Server_should_return_404_over_https_for_unknown_route()
     {
-        var response = await Client.GetAsync(
-            new Uri($"https://127.0.0.1:{Port}/unknown"),
+        var response = await _client.GetAsync(
+            new Uri($"https://127.0.0.1:{server.HttpsPort}/unknown"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);

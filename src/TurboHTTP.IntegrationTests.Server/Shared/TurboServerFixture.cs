@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
@@ -14,22 +16,51 @@ namespace TurboHTTP.IntegrationTests.Server.Shared;
 public sealed class TurboServerFixture : IAsyncLifetime
 {
     private WebApplication? _app;
-
+    private X509Certificate2? _serverCert;
     public ushort Port { get; private set; }
+    public ushort HttpsPort { get; private set; }
 
     public HttpClient CreateClient() => new(new SocketsHttpHandler
     {
         PooledConnectionLifetime = TimeSpan.Zero
     });
 
+    public HttpClient CreateTlsClient(X509Certificate2? clientCertificate = null)
+    {
+        var handler = new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.Zero,
+            SslOptions =
+            {
+                RemoteCertificateValidationCallback = (_, _, _, _) => true
+            }
+        };
+        if (clientCertificate is not null)
+        {
+            handler.SslOptions.LocalCertificateSelectionCallback =
+                (_, _, _, _, _) => clientCertificate;
+        }
+        return new HttpClient(handler);
+    }
+
     public async ValueTask InitializeAsync()
     {
         Port = GetFreePort();
+        HttpsPort = GetFreePort();
+
+        _serverCert = CreateSelfSignedCertificate("localhost");
+
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
         builder.Host.UseTurboHttp(options =>
         {
             options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = Port });
+
+            options.ListenLocalhost(HttpsPort, listen =>
+            {
+                listen.UseHttps(_serverCert);
+                listen.Protocols = HttpProtocols.Http1;
+            });
         });
 
         _app = builder.Build();
@@ -44,6 +75,27 @@ public sealed class TurboServerFixture : IAsyncLifetime
             await _app.StopAsync();
             await _app.DisposeAsync();
         }
+        _serverCert?.Dispose();
+    }
+
+    private static X509Certificate2 CreateSelfSignedCertificate(string cn)
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(
+            $"CN={cn}", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        request.CertificateExtensions.Add(
+            new X509BasicConstraintsExtension(false, false, 0, false));
+        var sanBuilder = new SubjectAlternativeNameBuilder();
+        sanBuilder.AddDnsName(cn);
+        if (cn is "localhost")
+        {
+            sanBuilder.AddIpAddress(IPAddress.Loopback);
+        }
+        request.CertificateExtensions.Add(sanBuilder.Build());
+        var cert = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddHours(1));
+        return X509CertificateLoader.LoadPkcs12(
+            cert.Export(X509ContentType.Pfx), null, X509KeyStorageFlags.Exportable);
     }
 
     private static void RegisterEndpoints(WebApplication app)
@@ -248,6 +300,24 @@ public sealed class TurboServerFixture : IAsyncLifetime
                 var data = Encoding.UTF8.GetBytes($"data: {evt}\n\n");
                 await ctx.Response.Body.WriteAsync(data);
             }
+        });
+
+        // TLS endpoints (served on all ports, accessed via HTTPS ports)
+        app.MapGet("/secure-hello", () => Results.Ok("Hello from HTTPS"));
+        app.MapGet("/test", () => Results.Ok("OK"));
+        app.MapGet("/tls-info", (HttpContext context) =>
+        {
+            var tls = context.Features.Get<TurboHTTP.Server.Context.Features.ITlsHandshakeFeature>();
+            if (tls is null)
+            {
+                return Results.NotFound();
+            }
+            return Results.Ok(new
+            {
+                Protocol = tls.Protocol.ToString(),
+                CipherSuite = tls.NegotiatedCipherSuite?.ToString(),
+                tls.HostName
+            });
         });
     }
 
