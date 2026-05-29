@@ -71,6 +71,35 @@ internal static class ContentHeaderClassifier
         ["Access-Control-Allow-Headers"] = "access-control-allow-headers",
         ["X-Content-Type-Options"] = "x-content-type-options",
         ["Strict-Transport-Security"] = "strict-transport-security",
+        // Standard request headers (RFC 9110) — avoids re-lowercasing on every client request.
+        ["Host"] = "host",
+        ["User-Agent"] = "user-agent",
+        ["Accept"] = "accept",
+        ["Accept-Encoding"] = "accept-encoding",
+        ["Accept-Language"] = "accept-language",
+        ["Accept-Charset"] = "accept-charset",
+        ["Authorization"] = "authorization",
+        ["Cookie"] = "cookie",
+        ["Connection"] = "connection",
+        ["Referer"] = "referer",
+        ["Origin"] = "origin",
+        ["Range"] = "range",
+        ["Expect"] = "expect",
+        ["If-Match"] = "if-match",
+        ["If-None-Match"] = "if-none-match",
+        ["If-Modified-Since"] = "if-modified-since",
+        ["If-Unmodified-Since"] = "if-unmodified-since",
+        ["If-Range"] = "if-range",
+        ["Pragma"] = "pragma",
+        ["TE"] = "te",
+        ["Upgrade-Insecure-Requests"] = "upgrade-insecure-requests",
+        ["X-Forwarded-For"] = "x-forwarded-for",
+        ["X-Forwarded-Proto"] = "x-forwarded-proto",
+        ["X-Forwarded-Host"] = "x-forwarded-host",
+        ["X-Requested-With"] = "x-requested-with",
+        ["Forwarded"] = "forwarded",
+        ["From"] = "from",
+        ["Max-Forwards"] = "max-forwards",
     };
 
     public static string ToLowerAscii(string name)
@@ -85,10 +114,7 @@ internal static class ContentHeaderClassifier
             return name;
         }
 
-        return string.Create(name.Length, name, static (span, src) =>
-        {
-            System.Text.Ascii.ToLower(src, span, out _);
-        });
+        return string.Create(name.Length, name, static (span, src) => { System.Text.Ascii.ToLower(src, span, out _); });
     }
 
     public static string JoinHeaderValues(IEnumerable<string> values)
@@ -108,7 +134,7 @@ internal static class ContentHeaderClassifier
         var second = enumerator.Current;
         if (!enumerator.MoveNext())
         {
-            return string.Concat(first, ", ", second);
+            return string.Concat(first, WellKnownHeaders.CommaSpace, second);
         }
 
         var parts = new List<string>(4) { first, second, enumerator.Current };
