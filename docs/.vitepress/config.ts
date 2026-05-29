@@ -8,8 +8,9 @@ export default defineConfig({
         ],
     },
     title: 'TurboHTTP',
-    description: 'High-performance HTTP client and server for .NET built on Akka.Streams — HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC) with automatic retries, caching, cookies, connection pooling, middleware pipeline, routing, and entity gateway.',
+    description: 'High-performance HTTP client and server for .NET built on Akka.Streams — HTTP/1.0, HTTP/1.1, HTTP/2, and HTTP/3 (QUIC). The client adds automatic retries, caching, cookies, and connection pooling; the server is a drop-in ASP.NET Core IServer (a Kestrel replacement).',
     base: '/',
+    srcExclude: ['superpowers/**', '**/CLAUDE.md'],
     head: [
         ['link', { rel: 'icon', type: 'image/png', href: '/logo/icon.png' }],
     ],
@@ -24,7 +25,7 @@ export default defineConfig({
             { text: 'Scenarios', link: '/scenarios' },
             { text: 'Client', link: '/client/' },
             { text: 'Server', link: '/server/' },
-            { text: 'Architecture', link: '/architecture/pipeline' },
+            { text: 'Architecture', link: '/architecture/' },
             { text: 'API', link: '/api/' },
         ],
 
@@ -97,9 +98,18 @@ export default defineConfig({
             ],
             '/architecture/': [
                 {
+                    text: 'Architecture',
+                    items: [
+                        { text: 'Overview', link: '/architecture/' },
+                        { text: 'Layers', link: '/architecture/layers' },
+                        { text: 'Scenarios', link: '/architecture/scenarios' },
+                    ],
+                },
+                {
                     text: 'Client Architecture',
                     items: [
                         { text: 'Request Pipeline', link: '/architecture/pipeline' },
+                        { text: 'Handlers', link: '/architecture/handlers' },
                         { text: 'Protocol Engines', link: '/architecture/engines' },
                     ],
                 },
