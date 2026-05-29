@@ -20,6 +20,8 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
     private readonly TimeSpan _keepAliveTimeout;
     private readonly TimeSpan _requestHeadersTimeout;
 
+    private readonly TimeSpan _bodyConsumptionTimeout;
+
     private int _requestsPipelined;
     private int _pendingResponseCount;
     private bool _outboundBodyPending;
@@ -37,6 +39,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
         ArgumentNullException.ThrowIfNull(options);
         _serverOptions = options;
+        _bodyConsumptionTimeout = options.BodyConsumptionTimeout;
 
         var shared = SharedHttpOptions.Default with
         {
@@ -94,6 +97,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
                 if (drainingDecoder.IsComplete)
                 {
                     _draining = false;
+                    _ops.OnCancelTimer("body-consumption");
                     _decoder.Reset();
                 }
             }
@@ -241,6 +245,11 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
             }
 
             _draining = true;
+
+            if (_bodyConsumptionTimeout > TimeSpan.Zero)
+            {
+                _ops.OnScheduleTimer("body-consumption", _bodyConsumptionTimeout);
+            }
         }
 
         if (responseBody is TurboHttpResponseBodyFeature turboBody)
@@ -248,7 +257,7 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
             _outboundBodyPending = true;
 
             var bodyStream = turboBody.GetResponseStream();
-            var encoder = BodyEncoderFactory.Create(bodyStream, contentLength, HttpVersion.Version11);
+            var encoder = BodyEncoderFactory.Create(bodyStream, contentLength, HttpVersion.Version11, _serverOptions.ResponseBodyChunkSize);
             if (encoder is not null)
             {
                 _encoder.SetActiveBodyEncoder(encoder);
@@ -272,13 +281,16 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
     {
         if (name == "keep-alive")
         {
-            // Keep-alive timeout expired, close the connection
             ShouldComplete = true;
         }
         else if (name == "request-headers")
         {
-            // Request headers timeout expired before headers were fully received
             _requestHeadersTimerActive = false;
+            ShouldComplete = true;
+        }
+        else if (name == "body-consumption")
+        {
+            _draining = false;
             ShouldComplete = true;
         }
     }
@@ -385,5 +397,6 @@ internal sealed class Http11ServerStateMachine : IServerStateMachine
         }
 
         _ops.OnCancelTimer("keep-alive");
+        _ops.OnCancelTimer("body-consumption");
     }
 }

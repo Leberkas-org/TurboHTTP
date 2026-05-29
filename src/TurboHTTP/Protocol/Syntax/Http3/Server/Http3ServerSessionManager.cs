@@ -24,6 +24,8 @@ internal sealed class Http3ServerSessionManager
     private readonly Http3ServerEncoderOptions _encoderOptions;
     private readonly Http3ServerDecoderOptions _decoderOptions;
     private readonly long _maxRequestBodySize;
+    private readonly int _responseBodyChunkSize;
+    private readonly TimeSpan _bodyConsumptionTimeout;
 
     private readonly Dictionary<long, (FrameDecoder Decoder, StreamState State)> _streams = new();
     private readonly StackStreamStatePool<StreamState> _statePool;
@@ -38,12 +40,16 @@ internal sealed class Http3ServerSessionManager
         Http3ServerEncoderOptions encoderOptions,
         Http3ServerDecoderOptions decoderOptions,
         IServerStageOperations ops,
-        long maxRequestBodySize = 30 * 1024 * 1024)
+        long maxRequestBodySize = 30 * 1024 * 1024,
+        int responseBodyChunkSize = 16 * 1024,
+        TimeSpan? bodyConsumptionTimeout = null)
     {
         _encoderOptions = encoderOptions;
         _decoderOptions = decoderOptions;
         _ops = ops ?? throw new ArgumentNullException(nameof(ops));
         _maxRequestBodySize = maxRequestBodySize;
+        _responseBodyChunkSize = responseBodyChunkSize;
+        _bodyConsumptionTimeout = bodyConsumptionTimeout ?? TimeSpan.FromSeconds(30);
 
         _tableSync = new QpackTableSync(
             encoderMaxCapacity: 0,
@@ -128,6 +134,11 @@ internal sealed class Http3ServerSessionManager
 
         var (_, state) = streamData;
 
+        if (state.HasBodyDecoder && _bodyConsumptionTimeout > TimeSpan.Zero)
+        {
+            _ops.OnScheduleTimer(string.Concat("body-consumption:", streamId.ToString()), _bodyConsumptionTimeout);
+        }
+
         var headersFrame = _responseEncoder.EncodeHeaders(features);
         EmitDataFrame(headersFrame, streamId);
 
@@ -150,7 +161,7 @@ internal sealed class Http3ServerSessionManager
         }
 
         var bodyStream = turboBody.GetResponseStream();
-        var encoder = BodyEncoderFactory.Create(bodyStream, contentLength);
+        var encoder = BodyEncoderFactory.Create(bodyStream, contentLength, _responseBodyChunkSize);
         if (encoder is null)
         {
             _ops.OnOutbound(new CompleteWrites(streamId));
@@ -453,6 +464,7 @@ internal sealed class Http3ServerSessionManager
         if (requestFeature is not null)
         {
             _ops.OnCancelTimer(string.Concat("headers-timeout:", streamId.ToString()));
+            _ops.OnCancelTimer(string.Concat("body-consumption:", streamId.ToString()));
 
             var hasBody = state.HasBodyDecoder;
             if (hasBody)
@@ -517,6 +529,7 @@ internal sealed class Http3ServerSessionManager
     private void CloseStream(long streamId)
     {
         _bodyRateStates.Remove(streamId);
+        _ops.OnCancelTimer(string.Concat("body-consumption:", streamId.ToString()));
 
         if (_streams.TryGetValue(streamId, out var streamData))
         {

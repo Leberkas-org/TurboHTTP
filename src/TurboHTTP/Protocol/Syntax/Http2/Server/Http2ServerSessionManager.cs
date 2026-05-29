@@ -24,6 +24,8 @@ internal sealed class Http2ServerSessionManager
     private readonly FlowController _flow;
     private readonly StreamTracker _tracker;
     private readonly long _maxRequestBodySize;
+    private readonly int _responseBodyChunkSize;
+    private readonly TimeSpan _bodyConsumptionTimeout;
     private readonly int _initialStreamWindowSize;
 
     private readonly Dictionary<int, StreamState> _streams = new();
@@ -51,6 +53,8 @@ internal sealed class Http2ServerSessionManager
         _flow = new FlowController(options.Http2.InitialConnectionWindowSize, options.Http2.InitialStreamWindowSize);
         _tracker = new StreamTracker(initialNextStreamId: 1, decoderOptions.MaxConcurrentStreams);
         _maxRequestBodySize = options.Http2.MaxRequestBodySize;
+        _responseBodyChunkSize = options.ResponseBodyChunkSize;
+        _bodyConsumptionTimeout = options.BodyConsumptionTimeout;
         _initialStreamWindowSize = options.Http2.InitialStreamWindowSize;
 
         var statePoolCapacity = Math.Min(
@@ -160,6 +164,11 @@ internal sealed class Http2ServerSessionManager
 
         state.SetFeatures(features);
 
+        if (state.HasBodyDecoder && _bodyConsumptionTimeout > TimeSpan.Zero)
+        {
+            _ops.OnScheduleTimer(string.Concat("body-consumption:", streamId.ToString()), _bodyConsumptionTimeout);
+        }
+
         var responseFeature = features.Get<IHttpResponseFeature>();
         var responseBody = features.Get<IHttpResponseBodyFeature>();
         var contentLength = ExtractContentLength(responseFeature);
@@ -184,7 +193,7 @@ internal sealed class Http2ServerSessionManager
         }
 
         var bodyStream = turboBody.GetResponseStream();
-        var encoder = BodyEncoderFactory.Create(bodyStream, contentLength);
+        var encoder = BodyEncoderFactory.Create(bodyStream, contentLength, _responseBodyChunkSize);
         if (encoder is null)
         {
             CloseStream(streamId);
@@ -455,6 +464,11 @@ internal sealed class Http2ServerSessionManager
                 return;
             }
 
+            if (data.EndStream)
+            {
+                _ops.OnCancelTimer(string.Concat("body-consumption:", streamId.ToString()));
+            }
+
             if (!data.Data.IsEmpty)
             {
                 if (!_bodyRateStates.TryGetValue(streamId, out var rateState))
@@ -606,6 +620,7 @@ internal sealed class Http2ServerSessionManager
     private void CloseStream(int streamId)
     {
         _bodyRateStates.Remove(streamId);
+        _ops.OnCancelTimer(string.Concat("body-consumption:", streamId.ToString()));
 
         if (_streams.TryGetValue(streamId, out var state))
         {

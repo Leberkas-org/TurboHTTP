@@ -102,7 +102,7 @@ internal sealed class Http10ServerStateMachine : IServerStateMachine
         if (responseBody is TurboHttpResponseBodyFeature turboBody)
         {
             var bodyStream = turboBody.GetResponseStream();
-            var encoder = BodyEncoderFactory.Create(bodyStream, null, HttpVersion.Version10);
+            var encoder = BodyEncoderFactory.Create(bodyStream, null, HttpVersion.Version10, _serverOptions.ResponseBodyChunkSize);
             if (encoder is not null)
             {
                 _activeBodyEncoder = encoder;

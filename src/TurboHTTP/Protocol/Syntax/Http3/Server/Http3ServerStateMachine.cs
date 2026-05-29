@@ -12,6 +12,7 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
     private const string HeadersTimeoutPrefix = "headers-timeout:";
     private const string KeepAliveTimeout = "keep-alive-timeout";
     private const string BodyRateCheck = "body-rate-check";
+    private const string BodyConsumptionPrefix = "body-consumption:";
 
     private readonly IServerStageOperations _ops;
     private readonly Http3ServerSessionManager _sessionManager;
@@ -51,7 +52,8 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
             MaxFieldSectionSize = options.Http3.MaxHeaderListSize,
         };
 
-        _sessionManager = new Http3ServerSessionManager(encoderOpts, decoderOpts, ops, options.Http3.MaxRequestBodySize);
+        _sessionManager = new Http3ServerSessionManager(encoderOpts, decoderOpts, ops, options.Http3.MaxRequestBodySize,
+            options.ResponseBodyChunkSize, options.BodyConsumptionTimeout);
 
         _keepAliveTimeout = options.Http3.KeepAliveTimeout;
         _requestHeadersTimeout = options.Http3.RequestHeadersTimeout;
@@ -132,6 +134,15 @@ internal sealed class Http3ServerStateMachine : IServerStateMachine
         if (name == BodyRateCheck)
         {
             _sessionManager.CheckBodyRates(_minBodyDataRate, _bodyRateGracePeriod);
+            return;
+        }
+
+        if (name.StartsWith(BodyConsumptionPrefix))
+        {
+            if (long.TryParse(name.AsSpan(BodyConsumptionPrefix.Length), out var consumptionStreamId))
+            {
+                _sessionManager.EmitRstStream(consumptionStreamId, ErrorCode.GeneralProtocolError);
+            }
         }
     }
 
