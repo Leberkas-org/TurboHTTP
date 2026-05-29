@@ -333,59 +333,7 @@ namespace TurboHTTP.Server.Context.Features
 }
 namespace TurboHTTP.Server.Context
 {
-    public interface ITurboFormCollection : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>>, System.Collections.IEnumerable
-    {
-        int Count { get; }
-        TurboHTTP.Server.Context.ITurboFormFileCollection Files { get; }
-        Microsoft.Extensions.Primitives.StringValues this[string key] { get; }
-        System.Collections.Generic.ICollection<string> Keys { get; }
-        bool ContainsKey(string key);
-    }
-    public interface ITurboFormFile
-    {
-        string ContentType { get; }
-        string FileName { get; }
-        long Length { get; }
-        string Name { get; }
-        void CopyTo(System.IO.Stream target);
-        System.Threading.Tasks.Task CopyToAsync(System.IO.Stream target, System.Threading.CancellationToken cancellationToken = default);
-        System.IO.Stream OpenReadStream();
-    }
-    public interface ITurboFormFileCollection : System.Collections.Generic.IEnumerable<TurboHTTP.Server.Context.ITurboFormFile>, System.Collections.IEnumerable
-    {
-        int Count { get; }
-        TurboHTTP.Server.Context.ITurboFormFile this[int index] { get; }
-        TurboHTTP.Server.Context.ITurboFormFile? this[string name] { get; }
-        TurboHTTP.Server.Context.ITurboFormFile? GetFile(string name);
-        System.Collections.Generic.IReadOnlyList<TurboHTTP.Server.Context.ITurboFormFile> GetFiles(string name);
-    }
-    public interface ITurboHeaderDictionary : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>>, System.Collections.IEnumerable
-    {
-        long? ContentLength { get; set; }
-        int Count { get; }
-        Microsoft.Extensions.Primitives.StringValues this[string key] { get; set; }
-        System.Collections.Generic.ICollection<string> Keys { get; }
-        void Add(string key, Microsoft.Extensions.Primitives.StringValues value);
-        void Clear();
-        bool ContainsKey(string key);
-        bool Remove(string key);
-        bool TryGetValue(string key, out Microsoft.Extensions.Primitives.StringValues value);
-    }
-    public interface ITurboQueryCollection : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>>, System.Collections.IEnumerable
-    {
-        int Count { get; }
-        Microsoft.Extensions.Primitives.StringValues this[string key] { get; }
-        System.Collections.Generic.ICollection<string> Keys { get; }
-        bool ContainsKey(string key);
-        bool TryGetValue(string key, out Microsoft.Extensions.Primitives.StringValues value);
-    }
-    public interface ITurboRequestCookieCollection : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.IEnumerable
-    {
-        int Count { get; }
-        string? this[string key] { get; }
-        System.Collections.Generic.ICollection<string> Keys { get; }
-        bool ContainsKey(string key);
-    }
+    public interface ITurboHeaderDictionary : Microsoft.AspNetCore.Http.IHeaderDictionary, System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>>, System.Collections.Generic.IDictionary<string, Microsoft.Extensions.Primitives.StringValues>, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>>, System.Collections.IEnumerable { }
 }
 namespace TurboHTTP.Server
 {

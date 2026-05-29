@@ -263,7 +263,7 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         serverSubscription.SendComplete();
 
         // Stage completes when server upstream finishes
-        networkSub.ExpectComplete();
+        networkSub.ExpectComplete(TestContext.Current.CancellationToken);
     }
 
     [Fact(Timeout = 10_000)]
@@ -305,6 +305,6 @@ public sealed class Http20ConnectionStageSpec : StreamTestBase
         appSubscription.SendComplete();
 
         // Stage should complete
-        responseSub.ExpectComplete();
+        responseSub.ExpectComplete(TestContext.Current.CancellationToken);
     }
 }
