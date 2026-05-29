@@ -7,6 +7,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Infrastructure;
 
+[Collection("Infrastructure")]
 public sealed class ConnectionLimitSpec : ServerSpecBase
 {
     private readonly TaskCompletionSource _slot1Gate = new(TaskCreationOptions.RunContinuationsAsynchronously);

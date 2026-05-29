@@ -7,6 +7,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting;
 
+[Collection("Infrastructure")]
 public sealed class HttpsConnectionSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)

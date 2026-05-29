@@ -4,7 +4,9 @@ namespace TurboHTTP.Protocol;
 
 internal sealed class BodyHandle(long maxBodySize) : IDisposable
 {
-    private readonly Pipe _pipe = new();
+    private static readonly PipeOptions NoPausePipeOptions = new(pauseWriterThreshold: 0);
+
+    private readonly Pipe _pipe = new(NoPausePipeOptions);
     private long _totalBytes;
     private bool _completed;
 

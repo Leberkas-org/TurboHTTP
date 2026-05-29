@@ -12,13 +12,12 @@ internal sealed class StreamingBodyEncoder : IBodyEncoder
         _chunkSize = chunkSize;
     }
 
-    public void Start(Stream bodyStream, Action<object> onMessage) => _ = DrainAsync(new StreamContent(bodyStream), onMessage, _cts.Token);
+    public void Start(Stream bodyStream, Action<object> onMessage) => _ = DrainAsync(bodyStream, onMessage, _cts.Token);
 
-    private async Task DrainAsync(HttpContent content, Action<object> onMessage, CancellationToken ct)
+    private async Task DrainAsync(Stream stream, Action<object> onMessage, CancellationToken ct)
     {
         try
         {
-            var stream = await content.ReadAsStreamAsync(ct).ConfigureAwait(false);
             while (true)
             {
                 var owner = MemoryPool<byte>.Shared.Rent(_chunkSize);

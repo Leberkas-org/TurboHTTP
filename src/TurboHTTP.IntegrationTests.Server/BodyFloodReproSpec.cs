@@ -7,6 +7,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server;
 
+[Collection("ServerStress")]
 public sealed class BodyFloodReproSpec : ServerSpecBase
 {
     private static readonly byte[] Payload = new byte[1 * 1024 * 1024];
@@ -53,9 +54,10 @@ public sealed class BodyFloodReproSpec : ServerSpecBase
     [Fact(Timeout = 120000)]
     public async Task Concurrent_1mb_posts_should_all_succeed()
     {
+        var concurrency = 50;
         using var handler = new SocketsHttpHandler
         {
-            MaxConnectionsPerServer = 50,
+            MaxConnectionsPerServer = concurrency,
         };
         using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
 
@@ -63,21 +65,27 @@ public sealed class BodyFloodReproSpec : ServerSpecBase
         var errors = new List<string>();
         var succeeded = 0;
 
-        var concurrency = 50;
-        var useSmallBody = true;
+        var expectedSize = (1 * 1024 * 1024).ToString();
         var tasks = Enumerable.Range(0, concurrency).Select(async i =>
         {
             try
             {
-                var content = new ByteArrayContent(useSmallBody ? new byte[100] : Payload);
+                var content = new ByteArrayContent(Payload);
                 var response = await client.PostAsync(uri, content, CancellationToken);
-                if (response.StatusCode == HttpStatusCode.OK)
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    lock (errors) errors.Add($"[{i}] status={response.StatusCode}");
+                    return;
+                }
+
+                var body = await response.Content.ReadAsStringAsync(CancellationToken);
+                if (body == expectedSize)
                 {
                     Interlocked.Increment(ref succeeded);
                 }
                 else
                 {
-                    lock (errors) errors.Add($"[{i}] status={response.StatusCode}");
+                    lock (errors) errors.Add($"[{i}] body size mismatch: expected={expectedSize}, actual={body}");
                 }
             }
             catch (Exception ex)
@@ -88,10 +96,10 @@ public sealed class BodyFloodReproSpec : ServerSpecBase
 
         await Task.WhenAll(tasks);
 
-        var msg = $"{succeeded}/50 succeeded";
+        var msg = $"{succeeded}/{concurrency} succeeded";
         if (errors.Count > 0)
         {
-            msg += "\nFirst 5 errors:\n" + string.Join("\n", errors.Take(5));
+            msg += $"\nErrors ({errors.Count}):\n" + string.Join("\n", errors.Take(10));
         }
 
         Assert.True(succeeded == concurrency, msg);

@@ -19,9 +19,8 @@ internal sealed class ListenerActor : ReceiveActor
     private readonly IListenerFactory _factory;
     private readonly ListenerOptions _listenerOptions;
     private readonly TurboServerOptions _serverOptions;
-    private readonly IActorRef _pipelineOwner;
     private readonly Sink<IFeatureCollection, NotUsed> _requestIngress;
-    private readonly Source<IFeatureCollection, NotUsed> _responseFanoutSource;
+    private readonly Source<IFeatureCollection, NotUsed> _responseBroadcast;
     private readonly IServiceProvider _services;
     private readonly IMaterializer _materializer;
     private readonly string? _connectionLoggingCategory;
@@ -30,7 +29,6 @@ internal sealed class ListenerActor : ReceiveActor
     private int _connectionIdCounter;
     private readonly HashSet<IActorRef> _activeConnections = [];
     private readonly Dictionary<IActorRef, (long Timestamp, Activity? Activity)> _connectionMetrics = new();
-    private readonly Dictionary<IActorRef, int> _connectionIds = new();
     private bool _draining;
 
     public sealed record StartListening;
@@ -55,9 +53,8 @@ internal sealed class ListenerActor : ReceiveActor
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
-        IActorRef pipelineOwner,
         Sink<IFeatureCollection, NotUsed> requestIngress,
-        Source<IFeatureCollection, NotUsed> responseFanoutSource,
+        Source<IFeatureCollection, NotUsed> responseBroadcast,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
@@ -65,9 +62,8 @@ internal sealed class ListenerActor : ReceiveActor
         _factory = factory;
         _listenerOptions = listenerOptions;
         _serverOptions = serverOptions;
-        _pipelineOwner = pipelineOwner;
         _requestIngress = requestIngress;
-        _responseFanoutSource = responseFanoutSource;
+        _responseBroadcast = responseBroadcast;
         _services = services;
         _materializer = materializer;
         _connectionLoggingCategory = connectionLoggingCategory;
@@ -147,16 +143,13 @@ internal sealed class ListenerActor : ReceiveActor
         Context.Watch(child);
         _activeConnections.Add(child);
         _connectionMetrics[child] = (timestamp, connectionActivity);
-        _connectionIds[child] = connectionId;
-
-        _pipelineOwner.Tell(new ServerPipelineOwner.RegisterConnection(connectionId));
 
         child.Tell(new ConnectionActor.Materialize(
             msg.ConnectionFlow,
             engine,
             connectionId,
             _requestIngress,
-            _responseFanoutSource,
+            _responseBroadcast,
             _services,
             _materializer,
             _connectionLoggingCategory,
@@ -230,11 +223,6 @@ internal sealed class ListenerActor : ReceiveActor
     {
         _activeConnections.Remove(msg.ActorRef);
 
-        if (_connectionIds.Remove(msg.ActorRef, out var connectionId))
-        {
-            _pipelineOwner.Tell(new ServerPipelineOwner.UnregisterConnection(connectionId));
-        }
-
         if (_connectionMetrics.Remove(msg.ActorRef, out var metrics))
         {
             if (Metrics.ActiveConnections().Enabled || Metrics.ConnectionDuration().Enabled || metrics.Activity is not null)
@@ -307,15 +295,14 @@ internal sealed class ListenerActor : ReceiveActor
         IListenerFactory factory,
         ListenerOptions listenerOptions,
         TurboServerOptions serverOptions,
-        IActorRef pipelineOwner,
         Sink<IFeatureCollection, NotUsed> requestIngress,
-        Source<IFeatureCollection, NotUsed> responseFanoutSource,
+        Source<IFeatureCollection, NotUsed> responseBroadcast,
         IServiceProvider services,
         IMaterializer materializer,
         string? connectionLoggingCategory = null)
         => Props.Create(() => new ListenerActor(
             factory, listenerOptions, serverOptions,
-            pipelineOwner, requestIngress, responseFanoutSource,
+            requestIngress, responseBroadcast,
             services, materializer,
             connectionLoggingCategory));
 }

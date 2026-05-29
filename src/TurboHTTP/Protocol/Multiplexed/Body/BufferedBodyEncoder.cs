@@ -6,16 +6,18 @@ internal sealed class BufferedBodyEncoder : IBodyEncoder
 {
     private readonly CancellationTokenSource _cts = new();
 
-    public void Start(Stream bodyStream, Action<object> onMessage) => _ = DrainAsync(new StreamContent(bodyStream), onMessage, _cts.Token);
+    public void Start(Stream bodyStream, Action<object> onMessage) => _ = DrainAsync(bodyStream, onMessage, _cts.Token);
 
-    private static async Task DrainAsync(HttpContent content, Action<object> onMessage, CancellationToken ct)
+    private static async Task DrainAsync(Stream stream, Action<object> onMessage, CancellationToken ct)
     {
         try
         {
-            var bytes = await content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
-            var owner = MemoryPool<byte>.Shared.Rent(bytes.Length);
-            bytes.CopyTo(owner.Memory.Span);
-            onMessage(new OutboundBodyChunk(owner, bytes.Length));
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms, ct).ConfigureAwait(false);
+            var length = (int)ms.Length;
+            var owner = MemoryPool<byte>.Shared.Rent(length);
+            ms.GetBuffer().AsSpan(0, length).CopyTo(owner.Memory.Span);
+            onMessage(new OutboundBodyChunk(owner, length));
             onMessage(new OutboundBodyComplete());
         }
         catch (Exception ex)

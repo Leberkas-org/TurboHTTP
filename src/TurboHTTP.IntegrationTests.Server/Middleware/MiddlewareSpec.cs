@@ -7,6 +7,7 @@ using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Middleware;
 
+[Collection("Infrastructure")]
 public sealed class MiddlewareSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)

@@ -114,9 +114,13 @@ public sealed class Http11ServerDecoderSecuritySpec
                                "0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(request);
 
-        var outcome = decoder.Feed(bytes, out _);
+        var outcome = decoder.Feed(bytes, out var consumed);
 
-        Assert.Equal(DecodeOutcome.Complete, outcome);
+        Assert.Equal(DecodeOutcome.HeadersReady, outcome);
+
+        var bodyOutcome = decoder.Feed(bytes.AsSpan(consumed), out _);
+
+        Assert.Equal(DecodeOutcome.Complete, bodyOutcome);
     }
 
     [Fact(Timeout = 5000)]
@@ -132,9 +136,13 @@ public sealed class Http11ServerDecoderSecuritySpec
                                "0\r\n\r\n";
         var bytes = Encoding.ASCII.GetBytes(request);
 
-        var outcome = decoder.Feed(bytes, out _);
+        var outcome = decoder.Feed(bytes, out var consumed);
 
-        Assert.Equal(DecodeOutcome.Complete, outcome);
+        Assert.Equal(DecodeOutcome.HeadersReady, outcome);
+
+        var bodyOutcome = decoder.Feed(bytes.AsSpan(consumed), out _);
+
+        Assert.Equal(DecodeOutcome.Complete, bodyOutcome);
     }
 
     [Fact(Timeout = 5000)]
