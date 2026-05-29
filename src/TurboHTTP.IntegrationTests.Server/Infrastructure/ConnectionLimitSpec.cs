@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Infrastructure;
 
 [Collection("Infrastructure")]
-public sealed class ConnectionLimitSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
+public sealed class ConnectionLimitSpec : ServerSpecBase
 {
     private readonly TaskCompletionSource _slot1Gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource _slot2Gate = new(TaskCreationOptions.RunContinuationsAsynchronously);

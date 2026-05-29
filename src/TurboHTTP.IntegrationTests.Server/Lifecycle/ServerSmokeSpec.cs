@@ -5,11 +5,10 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Lifecycle;
 
-public sealed class ServerSmokeSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
+public sealed class ServerSmokeSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {

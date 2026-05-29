@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Infrastructure;
 
 [Collection("Infrastructure")]
-public sealed class GracefulShutdownSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
+public sealed class GracefulShutdownSpec : ServerSpecBase
 {
     private readonly TaskCompletionSource _handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
 

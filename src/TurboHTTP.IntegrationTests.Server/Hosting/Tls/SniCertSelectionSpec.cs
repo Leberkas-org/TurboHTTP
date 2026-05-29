@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting.Tls;
 
 [Collection("Infrastructure")]
-public sealed class SniCertSelectionSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
+public sealed class SniCertSelectionSpec : ServerSpecBase
 {
     private X509Certificate2? _certA;
     private X509Certificate2? _certB;

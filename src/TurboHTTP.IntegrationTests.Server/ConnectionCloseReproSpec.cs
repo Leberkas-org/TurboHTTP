@@ -6,12 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server;
 
 [Collection("Infrastructure")]
-public sealed class ConnectionCloseReproSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
+public sealed class ConnectionCloseReproSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {

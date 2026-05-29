@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using TurboHTTP.IntegrationTests.Server.Shared;
 using TurboHTTP.Server;
-using TurboHTTP.Tests.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Hosting;
 
 [Collection("Infrastructure")]
-public sealed class HttpsConnectionSpec(ActorSystemFixture systemFixture) : ServerSpecBase(systemFixture)
+public sealed class HttpsConnectionSpec : ServerSpecBase
 {
     protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
     {
