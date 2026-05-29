@@ -72,9 +72,9 @@ public sealed class TurboServer : IServer
         foreach (var endpoint in resolvedEndpoints)
         {
             var opts = endpoint.Options;
-            var scheme = (opts is TcpListenerOptions tcp && tcp.ServerCertificate is not null) ? "https" : "http";
-            var host = opts.Host ?? "localhost";
-            if (host == "0.0.0.0" || host == "::")
+            var scheme = opts is TcpListenerOptions { ServerCertificate: not null } ? "https" : "http";
+            var host = opts.Host;
+            if (host is "0.0.0.0" or "::")
             {
                 host = "localhost";
             }
