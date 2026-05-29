@@ -3,14 +3,18 @@ using TurboHTTP.IntegrationTests.Server.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Middleware;
 
-public sealed class MiddlewareSpec(TurboServerFixture server)
+public sealed class MiddlewareSpec(TurboServerFixture server) : IDisposable
 {
+    private readonly HttpClient _client = server.CreateClient();
+
     private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Global_middleware_should_set_response_header()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/hello"),
             CancellationToken);
 
@@ -22,7 +26,7 @@ public sealed class MiddlewareSpec(TurboServerFixture server)
     [Fact(Timeout = 15000)]
     public async Task Mapped_middleware_should_apply_to_matching_path()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/api/data"),
             CancellationToken);
 
@@ -34,7 +38,7 @@ public sealed class MiddlewareSpec(TurboServerFixture server)
     [Fact(Timeout = 15000)]
     public async Task Mapped_middleware_should_not_apply_to_other_paths()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/other"),
             CancellationToken);
 
@@ -45,7 +49,7 @@ public sealed class MiddlewareSpec(TurboServerFixture server)
     [Fact(Timeout = 15000)]
     public async Task Global_middleware_should_apply_to_all_paths()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/other"),
             CancellationToken);
 

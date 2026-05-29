@@ -1,73 +1,21 @@
 using System.Net;
-using System.Text;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server.Streaming;
 
-public sealed class RawStreamingSpec : ServerSpecBase
+public sealed class RawStreamingSpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
-        });
-    }
+    private readonly HttpClient _client = server.CreateClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapGet("/stream-bytes", () =>
-        {
-            var chunks = new[]
-            {
-                new byte[] { 1, 2, 3 },
-                new byte[] { 4, 5, 6 },
-                new byte[] { 7, 8, 9 }
-            };
-            return Results.Stream(async stream =>
-            {
-                foreach (var chunk in chunks)
-                {
-                    await stream.WriteAsync(chunk);
-                }
-            }, "application/octet-stream");
-        });
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
-        app.MapGet("/stream-text", () =>
-        {
-            var lines = new[] { "line1\n", "line2\n", "line3\n" };
-            return Results.Stream(async stream =>
-            {
-                foreach (var line in lines)
-                {
-                    await stream.WriteAsync(Encoding.UTF8.GetBytes(line));
-                }
-            }, "text/plain");
-        });
-
-        app.MapGet("/stream-large", () =>
-        {
-            return Results.Stream(async stream =>
-            {
-                var chunk = new byte[1024];
-                Array.Fill(chunk, (byte)0xAB);
-                for (var i = 0; i < 100; i++)
-                {
-                    await stream.WriteAsync(chunk);
-                }
-            }, "application/octet-stream");
-        });
-    }
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Stream_should_return_all_bytes()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/stream-bytes"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/stream-bytes"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -78,8 +26,8 @@ public sealed class RawStreamingSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task Stream_should_set_custom_content_type()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/stream-text"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/stream-text"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -91,8 +39,8 @@ public sealed class RawStreamingSpec : ServerSpecBase
     [Fact(Timeout = 30000)]
     public async Task Stream_should_handle_large_payload()
     {
-        var response = await Client.GetAsync(
-            new Uri($"http://127.0.0.1:{Port}/stream-large"),
+        var response = await _client.GetAsync(
+            new Uri($"http://127.0.0.1:{server.Port}/stream-large"),
             CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

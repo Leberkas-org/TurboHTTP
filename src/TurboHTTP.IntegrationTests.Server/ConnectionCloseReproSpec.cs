@@ -1,34 +1,22 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Servus.Akka.Transport;
 using TurboHTTP.IntegrationTests.Server.Shared;
-using TurboHTTP.Server;
 
 namespace TurboHTTP.IntegrationTests.Server;
 
-[Collection("Infrastructure")]
-public sealed class ConnectionCloseReproSpec : ServerSpecBase
+public sealed class ConnectionCloseReproSpec(TurboServerFixture server) : IDisposable
 {
-    protected override void ConfigureServer(WebApplicationBuilder builder, ushort port)
-    {
-        builder.Host.UseTurboHttp(options =>
-        {
-            options.Bind(new TcpListenerOptions { Host = "127.0.0.1", Port = port });
-        });
-    }
+    private readonly HttpClient _client = server.CreateClient();
 
-    protected override void ConfigureEndpoints(WebApplication app)
-    {
-        app.MapGet("/ping", () => Results.Content("pong", "text/plain"));
-    }
+    private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task New_connection_after_graceful_close_should_succeed()
     {
-        var uri = new Uri($"http://127.0.0.1:{Port}/ping");
+        var uri = new Uri($"http://127.0.0.1:{server.Port}/ping");
 
         using (var client1 = new HttpClient())
         {
@@ -46,16 +34,15 @@ public sealed class ConnectionCloseReproSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task New_connection_after_tcp_rst_should_succeed()
     {
-        var uri = new Uri($"http://127.0.0.1:{Port}/ping");
-
         using (var socket = new TcpClient())
         {
-            await socket.ConnectAsync("127.0.0.1", Port, CancellationToken);
+            await socket.ConnectAsync("127.0.0.1", server.Port, CancellationToken);
             socket.LingerState = new LingerOption(true, 0);
         }
 
         await Task.Delay(500, CancellationToken);
 
+        var uri = new Uri($"http://127.0.0.1:{server.Port}/ping");
         using var client = new HttpClient();
         var r = await client.GetAsync(uri, CancellationToken);
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
@@ -64,11 +51,9 @@ public sealed class ConnectionCloseReproSpec : ServerSpecBase
     [Fact(Timeout = 15000)]
     public async Task New_connection_after_request_and_rst_should_succeed()
     {
-        var uri = new Uri($"http://127.0.0.1:{Port}/ping");
-
         using (var socket = new TcpClient())
         {
-            await socket.ConnectAsync("127.0.0.1", Port, CancellationToken);
+            await socket.ConnectAsync("127.0.0.1", server.Port, CancellationToken);
             var stream = socket.GetStream();
 
             var request = Encoding.ASCII.GetBytes("GET /ping HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
@@ -83,6 +68,7 @@ public sealed class ConnectionCloseReproSpec : ServerSpecBase
 
         await Task.Delay(500, CancellationToken);
 
+        var uri = new Uri($"http://127.0.0.1:{server.Port}/ping");
         using var client = new HttpClient();
         var r = await client.GetAsync(uri, CancellationToken);
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);

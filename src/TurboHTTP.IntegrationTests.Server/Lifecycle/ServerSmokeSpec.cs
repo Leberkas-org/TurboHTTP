@@ -4,14 +4,18 @@ using TurboHTTP.IntegrationTests.Server.Shared;
 
 namespace TurboHTTP.IntegrationTests.Server.Lifecycle;
 
-public sealed class ServerSmokeSpec(TurboServerFixture server)
+public sealed class ServerSmokeSpec(TurboServerFixture server) : IDisposable
 {
+    private readonly HttpClient _client = server.CreateClient();
+
     private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+    public void Dispose() => _client.Dispose();
 
     [Fact(Timeout = 15000)]
     public async Task Server_should_respond_to_get_request()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/hello"),
             CancellationToken);
 
@@ -30,7 +34,7 @@ public sealed class ServerSmokeSpec(TurboServerFixture server)
             Content = new StringContent(payload)
         };
 
-        var response = await server.Client.SendAsync(request, CancellationToken);
+        var response = await _client.SendAsync(request, CancellationToken);
         var body = await response.Content.ReadAsStringAsync(CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -41,7 +45,7 @@ public sealed class ServerSmokeSpec(TurboServerFixture server)
     [Fact(Timeout = 15000)]
     public async Task Server_should_return_404_for_unregistered_route()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/nonexistent"),
             CancellationToken);
 
@@ -51,7 +55,7 @@ public sealed class ServerSmokeSpec(TurboServerFixture server)
     [Fact(Timeout = 15000)]
     public async Task Server_should_expose_remote_ip()
     {
-        var response = await server.Client.GetAsync(
+        var response = await _client.GetAsync(
             new Uri($"http://127.0.0.1:{server.Port}/connection-info"),
             CancellationToken);
 
