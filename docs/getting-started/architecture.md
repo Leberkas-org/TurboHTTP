@@ -1,6 +1,6 @@
 # Architecture Overview
 
-TurboHTTP is both an HTTP client and a standalone HTTP server, built on Akka.Streams. Both sides follow the same principle: composable pipeline stages connected by backpressure-aware streams.
+TurboHTTP is both an HTTP client and a high-performance ASP.NET Core `IServer` — a drop-in Kestrel replacement — built on Akka.Streams. Both sides follow the same principle: composable pipeline stages connected by backpressure-aware streams.
 
 <ClientOnly>
   <LikeC4Diagram viewId="index" :height="300" />
@@ -95,39 +95,39 @@ When a request arrives at TurboHTTP Server, it passes through a complementary pi
 ```
 Incoming TCP/QUIC Connection
     ↓
-[Transport] — accepts connection via ListenerActor
+[Transport] — accepts connection via ListenerActor, spawns ConnectionActor
     ↓
-[Protocol Decoder] — parses HTTP/1.0, 1.1, 2, or 3 bytes
+[Protocol Negotiation] — detects HTTP version (ALPN over TLS, or byte-sniffing for plaintext)
     ↓
-[HttpContext Builder] — creates standard HttpContext from parsed request
+[Protocol Decoder] — parses HTTP/1.0, 1.1, 2, or 3 bytes into IFeatureCollection
     ↓
-[Middleware Pipeline] — runs registered middleware (Use/Run/Map/MapWhen)
+[ApplicationBridgeStage] — bridges to ASP.NET Core IHttpApplication<TContext>
     ↓
-[Router] — matches request to registered route
+[ASP.NET Core]
+  • Middleware pipeline (Use/Run/Map/MapWhen)
+  • Routing (matches request to endpoint)
+  • Parameter Binding (binds route, query, body, headers)
+  • Endpoint Execution (controller/Minimal API handler)
     ↓
-[Dispatcher] — handler function or actor
+[Response Encoding] — converts response through protocol encoder back to bytes
     ↓
-[Parameter Binding] — binds route values, query, body, headers to handler parameters
-    ↓
-[Handler / Actor] — executes your code
-    ↓
-[Response] — writes response back through the pipeline
+[Network] — sends over TCP or QUIC
 ```
 
-Each connection is managed by a `ConnectionActor` that owns the full Akka.Streams graph for that connection — from transport bytes through to response serialisation.
+Each connection is managed by a `ConnectionActor` that owns the full Akka.Streams graph for that connection — from transport bytes through protocol decoding, bridging to ASP.NET Core's request processing, and response serialisation.
 
 ### Server Architecture
 
-TurboHTTP Server is a standalone HTTP server — it does not use Kestrel. It uses its own transport layer via Servus.Akka.Transport.
+TurboHTTP Server is an ASP.NET Core `IServer` implementation that replaces Kestrel, with its own TCP/QUIC transport via Servus.Akka.Transport. Middleware, routing, and parameter binding are delegated to standard ASP.NET Core.
 
 <ClientOnly>
   <LikeC4Diagram viewId="serverHierarchy" :height="400" />
 </ClientOnly>
 
-- **TurboServerHostedService** — `IHostedService` entry point: creates ActorSystem and spawns the supervisor
+- **TurboServer** — the `IServer` implementation registered via `builder.Host.UseTurboHttp()`; ASP.NET Core hosting calls `StartAsync<TContext>()`, which creates the ActorSystem and spawns ServerSupervisorActor
 - **ServerSupervisorActor** — manages all listeners and tracks connection counts
 - **ListenerActor** — binds TCP or QUIC transport, accepts incoming connections, spawns a ConnectionActor per client
-- **ConnectionActor** — materialises the protocol engine + middleware + routing graph for a single client
+- **ConnectionActor** — materialises the protocol engine and bridges to the ASP.NET Core request pipeline for a single client
 
 ### Transport Layer
 
@@ -138,9 +138,9 @@ Protocol engines (`Http10ServerEngine`, `Http11ServerEngine`, `Http20ServerEngin
 
 ### Key Characteristics
 
-- **Standalone**: Own TCP/QUIC transport — no Kestrel dependency
+- **IServer replacement**: Replaces Kestrel with its own TCP/QUIC transport via Servus.Akka.Transport
 - **Actor-based**: Supervisor → Listener → Connection hierarchy with graceful shutdown and coordinated termination
-- **Composable**: ASP.NET Core-style middleware pipeline with Use/Run/Map/MapWhen
+- **ASP.NET Core native**: Works seamlessly with standard middleware, routing, and endpoint configuration
 - **Protocol-complete**: HTTP/1.0, 1.1, 2, and 3 with automatic ALPN negotiation
 
 ---

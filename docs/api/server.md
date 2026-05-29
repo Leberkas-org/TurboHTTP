@@ -76,11 +76,15 @@ public sealed class TurboServerOptions
     void ListenLocalhost(ushort port, Action<TurboListenOptions> configure);
     void ListenAnyIP(ushort port);
     void ListenAnyIP(ushort port, Action<TurboListenOptions> configure);
+    void BindTcp(string host, ushort port);
     void Bind(TcpListenerOptions options);
     void Bind(QuicListenerOptions options);
     void Bind(ListenerOptions options, IListenerFactory factory);
     void ConfigureHttpsDefaults(Action<TurboHttpsOptions> configure);
     void ConfigureEndpointDefaults(Action<TurboListenOptions> configure);
+
+    IList<ListenerBinding> Endpoints { get; }  // read-only, populated by Listen/Bind calls
+    IList<string> Urls { get; }                // read-only, populated by Listen/Bind calls
 }
 ```
 

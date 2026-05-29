@@ -136,7 +136,7 @@ When a connection arrives at TurboHTTP Server, the server mirrors the client arc
 | `Http20ServerEngine`    | HTTP/2   | Stream multiplexing over a single connection; uses HPACK header compression; flow-control windows at connection and stream level |
 | `Http30ServerEngine`    | HTTP/3   | QUIC-based multiplexing with per-stream flow control; uses QPACK header compression; eliminates head-of-line blocking          |
 
-Each server engine implements `IServerProtocolEngine`. When a connection arrives, the `NegotiatingServerEngine` delegates to `ProtocolRouter` to detect the protocol from ALPN negotiation (TLS) or the initial bytes (HTTP/1.x format, HTTP/2 preface `PRI * HTTP/2.0`, or QUIC Initial packet) and routes the connection to the appropriate version-specific engine for the duration of that connection.
+Each server engine implements `IServerProtocolEngine`. When a connection arrives, the `NegotiatingServerEngine` uses a `ProtocolNegotiatingStateMachine` to detect the protocol from ALPN negotiation (TLS) or the initial bytes (HTTP/1.x request line, or the HTTP/2 preface `PRI * HTTP/2.0`), then instantiates the matching version-specific server state machine for the duration of that connection. HTTP/3 connections arrive over QUIC and are routed directly to the HTTP/3 server engine at the listener, so they never pass through this byte-sniffing step.
 
 ## Related Guides
 

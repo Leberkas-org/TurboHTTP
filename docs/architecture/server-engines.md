@@ -51,7 +51,7 @@ With TLS, ALPN negotiation happens during the TLS handshake. The client sends ad
 - Connections persist after each response (`Connection: keep-alive`)
 - Supports pipelining — multiple requests queued for sequential processing
 - Chunked transfer encoding for streaming responses
-- Keep-alive timeout configurable via `TurboServerOptions.Http1.IdleTimeout`
+- Keep-alive timeout configurable via `TurboServerOptions.Http1.KeepAliveTimeout`
 
 **Transport:**
 - `TcpListenerFactory` — TCP listener binds to configured port

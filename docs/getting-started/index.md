@@ -20,7 +20,7 @@ TurboHTTP has two sides — use either or both:
 
 | | Client | Server |
 |---|---|---|
-| **What it does** | Makes HTTP requests with built-in retries, caching, cookies, and connection pooling | Handles HTTP requests with middleware, routing, and actor-based entity gateway |
+| **What it does** | Makes HTTP requests with built-in retries, caching, cookies, and connection pooling | Serves HTTP/1.0, 1.1, 2, 3 as a drop-in ASP.NET Core IServer (Kestrel replacement); middleware, routing, Minimal APIs, and Controllers are standard ASP.NET Core; an optional actor-based entity gateway is available via the separate Servus.Akka.AspNetCore package |
 | **Get started** | [Client Quick Start →](./client) | [Server Quick Start →](./server) |
 | **Full docs** | [Client Guide →](/client/) | [Server Guide →](/server/) |
 
@@ -68,7 +68,7 @@ await app.RunAsync();
 ```
 
 ::: tip About UseTurboHttp
-TurboHTTP Server is a fully standalone HTTP server built on Akka.Streams with its own TCP/QUIC transport layer. Register it on `builder.Host` using `UseTurboHttp()` — it does not use or depend on Kestrel.
+TurboHTTP Server is a high-performance IServer implementation for ASP.NET Core built on Akka.Streams; it replaces Kestrel as the transport layer and integrates with standard ASP.NET Core middleware, routing, and DI. Register it on `builder.Host` using `UseTurboHttp()`.
 :::
 
 ## Next Steps

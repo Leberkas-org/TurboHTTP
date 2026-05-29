@@ -1,6 +1,6 @@
 # Server Request Pipeline
 
-The server request pipeline shows how an incoming request flows through the server — from raw network bytes through protocol decoding, middleware, routing, and finally to your handler or actor.
+The server request pipeline shows how an incoming request flows through the server — from raw network bytes through protocol decoding to the ASP.NET Core application layer, where middleware, routing, and handlers run.
 
 <ClientOnly>
   <LikeC4Diagram viewId="serverPipeline" :height="500" />
@@ -15,23 +15,19 @@ Each connection is bound to a single `ConnectionActor` that owns the entire Akka
 ```
 Incoming TCP/QUIC Connection
     ↓
-[Transport] — TCP or QUIC listener accepts connection
+[Transport] — TCP or QUIC listener accepts connection (Servus.Akka)
+    ↓
+[ListenerActor] — spawns ConnectionActor per client
     ↓
 [ProtocolRouter] — detects HTTP/1.0, 1.1, 2, or 3 from initial bytes
     ↓
-[Protocol Decoder] — Http10/11/20/30ServerEngine decodes request
+[Http*ServerEngine] — protocol-specific decoder (Http10/11/20/30ServerEngine)
     ↓
-[ApplicationBridgeStage] — wraps parsed request as IFeatureCollection (HttpContext)
+[ApplicationBridgeStage] — wraps parsed request as IFeatureCollection
     ↓
-[Middleware] — runs registered middleware (Use/Run/Map/MapWhen)
-    ↓
-[Routing] — matches request path to registered route pattern
-    ↓
-[Dispatcher] — delegates to handler function or actor
-    ↓
-[Parameter Binding] — binds route values, query, body, headers to handler parameters
-    ↓
-[Handler / Entity Actor] — executes your code
+╔════════════════════════════════════════════════════════════════╗
+║  ASP.NET Core takes over (Middleware → Routing → Handlers)  ║
+╚════════════════════════════════════════════════════════════════╝
     ↓
 [Protocol Encoder] — encodes response to wire bytes
     ↓
@@ -44,14 +40,12 @@ Outgoing TCP/QUIC Bytes
 
 | Stage                        | Role                                                                                                                                      |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `Transport` (TCP/QUIC)       | `ListenerActor` binds transport, accepts incoming connections, spawns `ConnectionActor` per client                                      |
-| `ProtocolRouter`             | Inspects initial bytes to detect HTTP version; routes to appropriate server engine state machine                                        |
+| `Transport` (TCP/QUIC)       | Accepts incoming connections over TCP or QUIC (via Servus.Akka.Transport)                                                              |
+| `ListenerActor`              | Binds to a port and spawns a `ConnectionActor` for each incoming connection                                                             |
+| `ProtocolRouter`             | Inspects initial bytes to detect HTTP version; routes to appropriate server engine                                                    |
 | `Http*ServerEngine`          | Protocol-specific state machine: parses request bytes, manages connection/stream-level flow control, encodes response frames            |
-| `ApplicationBridgeStage`      | Wraps the parsed protocol request as an `IFeatureCollection` (standard ASP.NET Core `HttpContext`)                                   |
-| Middleware                   | Runs all registered middleware in order (outermost-first for request, innermost-first for response). Middleware can short-circuit.     |
-| Routing                      | Matches the request path against registered route patterns; extracts route parameters (`{id}`, etc.) into route values              |
-| Dispatcher                   | Selects and invokes the handler: function-based routes or actor-based routes                                                          |
-| `ParameterBindingStage`      | (within dispatcher) Binds route parameters, query string, body, and headers to handler parameters using reflection and model binding  |
+| `ApplicationBridgeStage`      | Wraps the parsed protocol request as an `IFeatureCollection` (standard ASP.NET Core `HttpContext`); then ASP.NET Core takes over    |
+| **(ASP.NET Core)**           | **Middleware** (app.Use/UseMiddleware) → **Routing** (endpoint routing) → **Model Binding** → **Handler Execution** (Minimal APIs, Controllers, etc.) |
 
 ---
 
@@ -69,12 +63,12 @@ Each connection is managed by a dedicated `ConnectionActor`:
 
 ## Response Flow
 
-After the handler returns a response, the response object flows back through the pipeline in reverse:
+After the handler returns a response, it flows back through the pipeline:
 
-1. The protocol engine encodes the `TurboHttpResponse` to wire bytes
-2. The transport layer (`TcpConnectionStage` or `QuicConnectionStage`) sends the bytes to the client
-3. For HTTP/1.1+, the connection can remain open and reuse for the next request
-4. For HTTP/1.0, the connection closes after sending the response
+1. ASP.NET Core populates the `IHttpResponseFeature` (status code, headers, response body stream)
+2. The protocol engine encodes the response to wire bytes using the appropriate HTTP version (1.0, 1.1, 2, or 3)
+3. The transport layer (via `ConnectionActor` and Servus.Akka.Transport) sends the bytes to the client
+4. For HTTP/1.1+, the connection can remain open and reuse for the next request; for HTTP/1.0, the connection closes after sending the response
 
 ---
 
@@ -92,29 +86,6 @@ With TLS (HTTPS), ALPN negotiation happens during the TLS handshake:
 - `http/1.1` or `http/1.0` → HTTP/1.1 (fallback)
 
 For plaintext connections, the router auto-detects from the initial bytes.
-
----
-
-## Middleware Pipeline Semantics
-
-Middleware runs in **outermost-first order** for requests:
-
-```csharp
-app.UseTurbo<ILogger>()          // runs 3rd on request, 1st on response
-    .UseTurbo<IAuth>()           // runs 2nd on request, 2nd on response
-    .UseTurbo<IMetrics>();      // runs 1st on request, 3rd on response
-    // Handler/Router below
-```
-
-Each middleware can:
-- **Transform the request** — modify headers, body, or context
-- **Short-circuit the chain** — return a response without calling `next(ctx)`, skipping downstream middleware and the handler
-- **Transform the response** — modify status code, headers, or body
-- **Observe execution** — wrap the downstream call to measure timing or log
-
-::: tip
-Unlike ASP.NET Core where middleware is registered in reverse order, TurboHTTP middleware is registered and executes in the order you call `UseTurbo<T>()`. This is more intuitive for declarative server configuration.
-:::
 
 ---
 

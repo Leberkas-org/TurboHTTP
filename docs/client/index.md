@@ -11,7 +11,7 @@ See [Installation & Setup](./installation) for DI registration, named clients, a
 :::
 
 ::: info Looking for the server?
-TurboHTTP also provides a server with middleware, routing, and entity gateway. See the [Server Guide](/server/).
+TurboHTTP also provides a high-performance drop-in ASP.NET Core IServer (a Kestrel replacement). See the [Server Guide](/server/).
 :::
 
 ## High-Throughput Usage

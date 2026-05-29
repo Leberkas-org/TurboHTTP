@@ -152,7 +152,7 @@ Key options control server and connection behavior:
 builder.Host.UseTurboHttp(options =>
 {
     // Limit concurrent connections (0 = unlimited)
-    options.MaxConcurrentConnections = 1000;
+    options.Limits.MaxConcurrentConnections = 1000;
     
     // Limit concurrent HTTP/2 streams per connection
     options.Http2.MaxConcurrentStreams = 100;
@@ -168,10 +168,10 @@ builder.Host.UseTurboHttp(options =>
 builder.Host.UseTurboHttp(options =>
 {
     // Time to wait for the next request on keep-alive connections
-    options.KeepAliveTimeout = TimeSpan.FromSeconds(120);
+    options.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(120);
     
     // Time to wait for request headers (includes TLS handshake)
-    options.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+    options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
     
     // Time to wait for request body to arrive
     options.BodyConsumptionTimeout = TimeSpan.FromSeconds(30);

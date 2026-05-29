@@ -215,36 +215,27 @@ options.ListenLocalhost(5000, listen =>
 });
 ```
 
-## Configuration from appsettings.json
+## Configuration via Code
 
-TurboHTTP reads endpoint configuration from the `TurboHTTP` section:
+TurboHTTP is configured imperatively through `UseTurboHttp()`. All endpoint and TLS settings are passed as `Action<TurboServerOptions>`:
 
-```json
+```csharp
+var config = builder.Configuration;
+
+builder.Host.UseTurboHttp(options =>
 {
-  "TurboHTTP": {
-    "Endpoints": {
-      "Http": {
-        "Url": "http://localhost:5000"
-      },
-      "Https": {
-        "Url": "https://localhost:5001",
-        "Protocols": "Http1AndHttp2",
-        "Certificate": {
-          "Path": "certs/server.pfx",
-          "Password": "changeit"
-        },
-        "SslProtocols": "Tls12, Tls13"
-      }
-    },
-    "HttpsDefaults": {
-      "SslProtocols": "Tls13",
-      "HandshakeTimeout": "00:00:30"
-    }
-  }
-}
+    // Read from IConfiguration if desired
+    var port = config.GetValue<int>("Server:Port") ?? 5000;
+    
+    options.ListenLocalhost(port);
+    options.ListenLocalhost(5001, listen =>
+    {
+        listen.UseHttps();
+    });
+});
 ```
 
-Endpoint names (`Http`, `Https`) are arbitrary — use meaningful names for your setup.
+There is no automatic binding from `appsettings.json` — you control which config values feed into `TurboServerOptions` at startup.
 
 ## Next Steps
 
