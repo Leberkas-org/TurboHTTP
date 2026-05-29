@@ -11,11 +11,10 @@ namespace TurboHTTP.Streams.Lifecycle;
 internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
 {
     internal sealed record Initialize;
-    internal sealed record PipelineReady;
-    internal sealed record RegisterConnection(int ConnectionId);
-    internal sealed record ConnectionRegistered(
+    internal sealed record PipelineReady(
         Sink<IFeatureCollection, NotUsed> RequestIngress,
         Source<IFeatureCollection, NotUsed> ResponseFanoutSource);
+    internal sealed record RegisterConnection(int ConnectionId);
     internal sealed record UnregisterConnection(int ConnectionId);
 
     private readonly ILoggingAdapter _log = Context.GetLogger();
@@ -47,7 +46,7 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     {
         Receive<Initialize>(_ =>
         {
-            Sender.Tell(new PipelineReady());
+            Sender.Tell(new PipelineReady(_requestIngress!, _responseFanoutSource!));
         });
         Receive<RegisterConnection>(HandleRegisterConnection);
         Receive<UnregisterConnection>(HandleUnregisterConnection);
@@ -89,7 +88,7 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
 
             _log.Debug("Server pipeline materialized successfully");
             BecomeReady();
-            Sender.Tell(new PipelineReady());
+            Sender.Tell(new PipelineReady(_requestIngress!, _responseFanoutSource!));
         }
         catch (Exception ex)
         {
@@ -108,7 +107,6 @@ internal sealed class ServerPipelineOwner : ReceiveActor, IWithStash
     private void HandleRegisterConnection(RegisterConnection message)
     {
         _connectionPartitions[message.ConnectionId] = _nextPartitionIndex++;
-        Sender.Tell(new ConnectionRegistered(_requestIngress!, _responseFanoutSource!));
     }
 
     private void HandleUnregisterConnection(UnregisterConnection message)

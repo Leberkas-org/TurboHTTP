@@ -60,7 +60,7 @@ public sealed class TurboServer : IServer
         var materializer = _system.Materializer();
 
         var parallelism = _options.Http2.MaxConcurrentStreams;
-        var bridgeFlow = Flow.FromGraph(new ApplicationBridgeStage<TContext>(
+        var bridgeFlow = Flow.FromGraph(new SharedBridgeStage<TContext>(
             application,
             parallelism,
             _options.HandlerTimeout,
@@ -70,7 +70,7 @@ public sealed class TurboServer : IServer
             Props.Create(() => new ServerPipelineOwner(bridgeFlow)),
             "turbo-pipeline");
 
-        await _pipelineOwner.Ask<ServerPipelineOwner.PipelineReady>(
+        var ready = await _pipelineOwner.Ask<ServerPipelineOwner.PipelineReady>(
             new ServerPipelineOwner.Initialize(),
             TimeSpan.FromSeconds(10),
             cancellationToken);
@@ -86,6 +86,8 @@ public sealed class TurboServer : IServer
                 endpoint.Options,
                 _options,
                 _pipelineOwner,
+                ready.RequestIngress,
+                ready.ResponseFanoutSource,
                 _services,
                 materializer,
                 endpoint.ConnectionLoggingCategory));
@@ -95,7 +97,7 @@ public sealed class TurboServer : IServer
             Props.Create(() => new ServerSupervisorActor()),
             "turbo-server");
 
-        var ready = await _supervisor.Ask<ServerSupervisorActor.ListenersReady>(
+        var listenersReady = await _supervisor.Ask<ServerSupervisorActor.ListenersReady>(
             new ServerSupervisorActor.StartListeners(listenerProps),
             TimeSpan.FromSeconds(30),
             cancellationToken);
@@ -111,7 +113,7 @@ public sealed class TurboServer : IServer
                 host = "localhost";
             }
 
-            var port = i < ready.BoundPorts.Count ? ready.BoundPorts[i] : opts.Port;
+            var port = i < listenersReady.BoundPorts.Count ? listenersReady.BoundPorts[i] : opts.Port;
             addressesFeature.Addresses.Add(string.Concat(scheme, "://", host, ":", port.ToString()));
         }
 
