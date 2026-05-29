@@ -92,7 +92,7 @@ Per-version connection and protocol settings are configured on nested sub-object
 | -------------------------------- | ----- | ------------- | -------------------------------------------------- |
 | `Http1.MaxConnectionsPerServer`  | `int` | `6`           | Maximum concurrent HTTP/1.x connections per host   |
 | `Http1.MaxPipelineDepth`         | `int` | `16`          | Maximum pipelined requests per HTTP/1.1 connection |
-| `Http1.MaxResponseHeadersLength` | `int` | `64 * 1024`   | Max response header size                           |
+| `Http1.MaxResponseHeadersLength` | `int` | `64` (KB)     | Max response header size in kilobytes              |
 | `Http1.MaxReconnectAttempts`     | `int` | `3`           | Max reconnect attempts on connection drop          |
 
 ```csharp
@@ -113,7 +113,7 @@ options.Http1.MaxPipelineDepth = 32;
 Increase frame size for workloads with large response bodies to reduce framing overhead:
 
 ```csharp
-options.Http2.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB (default: 16 KiB)
+options.Http2.MaxFrameSize = 4 * 1024 * 1024; // 4 MiB (default: 64 KiB)
 ```
 
 ### HTTP/3 Options
@@ -212,14 +212,29 @@ See [Automatic Retries guide](./retries) for which methods and status codes trig
 .WithCache(c => { c.MaxEntries = 200; c.MaxBodyBytes = 5 * 1024 * 1024; })
 ```
 
-To share a single store across multiple named clients, pass a `CacheStore` directly:
+To share a single store across multiple named clients, implement the `ICacheStore` interface and pass it to `WithCache()`:
 
 ```csharp
-var sharedStore = new CacheStore();
+using TurboHTTP.Features.Caching;
+
+public sealed class MyCacheStore : ICacheStore
+{
+    private readonly Dictionary<string, CacheStoreEntry> _entries = new();
+
+    public bool TryGet(string key, out CacheStoreEntry? entry) => _entries.TryGetValue(key, out entry);
+    public void Set(string key, CacheStoreEntry entry) => _entries[key] = entry;
+    public bool Remove(string key) => _entries.Remove(key);
+    public void Clear() => _entries.Clear();
+    public void Dispose() { }
+}
+
+var sharedStore = new MyCacheStore();
 
 builder.Services.AddTurboHttpClient("client-a", options => { ... }).WithCache(sharedStore);
 builder.Services.AddTurboHttpClient("client-b", options => { ... }).WithCache(sharedStore);
 ```
+
+By default, each client gets its own in-memory cache. Pass a shared `ICacheStore` to reuse cache entries across multiple clients.
 
 **`CacheOptions` properties:**
 
@@ -234,8 +249,27 @@ See [HTTP Caching guide](./caching) for freshness evaluation and conditional req
 ### Cookie management
 
 ```csharp
-.WithCookies()             // private cookie jar per named client
-.WithCookies(sharedJar)    // shared CookieJar across multiple clients
+using TurboHTTP.Features.Cookies;
+
+public sealed class MyCookieStore : ICookieStore
+{
+    private readonly List<CookieStoreEntry> _entries = new();
+
+    public IReadOnlyList<CookieStoreEntry> GetAll() => _entries.AsReadOnly();
+    public void Add(CookieStoreEntry entry) => _entries.Add(entry);
+    public void Remove(string name, string domain, string path)
+        => _entries.RemoveAll(e => e.Name == name && e.Domain == domain && e.Path == path);
+    public void Clear() => _entries.Clear();
+    public int Count => _entries.Count;
+}
+
+// Private cookie jar per named client (default)
+.WithCookies()
+
+// Shared cookie store across multiple clients
+var sharedStore = new MyCookieStore();
+builder.Services.AddTurboHttpClient("client-a", options => { ... }).WithCookies(sharedStore);
+builder.Services.AddTurboHttpClient("client-b", options => { ... }).WithCookies(sharedStore);
 ```
 
 See [Cookies guide](./cookies) for session and domain handling.

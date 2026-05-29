@@ -22,7 +22,7 @@ Or add it to your `.csproj`:
 Register TurboHTTP in your `IServiceCollection`:
 
 ```csharp
-using TurboHTTP;
+using TurboHTTP.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -128,7 +128,7 @@ builder.Services.AddTurboHttpClient("full-featured", options =>
 A complete console application using the DI-based approach:
 
 ```csharp
-using TurboHTTP;
+using TurboHTTP.Client;
 using Microsoft.Extensions.DependencyInjection;
 
 var services = new ServiceCollection();

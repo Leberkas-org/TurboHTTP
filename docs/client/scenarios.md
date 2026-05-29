@@ -152,7 +152,6 @@ Web scraping, automated testing against web apps, session-based client applicati
 builder.Services.AddTurboHttpClient("batch-processor", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
-    options.DefaultRequestVersion = HttpVersion.Version20;  // HTTP/2
     options.Http2.MaxConcurrentStreams = 100;  // up to 100 concurrent streams per connection
     options.Http2.MaxConnectionsPerServer = 2;   // reuse 2 connections
 })
@@ -171,6 +170,7 @@ public class BatchProcessor(ITurboHttpClientFactory factory)
     public async Task ProcessUrlsAsync(List<string> urls, CancellationToken ct)
     {
         var client = factory.CreateClient("batch-processor");
+        client.DefaultRequestVersion = HttpVersion.Version20;  // default to HTTP/2 (set on the client instance, not options)
         
         var results = new ConcurrentBag<(string Url, int Status, string Body)>();
         
@@ -228,7 +228,7 @@ Batch URL fetching, parallel API polling, high-throughput data ingestion, distri
 
 **The problem:** Your service calls another internal service over HTTP/2. Connection setup needs a 5-second timeout, individual requests have a 10-second timeout. If the service is briefly unavailable, retry automatically.
 
-**Features in play:** `ConnectTimeout` + `Timeout` for timeout management, `.WithRetry()` for resilience, HTTP/2 for efficiency.
+**Features in play:** `ConnectTimeout` (in options) + `Timeout` (on client instance) for timeout management, `.WithRetry()` for resilience, HTTP/2 for efficiency.
 
 ```csharp
 // DI Registration
@@ -236,8 +236,6 @@ builder.Services.AddTurboHttpClient("internal-service", options =>
 {
     options.BaseAddress = new Uri("http://internal-service:8080");
     options.ConnectTimeout = TimeSpan.FromSeconds(5);    // TCP connect timeout
-    options.Timeout = TimeSpan.FromSeconds(10);          // request timeout (for GET, HEAD, PUT, DELETE, OPTIONS)
-    options.DefaultRequestVersion = HttpVersion.Version20;  // HTTP/2
 })
 .WithDecompression()  // some responses may be compressed
 .WithRetry(retry =>
@@ -245,6 +243,14 @@ builder.Services.AddTurboHttpClient("internal-service", options =>
     retry.MaxRetries = 2;  // 2 retries = 3 attempts total
     retry.RespectRetryAfter = true;
 });
+```
+
+Then set the request timeout on the client instance:
+
+```csharp
+var client = factory.CreateClient("internal-service");
+client.Timeout = TimeSpan.FromSeconds(10);  // per-request timeout
+client.DefaultRequestVersion = HttpVersion.Version20;  // default to HTTP/2 (set on the client instance, not options)
 ```
 
 Usage:
@@ -281,114 +287,55 @@ Internal service-to-service communication, calling backend APIs from frontend se
 
 ---
 
-## Akka.Streams Integration
+## Direct Channel-Based Processing
 
-**The problem:** You're already using Akka.Streams for data processing and want to plug TurboHTTP's channel API into an Akka.Streams graph — applying backpressure, throttling, transformation, and fan-out using the full Akka.Streams DSL.
+**The problem:** You want to drive request/response processing yourself without `SendAsync()` — perhaps to implement custom backpressure logic, or to coordinate TurboHTTP with other async systems.
 
-**Features in play:** `client.Requests` / `client.Responses` channels bridged to Akka.Streams via `ChannelSource.FromReader()` and `ChannelSink.AsWriter()`.
+**Features in play:** `client.Requests` (a `ChannelWriter<HttpRequestMessage>`) and `client.Responses` (a `ChannelReader<HttpResponseMessage>`).
 
-### Setup
+TurboHTTP's channel API lets you:
+
+1. Write requests directly to `client.Requests.WriteAsync(request)` instead of calling `SendAsync()`
+2. Read responses from `client.Responses.ReadAllAsync()` in a loop
+3. Both channels support `CancellationToken` for cancellation
+
+This is useful if you want to coordinate request submission and response collection independently, or if you're building a custom orchestration layer. Example:
 
 ```csharp
-builder.Services.AddTurboHttpClient("stream-api", options =>
+var client = factory.CreateClient("my-client");
+
+// Producer task: submit requests without waiting for responses
+var producer = Task.Run(async () =>
 {
-    options.BaseAddress = new Uri("https://api.example.com/");
-    options.Http2.MaxConcurrentStreams = 100;
-})
-.WithRetry()
-.WithDecompression();
-```
-
-### Bridge Channels to Akka.Streams
-
-TurboHTTP exposes `ChannelWriter<HttpRequestMessage>` and `ChannelReader<HttpResponseMessage>` on the client. Use Akka.Streams' `ChannelSource` and `ChannelSink` to bridge these into a stream graph:
-
-```csharp
-using Akka.Streams;
-using Akka.Streams.Dsl;
-
-var client = factory.CreateClient("stream-api");
-client.DefaultRequestVersion = HttpVersion.Version20;
-
-var materializer = actorSystem.Materializer();
-
-// Bridge: ChannelReader<HttpResponseMessage> → Akka.Streams Source
-var responseSource = ChannelSource.FromReader(client.Responses);
-
-// Bridge: Akka.Streams Sink → ChannelWriter<HttpRequestMessage>
-var requestSink = ChannelSink.AsWriter(client.Requests);
-```
-
-### Example: Throttled Request Pipeline
-
-Feed URLs through an Akka.Streams graph that throttles requests, sends them via TurboHTTP, and processes responses — all with backpressure end to end:
-
-```csharp
-var urls = Enumerable.Range(1, 10_000)
-    .Select(id => $"items/{id}");
-
-// Request pipeline: throttle → build request → send to TurboHTTP
-Source.From(urls)
-    .Throttle(50, TimeSpan.FromSeconds(1), 10, ThrottleMode.Shaping)
-    .Select(url => new HttpRequestMessage(HttpMethod.Get, url))
-    .RunWith(requestSink, materializer);
-
-// Response pipeline: receive from TurboHTTP → deserialize → process
-await responseSource
-    .SelectAsync(4, async response =>
+    foreach (var url in urls)
     {
-        var body = await response.Content.ReadFromJsonAsync<ItemResult>();
-        return body;
-    })
-    .Where(item => item is not null)
-    .RunForeach(item =>
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        await client.Requests.WriteAsync(request, ct);
+    }
+    client.Requests.Complete();  // Signal no more requests
+}, ct);
+
+// Consumer task: process responses as they arrive
+var consumer = Task.Run(async () =>
+{
+    await foreach (var response in client.Responses.ReadAllAsync(ct))
     {
-        Console.WriteLine($"Processed: {item!.Name}");
-    }, materializer);
+        var body = await response.Content.ReadAsStringAsync(ct);
+        Console.WriteLine($"{response.StatusCode}: {body}");
+        response.Dispose();
+    }
+}, ct);
+
+await Task.WhenAll(producer, consumer);
 ```
 
-### Example: Fan-Out with BroadcastHub
-
-Share a single TurboHTTP response stream across multiple consumers:
-
-```csharp
-// Create a broadcast hub from the response source
-var (broadcastSink, broadcastSource) = BroadcastHub.Sink<HttpResponseMessage>(256)
-    .PreMaterialize(materializer);
-
-// Feed TurboHTTP responses into the hub
-responseSource.RunWith(broadcastSink, materializer);
-
-// Consumer 1: log all responses
-broadcastSource
-    .RunForeach(r =>
-        Console.WriteLine($"[log] {r.RequestMessage?.RequestUri} → {r.StatusCode}"),
-        materializer);
-
-// Consumer 2: collect only successful responses
-broadcastSource
-    .Where(r => r.IsSuccessStatusCode)
-    .SelectAsync(4, async r => await r.Content.ReadAsStringAsync())
-    .RunForeach(body => ProcessResult(body), materializer);
-```
-
-**How they interact:**
-
-- **ChannelSource/ChannelSink** bridge `System.Threading.Channels` to Akka.Streams without copying — backpressure flows through the channel boundary naturally
-- **Throttle** limits request rate at the Akka.Streams level; when the sink can't keep up, backpressure pauses the throttle
-- **SelectAsync** allows parallel response deserialization while preserving ordering
-- **BroadcastHub** lets multiple consumers process the same response stream independently
-- TurboHTTP's built-in **retry** and **decompression** still apply — the Akka.Streams graph sees clean, retried, decompressed responses
-
-::: tip When to use this pattern
-Use this when you need stream-level control that the channel API alone doesn't provide: throttling, fan-out, windowing, grouping, merging multiple clients, or integrating TurboHTTP into a larger Akka.Streams data pipeline.
-:::
+For stream processing with backpressure, throttling, merging, or fan-out — use Akka.Streams directly with Akka.Streams adapters, or write your own adapter that bridges the channels to your stream DSL.
 
 ---
 
 ## Combining These Patterns
 
-The four scenarios above show different feature combinations, but there is no rule against mixing them further. For example:
+The scenarios above show different feature combinations, but there is no rule against mixing them further. For example:
 
 - **Authenticated batch processor:** Add `.UseRequest()` to inject a Bearer token into every request in a batch job.
 - **Cached microservice:** Add `.WithCache()` to an internal service call to avoid redundant backend queries.

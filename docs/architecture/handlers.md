@@ -75,7 +75,7 @@ services.AddTurboHttpClient("myapi", options => { ... })
 
     // Cookies: off by default, opt-in
     .WithCookies()                                   // Shared CookieJar for this client
-    .WithCookies(existingJar)                        // Bring your own CookieJar instance
+    .WithCookies(existingStore)                      // Bring your own ICookieStore implementation
 
     // Cache: off by default, opt-in
     .WithCache(c => { c.MaxEntries = 1000; })
@@ -122,12 +122,12 @@ services.AddTurboHttpClient("myapi", options => { ... })
 
 // Inline delegate for simple cases
 services.AddTurboHttpClient("myapi", options => { ... })
-    .UseRequest(async (req, ct) =>
+    .UseRequest((req) =>
     {
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return req;
     })
-    .UseResponse(async (original, resp, ct) =>
+    .UseResponse((original, resp) =>
     {
         metrics.Record(original.RequestUri!, resp.StatusCode);
         return resp;
