@@ -40,7 +40,8 @@ internal sealed class ConnectionBridgeStage : GraphStage<FlowShape<IFeatureColle
         private Action<IFeatureCollection>? _onResponseCallback;
         private Action<Exception?>? _onResponseCompleteCallback;
         private Action? _onRequestAcceptedCallback;
-        private bool _waitingForResponse;
+        private bool _downstreamWantsPull;
+        private readonly Queue<IFeatureCollection> _responseBuffer = [];
 
         public Logic(ConnectionBridgeStage stage) : base(stage.Shape)
         {
@@ -73,11 +74,8 @@ internal sealed class ConnectionBridgeStage : GraphStage<FlowShape<IFeatureColle
 
         private void OnResponseReceived(IFeatureCollection response)
         {
-            _waitingForResponse = false;
-            if (IsAvailable(_stage._out))
-            {
-                Push(_stage._out, response);
-            }
+            _responseBuffer.Enqueue(response);
+            TryEmitResponse();
         }
 
         private void OnResponseStreamCompleted(Exception? error)
@@ -162,13 +160,16 @@ internal sealed class ConnectionBridgeStage : GraphStage<FlowShape<IFeatureColle
 
         private void OnResponsePull()
         {
-            if (!_waitingForResponse)
+            _downstreamWantsPull = true;
+            TryEmitResponse();
+        }
+
+        private void TryEmitResponse()
+        {
+            while (_downstreamWantsPull && _responseBuffer.Count > 0)
             {
-                _waitingForResponse = true;
-                if (IsAvailable(_stage._out))
-                {
-                    _waitingForResponse = false;
-                }
+                _downstreamWantsPull = false;
+                Push(_stage._out, _responseBuffer.Dequeue());
             }
         }
 

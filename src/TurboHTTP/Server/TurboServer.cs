@@ -29,6 +29,7 @@ public sealed class TurboServer : IServer
     private ActorSystem? _system;
     private bool _ownsSystem;
     private IActorRef _supervisor = ActorRefs.Nobody;
+    private IActorRef _pipelineOwner = ActorRefs.Nobody;
 
     public TurboServer(IOptions<TurboServerOptions> options, ILoggerFactory loggerFactory, IServiceProvider services)
     {
@@ -65,6 +66,15 @@ public sealed class TurboServer : IServer
             _options.HandlerTimeout,
             _options.HandlerGracePeriod));
 
+        _pipelineOwner = _system.ActorOf(
+            Props.Create(() => new ServerPipelineOwner(bridgeFlow)),
+            "turbo-pipeline");
+
+        await _pipelineOwner.Ask<ServerPipelineOwner.PipelineReady>(
+            new ServerPipelineOwner.Initialize(),
+            TimeSpan.FromSeconds(10),
+            cancellationToken);
+
         var resolver = new EndpointResolver();
         var resolvedEndpoints = resolver.Resolve(_options);
 
@@ -75,7 +85,7 @@ public sealed class TurboServer : IServer
                 endpoint.Factory,
                 endpoint.Options,
                 _options,
-                bridgeFlow,
+                _pipelineOwner,
                 _services,
                 materializer,
                 endpoint.ConnectionLoggingCategory));
