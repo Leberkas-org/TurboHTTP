@@ -41,6 +41,21 @@ public sealed class TransportBuffer : IDisposable
         return buf;
     }
 
+    // Wraps an existing IMemoryOwner without renting/copying. The returned buffer takes
+    // ownership of 'owner' and disposes it on Dispose — use when the data already lives in a
+    // pooled buffer that can be handed off directly (e.g. an outbound body chunk).
+    public static TransportBuffer Wrap(IMemoryOwner<byte> owner, int length)
+    {
+        if (!Pool.TryPop(out var buf))
+        {
+            return new TransportBuffer { _owner = owner, Length = length };
+        }
+
+        buf._owner = owner;
+        buf.Length = length;
+        return buf;
+    }
+
     public static implicit operator TransportBuffer(byte[] data)
     {
         var buf = Rent(data.Length);
