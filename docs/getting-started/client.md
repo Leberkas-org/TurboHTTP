@@ -11,7 +11,7 @@ dotnet add package TurboHTTP
 ## 2. Register a Client
 
 ```csharp
-using TurboHTTP;
+using TurboHTTP.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +26,9 @@ var app = builder.Build();
 ## 3. Send a Request
 
 ```csharp
+using TurboHTTP.Client;
+using System.Net.Http;
+
 var factory = app.Services.GetRequiredService<ITurboHttpClientFactory>();
 var client = factory.CreateClient("api");
 
@@ -42,6 +45,8 @@ Console.WriteLine(await response.Content.ReadAsStringAsync());
 Features are opt-in via the fluent builder:
 
 ```csharp
+using TurboHTTP.Client;
+
 builder.Services.AddTurboHttpClient("api", options =>
 {
     options.BaseAddress = new Uri("https://api.example.com");
@@ -60,6 +65,10 @@ Each `.With*()` method adds a pipeline stage. They compose — order doesn't mat
 For batch processing, use the channel-based API instead of `SendAsync`:
 
 ```csharp
+using TurboHTTP.Client;
+using System.Net.Http;
+using System.Threading.Channels;
+
 var client = factory.CreateClient("api");
 
 // Producer: write requests without waiting

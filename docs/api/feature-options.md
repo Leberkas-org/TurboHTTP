@@ -56,7 +56,7 @@ builder.Services.AddTurboHttpClient("api", ...)
     .WithCache(c => { c.MaxEntries = 100; c.MaxBodyBytes = 5 * 1024 * 1024; });
 
 // Custom store shared across clients
-var sharedStore = new CacheStore();
+var sharedStore = new MyCustomCacheStore();  // implement ICacheStore
 builder.Services.AddTurboHttpClient("api", ...).WithCache(sharedStore);
 ```
 
@@ -245,8 +245,8 @@ These types are part of the public API and can be customized:
 
 | Type | Purpose | Guide |
 |------|---------|-------|
-| `CookieJar` | Cookie storage and injection — provided via `.WithCookies()` | [Cookies](/client/cookies) |
-| `CacheStore` | In-memory LRU cache backend — provided via `.WithCache(store)` | [Caching](/client/caching) |
-| `TurboHandler` | Custom request/response middleware — registered via `.AddHandler<T>()` | [Configuration](/client/configuration) |
+| `ICookieStore` | Cookie storage and injection — implement and pass to `.WithCookies(store)` | [Cookies](/client/cookies) |
+| `ICacheStore` | Cache backend — implement and pass to `.WithCache(store)` | [Caching](/client/caching) |
+| `TurboHandler` | Custom request/response middleware — register via `.AddHandler<T>()` | [Configuration](/client/configuration) |
 
 See [Configuration guide](/client/configuration) for integration patterns.

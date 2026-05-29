@@ -112,7 +112,7 @@ Set-Cookie: sid=abc123   ← no expiry: lasts until the client is disposed
 By default each named client gets its own isolated cookie store. To share cookies across multiple clients — for example, so that a login performed by one client is visible to another — implement `ICookieStore` and pass the same instance to each:
 
 ```csharp
-using TurboHTTP.Protocol.Cookies;
+using TurboHTTP.Features.Cookies;
 
 // Your thread-safe ICookieStore implementation
 ICookieStore sharedStore = new MySharedCookieStore();

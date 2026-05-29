@@ -48,7 +48,7 @@ Same-origin redirects preserve the `Authorization` header normally.
 
 ### HTTPS → HTTP Downgrade Protection
 
-TurboHTTP blocks redirects that would downgrade from `https://` to `http://`. If a server tries to redirect you from an encrypted connection to a cleartext one, TurboHTTP throws a `RedirectException` with `RedirectError.ProtocolDowngrade` instead of following it.
+TurboHTTP blocks redirects that would downgrade from `https://` to `http://`. If a server tries to redirect you from an encrypted connection to a cleartext one, TurboHTTP fails the request rather than following it.
 
 ```
 Original:  GET https://secure.example.com/data
@@ -63,10 +63,10 @@ The `Cookie` header is never blindly forwarded across redirects. For each redire
 
 ## Loop Detection
 
-TurboHTTP tracks every URL visited during a redirect chain. If the same URL appears twice, it throws a `RedirectException` with `RedirectError.RedirectLoop` immediately rather than continuing. This prevents infinite redirect loops caused by misconfigured servers from hanging your application.
+TurboHTTP tracks every URL visited during a redirect chain. If the same URL appears twice, it fails the request immediately rather than continuing. This prevents infinite redirect loops caused by misconfigured servers from hanging your application.
 
 ```
-GET /a → 302 → /b → 302 → /a   ← RedirectException (loop detected)
+GET /a → 302 → /b → 302 → /a   ← request fails (loop detected)
 ```
 
 ## Configuration
@@ -95,7 +95,7 @@ builder.Services.AddTurboHttpClient("strict", options =>
 
 ### `MaxRedirects`
 
-The maximum number of redirect hops to follow before giving up. Default: **10**. Exceeding this limit throws `RedirectException` with `RedirectError.MaxRedirectsExceeded`.
+The maximum number of redirect hops to follow before giving up. Default: **10**. Exceeding this limit causes the request to fail.
 
 ### `AllowHttpsToHttpDowngrade`
 
@@ -107,28 +107,22 @@ This is rarely needed. Only enable it in fully-trusted internal networks where y
 
 Omit `.WithRedirect()` to leave redirects disabled entirely. All 3xx responses are returned as-is.
 
-## Handling Redirect Exceptions
+## Handling Redirect Failures
 
-When a redirect cannot be completed, TurboHTTP throws `RedirectException`. You can handle each case separately:
+When a redirect cannot be completed — due to too many hops, a detected loop, or a blocked HTTPS→HTTP downgrade — the failure surfaces as an exception thrown from `SendAsync`. You catch and handle it using the standard exception handling:
 
 ```csharp
 try
 {
     var response = await client.SendAsync(request);
 }
-catch (RedirectException ex) when (ex.Error == RedirectError.MaxRedirectsExceeded)
+catch (Exception ex)
 {
-    Console.WriteLine($"Too many redirects: {ex.Message}");
-}
-catch (RedirectException ex) when (ex.Error == RedirectError.RedirectLoop)
-{
-    Console.WriteLine($"Redirect loop detected: {ex.Message}");
-}
-catch (RedirectException ex) when (ex.Error == RedirectError.ProtocolDowngrade)
-{
-    Console.WriteLine($"Blocked HTTPS→HTTP downgrade: {ex.Message}");
+    Console.WriteLine($"Request failed: {ex.Message}");
 }
 ```
+
+The specific internal exception types are not part of the public API, so you cannot distinguish between different redirect failure modes by exception type. If your application needs to respond differently to different kinds of redirect failures, consider lowering the `MaxRedirects` limit or disabling redirects entirely (omit `.WithRedirect()`) and handling 3xx responses yourself.
 
 ::: info How it works
 See [Architecture: Request Pipeline](/architecture/pipeline) to understand how this feature fits into the processing pipeline.

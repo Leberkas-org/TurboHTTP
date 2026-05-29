@@ -34,10 +34,14 @@ TurboHTTP reuses an existing `ActorSystem` from DI if one is registered (e.g. vi
 
 ## Real-Time SSE Streaming
 
-Server-Sent Events let you push data to clients over a long-lived HTTP connection. TurboHTTP makes this trivial — return an Akka Streams `Source` wrapped in `TurboStreamResults.EventStream`, and the framework handles SSE framing, connection lifecycle, and backpressure for you.
+Server-Sent Events let you push data to clients over a long-lived HTTP connection. TurboHTTP makes this trivial — return an Akka Streams `Source` wrapped in `AkkaResults.ServerSentEvent`, and the framework handles SSE framing, connection lifecycle, and backpressure for you.
+
+Streaming helpers come from the `Servus.Akka.AspNetCore` package and require an `IMaterializer` instance (typically injected from DI).
 
 ```csharp
-app.MapGet("/events/orders", (HttpContext ctx, IOrderEventSource orderEvents) =>
+using Servus.Akka.AspNetCore;
+
+app.MapGet("/events/orders", (HttpContext ctx, IOrderEventSource orderEvents, IMaterializer materializer) =>
 {
     var events = orderEvents
         .AsSource()
@@ -46,7 +50,7 @@ app.MapGet("/events/orders", (HttpContext ctx, IOrderEventSource orderEvents) =>
             EventType: e.GetType().Name,
             Id: e.OrderId.ToString()));
 
-    return TurboStreamResults.EventStream(events);
+    return AkkaResults.ServerSentEvent(events, materializer);
 });
 ```
 
@@ -58,10 +62,12 @@ The `Source` is materialized when the client connects and torn down when they di
 
 ## Raw Byte Streaming
 
-When you need to stream binary data — file downloads, video, sensor feeds — you want bytes to flow from the source to the network without piling up in memory. `TurboStreamResults.Stream` takes an Akka Streams `Source` of byte chunks and pipes it directly into the HTTP response body.
+When you need to stream binary data — file downloads, video, sensor feeds — you want bytes to flow from the source to the network without piling up in memory. `AkkaResults.Stream` takes an Akka Streams `Source` of byte chunks and pipes it directly into the HTTP response body.
 
 ```csharp
-app.MapGet("/files/{fileId}", (HttpContext ctx, IFileStore fileStore, string fileId) =>
+using Servus.Akka.AspNetCore;
+
+app.MapGet("/files/{fileId}", (HttpContext ctx, IFileStore fileStore, string fileId, IMaterializer materializer) =>
 {
     var metadata = fileStore.GetMetadata(fileId);
 
@@ -69,7 +75,7 @@ app.MapGet("/files/{fileId}", (HttpContext ctx, IFileStore fileStore, string fil
         .FromFile(new FileInfo(metadata.Path), chunkSize: 8 * 1024)
         .Select(chunk => (ReadOnlyMemory<byte>)chunk.Memory);
 
-    return TurboStreamResults.Stream(bytes, contentType: metadata.ContentType);
+    return AkkaResults.Stream(bytes, materializer, contentType: metadata.ContentType);
 });
 ```
 
@@ -114,7 +120,9 @@ Over HTTP/2, all 100 requests multiplex on a single connection. Responses arrive
 TurboHTTP doesn't just use Akka Streams for internal plumbing — it exposes the full operator toolkit for you to shape, merge, and throttle data before it hits the wire. Every operator in the pipeline participates in backpressure, from the data source all the way to the client's TCP receive window.
 
 ```csharp
-app.MapGet("/metrics/live", (HttpContext ctx, IMetricsSource metrics) =>
+using Servus.Akka.AspNetCore;
+
+app.MapGet("/metrics/live", (HttpContext ctx, IMetricsSource metrics, IMaterializer materializer) =>
 {
     var cpuMetrics = metrics.CpuEvents();
     var memoryMetrics = metrics.MemoryEvents();
@@ -126,7 +134,7 @@ app.MapGet("/metrics/live", (HttpContext ctx, IMetricsSource metrics) =>
             Data: m.ToJson(),
             EventType: m.Category));
 
-    return TurboStreamResults.EventStream(merged);
+    return AkkaResults.ServerSentEvent(merged, materializer);
 });
 ```
 
