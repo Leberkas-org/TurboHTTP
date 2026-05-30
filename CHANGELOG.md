@@ -1,5 +1,58 @@
 # Changelog
 
+## [2.1.0](https://github.com/Leberkas-org/TurboHTTP/compare/v2.0.0...v2.1.0) (2026-05-30)
+
+
+### Features
+
+* **server:** add ConnectionBridgeStage for per-connection hub bridging ([0818563](https://github.com/Leberkas-org/TurboHTTP/commit/0818563a26f053c2370df68eac90812e089b9f15))
+* **server:** add ConnectionRoutingFeature for shared pipeline routing ([d2cc054](https://github.com/Leberkas-org/TurboHTTP/commit/d2cc054b958d7fff3f879c49bd0f04c9e88c08bd))
+* **server:** add ResponseDispatcherHub with O(1) key-based routing ([a66adf1](https://github.com/Leberkas-org/TurboHTTP/commit/a66adf1ddc256c19eac0c3a3f825ca9f39c93005))
+* **server:** add ServerPipelineOwner with MergeHub/PartitionHub shared pipeline ([eecd453](https://github.com/Leberkas-org/TurboHTTP/commit/eecd453b50e1c815086b4579adb12b7068cb487d))
+* **server:** add SharedBridgeStage with unordered handler dispatch ([459c6d9](https://github.com/Leberkas-org/TurboHTTP/commit/459c6d9fa07e6f29af1f1faf125e4f4714db2fa4))
+* **server:** integrate ResponseDispatcherHub into server pipeline ([3a93f86](https://github.com/Leberkas-org/TurboHTTP/commit/3a93f868acaaaa73fbeca7697872ed1e9c307ad1))
+* **server:** partition index recycling + connection stage error isolation ([141b736](https://github.com/Leberkas-org/TurboHTTP/commit/141b736ff1a2e1f720582794f1e53bc4e512d8aa))
+* **server:** shared pipeline with fire-and-forget registration ([02d56c7](https://github.com/Leberkas-org/TurboHTTP/commit/02d56c7784344596f9816c602666e9ad72979d5e))
+* **server:** shared pipeline with GraphDsl bridge + Recover ([f984812](https://github.com/Leberkas-org/TurboHTTP/commit/f9848128239c30f832dc00e68e9658c2d7f0d39c))
+* **server:** wire up ResponseBodyChunkSize and BodyConsumptionTimeout options ([5d00828](https://github.com/Leberkas-org/TurboHTTP/commit/5d00828302d8cd302409094390875acb92555dc3))
+* **tests:** add ActorSystemFixture constructors to all server specs ([c02cddb](https://github.com/Leberkas-org/TurboHTTP/commit/c02cddb4b0624a7573e8e4d13b08922d659ebabc))
+* **tests:** add HTTPS port to shared fixture, convert 2 TLS specs ([e1a6a8a](https://github.com/Leberkas-org/TurboHTTP/commit/e1a6a8a763d0acbf75a689769d0c80ce0a97d387))
+* **tests:** convert 10 more specs to shared TurboServerFixture ([2fdc79c](https://github.com/Leberkas-org/TurboHTTP/commit/2fdc79c2d746726760b9aca5df2582bc92a86a6b))
+* **tests:** shared TurboServerFixture for integration test pilot ([c5bb863](https://github.com/Leberkas-org/TurboHTTP/commit/c5bb863f9a5e6a699bbcaf23831e5f26e0884e99))
+* **tests:** wire AssemblyFixture and shared ActorSystem into ServerSpecBase ([8e1cf8d](https://github.com/Leberkas-org/TurboHTTP/commit/8e1cf8da7f74ff487e456482894c1c069491fac8))
+
+
+### Bug Fixes
+
+* **server:** absorb network failures on all ConnectionStage ports ([ea58d25](https://github.com/Leberkas-org/TurboHTTP/commit/ea58d25e7bd895351497823089d6efb2d5b916d9))
+* **server:** buffer pending responses before source registration ([f364076](https://github.com/Leberkas-org/TurboHTTP/commit/f3640768ce3fd87f088e204eed425a9e4b5e07bf))
+* **server:** handle shared ActorSystem lifecycle in StopAsync ([7165e80](https://github.com/Leberkas-org/TurboHTTP/commit/7165e80a9ec08948c116971ee57c9044ac881595))
+* **server:** propagate actual bound port for dynamic port allocation ([78963db](https://github.com/Leberkas-org/TurboHTTP/commit/78963dbad7c3201f6f26ea84f140821f380cfbe9))
+* **tests:** add explicit read timeout to ConnectionCloseReproSpec ([fc5598d](https://github.com/Leberkas-org/TurboHTTP/commit/fc5598d3c2ffc4401dc10e7b66a1bdbff8fe1a77))
+* **tests:** increase read timeout to 10s for ConnectionCloseReproSpec ([18628ea](https://github.com/Leberkas-org/TurboHTTP/commit/18628eac8e3b0167d3bbf0818bfb64700feb11a9))
+* **tests:** increase timeout for 3 flaky acceptance tests on CI ([e84d5c8](https://github.com/Leberkas-org/TurboHTTP/commit/e84d5c88d4987f83be68610103811d63e882ae56))
+* **tests:** move ConnectionCloseReproSpec back to ServerSpecBase ([ad82589](https://github.com/Leberkas-org/TurboHTTP/commit/ad82589bdbd7baed1a6b4d255f2682348ec04e64))
+
+
+### Performance
+
+* **tests:** enable parallel test collections and increase thread count ([e60a41c](https://github.com/Leberkas-org/TurboHTTP/commit/e60a41c56a995b2a48ebec1f12a2745c1333c4de))
+
+
+### Documentation
+
+* **client:** correct option defaults and behavior descriptions ([72ec6da](https://github.com/Leberkas-org/TurboHTTP/commit/72ec6da7acea1409b05fc389755a55f99bbe1af9))
+* **client:** fix namespaces and remove non-public APIs from examples ([d8ddf87](https://github.com/Leberkas-org/TurboHTTP/commit/d8ddf87709cff0826ed850dd4f67b4104fe52a05))
+* **diagrams:** fix LikeC4 client pipeline order and component metadata ([f3b9598](https://github.com/Leberkas-org/TurboHTTP/commit/f3b9598f6ac83fd37216720028990263ed88ef02))
+* **server:** reflect pure ASP.NET Core IServer architecture ([70e41d7](https://github.com/Leberkas-org/TurboHTTP/commit/70e41d7ffa675507e2baa93f66a25964628e664c))
+* **site:** exclude internal docs from build, fix meta description, wire orphan pages ([f3357c2](https://github.com/Leberkas-org/TurboHTTP/commit/f3357c2afbb0fa76858269a976d38ee3572996d9))
+
+
+### Refactoring
+
+* **server:** rewire ConnectionActor, ListenerActor, and TurboServer for shared pipeline ([542d188](https://github.com/Leberkas-org/TurboHTTP/commit/542d188496a2447db3c219d0ea88fe07508c258f))
+* **server:** simplify ConnectionBridge to GraphDsl factory ([f3b1d30](https://github.com/Leberkas-org/TurboHTTP/commit/f3b1d30b2686ff9e145032e29015cefe3504d993))
+
 ## [2.0.0](https://github.com/Leberkas-org/TurboHTTP/compare/v1.3.0...v2.0.0) (2026-05-28)
 
 
